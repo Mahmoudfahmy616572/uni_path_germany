@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:germany_travel/core/services/services_locator.dart' as di;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'core/config/app_router.dart';
+import 'core/utils/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

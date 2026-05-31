@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:germany_travel/core/config/themes/app_colors.dart';
+import 'package:germany_travel/core/themes/app_colors.dart';
 
 class CustomAuthField extends StatelessWidget {
   final String hint;
   final IconData prefixIcon;
+
   final bool isPassword;
   final TextEditingController? controller;
+  final String? Function(String?)? validator;
 
   const CustomAuthField({
     super.key,
@@ -13,6 +15,7 @@ class CustomAuthField extends StatelessWidget {
     required this.prefixIcon,
     this.isPassword = false,
     this.controller,
+    this.validator,
   });
 
   @override
@@ -24,9 +27,10 @@ class CustomAuthField extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         obscureText: isPassword,
+        validator: validator,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 14),

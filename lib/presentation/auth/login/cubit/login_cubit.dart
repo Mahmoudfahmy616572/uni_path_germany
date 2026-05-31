@@ -8,10 +8,18 @@ class LoginCubit extends Cubit<LoginState> {
 
   LoginCubit(this.authRepository) : super(LoginInitial());
 
-  Future<void> login(String email, String password) async {
+  // تعديل اسم الباراميتر الأول ليكون معبراً عن الإيميل أو اليوزر نيم
+  Future<void> login({
+    required String emailOrUsername,
+    required String password,
+  }) async {
     emit(LoginLoading());
     try {
-      await authRepository.login(email, password);
+      // مناداة الـ Repository باستخدام الـ Named Parameters المحدثة
+      await authRepository.login(
+        emailOrUsername: emailOrUsername,
+        password: password,
+      );
       emit(LoginSuccess());
     } catch (e) {
       emit(LoginError(e.toString()));

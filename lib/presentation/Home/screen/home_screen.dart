@@ -12,123 +12,92 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => HomeCubit()..calculateAndFetchRecommendations(72),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF7FAFC), // لون الخلفية الفاتح
-        body: SafeArea(
-          child: BlocBuilder<HomeCubit, HomeState>(
-            builder: (context, state) {
-              if (state is HomeLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF5A67D8)),
-                );
-              }
+    return Scaffold(
+      backgroundColor: const Color(
+        0xFFFFF7FAFC,
+      ), // لون الخلفية الفاتح من تصميمك
+      body: SafeArea(
+        child: BlocBuilder<HomeCubit, HomeState>(
+          builder: (context, state) {
+            // 1. حالة التحميل (Loading)
+            if (state is HomeLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFF5A67D),
+                ), // تعديل كود اللون ليكون سليم
+              );
+            }
 
-              if (state is HomeError) {
-                return Center(child: Text(state.message));
-              }
+            // 2. حالة حدوث خطأ (Error)
+            if (state is HomeError) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: GoogleFonts.poppins(color: Colors.red, fontSize: 16),
+                ),
+              );
+            }
 
-              if (state is HomeLoaded) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Text(
-                        "Hello, Mahmoud 👋",
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A202C),
+            // 3. حالة نجاح جلب البيانات (Loaded)
+            if (state is HomeLoaded) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // الـ Header الترحيبي باسمك يا هندسة
+                    Text(
+                      "Hello, Mahmoud 👋",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1A202C),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // الداتا الدايناميك المحسوبة جاية من الـ State هنا!
+                    MatchScoreCard(score: state.matchScore),
+                    const SizedBox(height: 30),
+
+                    // Quick Actions (الـ Row بتاع الزراير الأربعة)
+                    // يمكنك استدعاء الـ Widget المخصص ليها هنا لو منقصلة
+                    const SizedBox(height: 35),
+
+                    Text(
+                      "Recommended for you",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1A202C),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // الـ Loop الذكي بتاعك على اللستة الحقيقية اللي جاية من الكوبيت والـ Repository
+                    // 🎯 الـ Loop بعد تنظيف الـ parameters المتداخلة
+                    ...state.recommendations.map(
+                      (uni) => Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: 16.0,
+                        ), // مسافة بين الكروت
+                        child: UniversityCard(
+                          university:
+                              uni, // 👈 باصي الـ object كامل ومحمل بكل الداتا الجديدة والنسبة المحسوبة
                         ),
                       ),
-                      const SizedBox(height: 30),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                      // الداتا الدايناميك جاية من الـ State هنا!
-                      MatchScoreCard(score: state.matchScore),
-                      const SizedBox(height: 30),
-
-                      // Quick Actions
-                      // (حط الـ Row بتاع الزراير هنا)
-                      const SizedBox(height: 35),
-
-                      Text(
-                        "Recommended for you",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A202C),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // بنعمل Loop على اللستة اللي جاية من الـ Cubit
-                      ...state.recommendations.map(
-                        (uni) => UniversityCard(
-                          logoText: uni.logoText,
-                          name: uni.name,
-                          program: uni.program,
-                          matchPercentage: uni.matchPercentage,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-
-        // 6. Bottom Navigation Bar
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF5A67D8),
-            unselectedItemColor: Colors.grey.shade400,
-            showUnselectedLabels: true,
-            selectedLabelStyle: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: GoogleFonts.poppins(fontSize: 10),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_filled),
-                label: "Home",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.search),
-                label: "Search",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.bookmark_border),
-                label: "Saved",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.file_copy_outlined),
-                label: "Applications",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                label: "Profile",
-              ),
-            ],
-          ),
+            // الحالة الافتراضية
+            return const SizedBox.shrink();
+          },
         ),
       ),
+      // 6. الـ Bottom Navigation Bar بتاعك ضيفه هنا تحت الـ SafeArea لو حابب
     );
   }
 }

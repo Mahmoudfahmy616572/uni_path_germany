@@ -12,9 +12,16 @@ class LogoutCubit extends Cubit<LogoutState> {
     emit(LogoutLoading());
     try {
       await authRepository.logout();
-      emit(LogoutSuccess());
+
+      // نتأكد إن الـ Cubit لسه مفتوح قبل ما نبعت الحالة
+      if (!isClosed) {
+        emit(LogoutSuccess());
+      }
     } catch (e) {
-      emit(LogoutError(e.toString()));
+      // وهنا كمان نتأكد
+      if (!isClosed) {
+        emit(LogoutError(e.toString()));
+      }
     }
   }
 }

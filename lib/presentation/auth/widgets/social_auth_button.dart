@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/config/themes/app_colors.dart';
+import '../../../core/themes/app_colors.dart';
 
 class SocialAuthButton extends StatelessWidget {
   final String text;
