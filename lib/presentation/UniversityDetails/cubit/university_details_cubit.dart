@@ -5,19 +5,31 @@ import 'university_details_state.dart';
 
 class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
   final ApplicationsRepository repository;
+  int _currentMatchPercentage = 0;
   UniversityDetailsCubit(this.repository) : super(UniversityDetailsInitial());
+  // 2. ضيف الدالة الجديدة دي هنا عشان تلقط النسبة من الشاشة أول ما تفتح
+  void setInitialMatchPercentage(int percentage) {
+    _currentMatchPercentage = percentage;
+  }
 
   // الفحص المبدئي عند فتح الشاشة
   Future<void> checkInitialSaveStatus(String universityId) async {
     try {
       bool saved = await repository.checkIfSaved(universityId);
-      emit(UniversitySaveStatus(isSaved: saved, isLoading: false));
+      emit(
+        UniversitySaveStatus(
+          isSaved: saved,
+          isLoading: false,
+          matchPercentage: _currentMatchPercentage,
+        ),
+      );
     } catch (e) {
       emit(
         UniversitySaveStatus(
           isSaved: false,
           isLoading: false,
           errorMessage: e.toString(),
+          matchPercentage: _currentMatchPercentage,
         ),
       );
     }
@@ -37,6 +49,7 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
             isSaved: false,
             isLoading: false,
             isFromAction: true,
+            matchPercentage: _currentMatchPercentage,
           ),
         );
       } else {
@@ -46,6 +59,7 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
             isSaved: true,
             isLoading: false,
             isFromAction: true,
+            matchPercentage: _currentMatchPercentage,
           ),
         );
       }
@@ -56,32 +70,55 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           isLoading: false,
           errorMessage: e.toString(),
           isFromAction: true,
+          matchPercentage: _currentMatchPercentage,
         ),
       );
     }
   }
 
   // 🔥 الدالة الجديدة لتحديث ورقة معينة في الـ Checklist دايناميك
+  // 🎯 دالة تحديث الملاحظات للنظام المستقل في شاشة التفاصيل
+  Future<void> updateNotes({
+    required String universityId,
+    required String newNotes,
+  }) async {
+    try {
+      await repository.updateApplicationNotes(
+        universityId: universityId,
+        newNotes: newNotes,
+      );
+      // إعادة استدعاء الفحص لتحديث الـ UI بالكامل بالقيم الجديدة
+      await checkInitialSaveStatus(universityId);
+    } catch (e) {
+      emit(
+        UniversitySaveStatus(
+          isSaved: true,
+          errorMessage: "Failed to update notes",
+          matchPercentage: _currentMatchPercentage,
+        ),
+      );
+    }
+  }
+
+  // 🔥 دالة الـ Checklist الأصلية المحدثة لتنادي نفس الـ Repo المركزي
   Future<void> updateChecklistItem({
     required String universityId,
     required String column,
     required bool newValue,
   }) async {
     try {
-      // نداء الـ Repo لتحديث خانة معينة (مثلا has_cv = true)
       await repository.updateApplicationDocument(
         universityId: universityId,
         columnName: column,
         newValue: newValue,
       );
-
-      // إعادة قراءة الحالة لتحديث الـ UI
       await checkInitialSaveStatus(universityId);
     } catch (e) {
       emit(
         UniversitySaveStatus(
           isSaved: true,
           errorMessage: "Failed to update document",
+          matchPercentage: _currentMatchPercentage,
         ),
       );
     }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/models/university_model.dart';
-import '../cubit/university_details_cubit.dart';
+import '../../data/models/university_model.dart';
+import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
 
 class RequirementsChecklistList extends StatelessWidget {
   final UniversityModel university;

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:germany_travel/core/services/services_locator.dart' as di;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/utils/app_router.dart';
+import 'presentation/Home/cubit/home_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,11 +21,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'UniPath',
-      routerConfig: appRouter,
-      theme: ThemeData(primarySwatch: Colors.indigo),
+    return MultiBlocProvider(
+      providers: [
+        // الـ HomeCubit مركزي ومتاح في كل مكان ويحتفظ بنسب التوافق
+        BlocProvider<HomeCubit>(
+          create: (context) =>
+              di.sl<HomeCubit>()..calculateAndFetchRecommendations(),
+        ),
+      ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'UniPath',
+        routerConfig: appRouter,
+        theme: ThemeData(primarySwatch: Colors.indigo),
+      ),
     );
   }
 }

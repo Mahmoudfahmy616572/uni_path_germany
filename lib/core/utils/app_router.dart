@@ -21,7 +21,7 @@ import '../../presentation/onboarding/cubit/onboarding_cubit.dart';
 import '../../presentation/onboarding/screens/OnboardingScreen.dart';
 import '../../presentation/profile/cubit/screen/profile_screen.dart';
 import '../../presentation/saved/screen/saved_screen.dart';
-import '../../presentation/search/screen/search_screen.dart';
+import '../../presentation/search/screen/university_search_screen.dart';
 import '../services/services_locator.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -36,13 +36,15 @@ final GoRouter appRouter = GoRouter(
     final bool isGoingToOnboarding = currentLocation == '/onboarding';
 
     if (!isLoggedIn) {
-      if (!isGoingToAuth && !isGoingToOnboarding && currentLocation != '/')
+      if (!isGoingToAuth && !isGoingToOnboarding && currentLocation != '/') {
         return '/login';
+      }
       return null;
     }
     if (isLoggedIn &&
-        (isGoingToAuth || isGoingToOnboarding || currentLocation == '/'))
+        (isGoingToAuth || isGoingToOnboarding || currentLocation == '/')) {
       return '/home';
+    }
     return null;
   },
   routes: [
@@ -83,9 +85,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final extraData = state.extra;
         final UniversityModel university;
-        if (extraData is UniversityModel)
+        if (extraData is UniversityModel) {
           university = extraData;
-        else if (extraData is UniversityEntity)
+        } else if (extraData is UniversityEntity) {
           university = UniversityModel(
             id: extraData.id,
             name: extraData.name,
@@ -96,11 +98,15 @@ final GoRouter appRouter = GoRouter(
             requiresIelts: extraData.requiresIelts,
             requiredGpa: extraData.requiredGpa,
             minIeltsScore: extraData.minIeltsScore,
+            acceptsMoi: extraData.acceptsMoi,
+            instructionLanguage: extraData.instructionLanguage,
+            degreeType: extraData.degreeType,
           );
-        else if (extraData is Map<String, dynamic>)
+        } else if (extraData is Map<String, dynamic>) {
           university = UniversityModel.fromJson(extraData);
-        else
+        } else {
           throw Exception('Unexpected data type');
+        }
         return UniversityDetailsScreen(university: university);
       },
     ),
@@ -162,7 +168,7 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/search',
-              builder: (context, state) => const SearchScreen(),
+              builder: (context, state) => const UniversitySearchScreen(),
             ),
           ],
         ),

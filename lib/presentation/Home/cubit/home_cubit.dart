@@ -60,6 +60,9 @@ class HomeCubit extends Cubit<HomeState> {
             hasCv: uni.hasCv,
             hasSop: uni.hasSop,
             hasBachelorCert: uni.hasBachelorCert,
+            acceptsMoi: uni.acceptsMoi,
+            instructionLanguage: uni.instructionLanguage,
+            degreeType: uni.degreeType,
           );
         }
         return uni;

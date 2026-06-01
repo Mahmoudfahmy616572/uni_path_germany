@@ -4,16 +4,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // الـ Repositories Implementations
 import '../../data/repositories/applications_repository_impl.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-// الـ Data Sources
 import '../../data/repositories/universities_repository_impl.dart';
+// الـ Data Sources
 import '../../data/sources/applications_remote_data_source.dart';
 import '../../data/sources/auth_remote_data_source.dart';
-// الـ Repositories Contracts
 import '../../data/sources/universities_remote_data_source.dart';
+// الـ Repositories Contracts
 import '../../domain/repositories/applications_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
-// الـ Cubits
 import '../../domain/repositories/universities_repository.dart';
+// الـ Cubits
 import '../../presentation/Home/cubit/home_cubit.dart';
 import '../../presentation/MyApplications/cubit/my_applications_cubits.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
@@ -41,7 +41,7 @@ Future<void> init() async {
     () => ApplicationsRemoteDataSourceImpl(sl()),
   );
 
-  // 3. ال  Repositories
+  // 3. الـ Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<ApplicationsRepository>(
     () => ApplicationsRepositoryImpl(sl()),
@@ -50,14 +50,11 @@ Future<void> init() async {
     () => UniversitiesRepositoryImpl(sl(), sl()),
   );
 
-  // 4. الـ Cubits (Factory لمنع كاش الستيت القديم عند إعادة فتح الشاشات)
+  // 4. الـ Cubits
   sl.registerLazySingleton(() => HomeCubit(sl<UniversitiesRepository>()));
   sl.registerLazySingleton(() => LoginCubit(sl<AuthRepository>()));
   sl.registerLazySingleton(
-    () => RegisterCubit(
-      sl<AuthRepository>(), // الـ Repository الأول
-      sl<UniversitiesRepository>(), //  الـ Repository الثاني اللي ضفناه
-    ),
+    () => RegisterCubit(sl<AuthRepository>(), sl<UniversitiesRepository>()),
   );
 
   sl.registerLazySingleton(() => LogoutCubit(sl()));
@@ -70,5 +67,5 @@ Future<void> init() async {
   sl.registerLazySingleton(
     () =>
         MyApplicationsCubit(sl<ApplicationsRepository>(), sl<AuthRepository>()),
-  ); // 🔥 ضفنا الـ HomeCubit كاعتمادية هنا
+  );
 }

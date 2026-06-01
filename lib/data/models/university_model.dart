@@ -24,9 +24,74 @@ class UniversityModel extends UniversityEntity {
     super.deadline,
     super.applicationFee,
     super.tuitionFeePerYear,
-    super.location, // 👈 ضفنا اللوكيشن هنا
-    super.websiteUrl, // 👈 ضفنا رابط الموقع هنا
+    super.location,
+    super.websiteUrl,
+    required super.acceptsMoi, // 👈 تمرير الـ MOI
+    required super.instructionLanguage, // 👈 تمرير لغة التدريس الحقيقية
+    required super.degreeType, // 👈 تمرير نوع الدرجة
   });
+  @override
+  // 🎯 دالة الـ copyWith المضافة لنسخ الكائن وتعديل قيم معينة دون تصفير الباقي
+  UniversityModel copyWith({
+    String? id,
+    String? name,
+    String? program,
+    int? matchPercentage,
+    String? logoText,
+    double? requiredGpa,
+    bool? requiresIelts,
+    double? minIeltsScore,
+    String? country,
+    String? status,
+    String? notes,
+    bool? hasTranscripts,
+    bool? hasCv,
+    bool? hasSop,
+    bool? hasBachelorCert,
+    String? description,
+    String? curriculum,
+    dynamic
+    rankings, // ديناميك ليطابق نوع الـ Entity (سواء كان int أو حسب تعريف السوبر)
+    String? logoUrl,
+    String? deadline,
+    int? applicationFee,
+    int? tuitionFeePerYear,
+    String? location,
+    String? websiteUrl,
+    bool? acceptsMoi,
+    String? instructionLanguage,
+    String? degreeType,
+  }) {
+    return UniversityModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      program: program ?? this.program,
+      matchPercentage: matchPercentage ?? this.matchPercentage,
+      logoText: logoText ?? this.logoText,
+      requiredGpa: requiredGpa ?? this.requiredGpa,
+      requiresIelts: requiresIelts ?? this.requiresIelts,
+      minIeltsScore: minIeltsScore ?? this.minIeltsScore,
+      country: country ?? this.country,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      hasTranscripts: hasTranscripts ?? this.hasTranscripts,
+      hasCv: hasCv ?? this.hasCv,
+      hasSop: hasSop ?? this.hasSop,
+      hasBachelorCert: hasBachelorCert ?? this.hasBachelorCert,
+      description: description ?? this.description,
+      curriculum: curriculum ?? this.curriculum,
+      rankings: rankings ?? this.rankings,
+      logoUrl: logoUrl ?? this.logoUrl,
+      deadline: deadline ?? this.deadline,
+      applicationFee: applicationFee ?? this.applicationFee,
+      tuitionFeePerYear: tuitionFeePerYear ?? this.tuitionFeePerYear,
+      location: location ?? this.location,
+      websiteUrl: websiteUrl ?? this.websiteUrl,
+      acceptsMoi: acceptsMoi ?? this.acceptsMoi,
+      instructionLanguage: instructionLanguage ?? this.instructionLanguage,
+      degreeType: degreeType ?? this.degreeType,
+    );
+  }
 
   static int calculateAcademicMatch({
     required double requiredGpa,
@@ -130,7 +195,12 @@ class UniversityModel extends UniversityEntity {
     double reqGpa = (json['required_gpa'] as num?)?.toDouble() ?? 4.0;
     bool reqIelts = json['requires_ielts'] ?? false;
     double minIelts = (json['min_ielts_score'] as num?)?.toDouble() ?? 0.0;
+
     bool acceptsMoi = json['accepts_moi'] as bool? ?? false;
+    String instructionLang =
+        json['instruction_language']?.toString() ?? 'English';
+    String degreeType = json['degree_type']?.toString() ?? 'Bachelor';
+
     String uniProgram =
         json['program_name'] ?? json['major'] ?? json['target_major'] ?? '';
 
@@ -167,9 +237,11 @@ class UniversityModel extends UniversityEntity {
       deadline: json['deadline']?.toString(),
       applicationFee: (json['application_fee'] as num?)?.toInt() ?? 0,
       tuitionFeePerYear: (json['tuition_fee_per_year'] as num?)?.toInt() ?? 0,
-      location: json['location']?.toString(), // 👈 جبنا اللوكيشن من الـ JSON
-      websiteUrl: json['website_url']
-          ?.toString(), // 👈 جبنا رابط الموقع من الـ JSON
+      location: json['location']?.toString(),
+      websiteUrl: json['website_url']?.toString(),
+      acceptsMoi: acceptsMoi,
+      instructionLanguage: instructionLang,
+      degreeType: degreeType,
       status:
           applicationData?['status'] ?? json['status'] ?? status ?? 'unsaved',
       notes: applicationData?['notes'] ?? json['notes'] ?? notes ?? '',

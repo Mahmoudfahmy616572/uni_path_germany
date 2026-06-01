@@ -10,4 +10,8 @@ abstract class ApplicationsRepository {
     required String columnName,
     required bool newValue,
   });
+  Future<void> updateApplicationNotes({
+    required String universityId,
+    required String newNotes,
+  });
 }

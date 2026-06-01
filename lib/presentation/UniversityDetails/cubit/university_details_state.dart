@@ -7,13 +7,15 @@ class UniversitySaveStatus extends UniversityDetailsState {
   final bool isSaved;
   final bool isLoading;
   final String? errorMessage;
-  final bool isFromAction; 
+  final bool isFromAction;
+  final int matchPercentage; //
 
   UniversitySaveStatus({
     required this.isSaved,
     this.isLoading = false,
     this.errorMessage,
     this.isFromAction = false,
+    this.matchPercentage = 0,
   });
 }
 

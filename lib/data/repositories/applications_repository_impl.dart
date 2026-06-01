@@ -31,7 +31,16 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
         .single();
 
     return rawApplications.map((item) {
-      final uniData = item['test_universities'] as Map<String, dynamic>;
+      final uniData = Map<String, dynamic>.from(
+        item['test_universities'] as Map<String, dynamic>,
+      );
+
+      // 🎯 السر هنا: نضمن يقيناً إن الـ id الممرر للموديل هو الـ university_id الحقيقي المربوط بالطلب
+      // عشان لما الـ UI يرجعه للـ Cubit يروح للـ Supabase يطابق الـ eq('university_id') علطول!
+      if (item['university_id'] != null) {
+        uniData['id'] = item['university_id'].toString();
+      }
+
       return UniversityModel.fromJson(
         uniData,
         studentProfile: studentData,
@@ -55,6 +64,25 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
     await remoteDataSource.removeSavedUniversity(universityId);
     // تأخير بسيط لضمان تزامن قاعدة البيانات قبل جلب البيانات المحدثة
     await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> updateApplicationNotes({
+    required String universityId,
+    required String newNotes,
+  }) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
+      await Supabase.instance.client
+          .from('my_applications')
+          .update({'notes': newNotes})
+          .eq('user_id', user.id)
+          .eq('university_id', universityId);
+    } catch (e) {
+      throw Exception('Failed to update notes: ${e.toString()}');
+    }
   }
 
   @override

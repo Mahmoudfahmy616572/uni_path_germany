@@ -18,6 +18,22 @@ class MyApplicationsLoaded extends MyApplicationsState {
     required this.activeFilter,
     required this.statusCounts,
   });
+
+  // 🎯 دالة الـ copyWith لتحديث حقول معينة (مثل حقل الـ filteredApplications عند البحث)
+  MyApplicationsLoaded copyWith({
+    List<UniversityModel>? allApplications,
+    List<UniversityModel>? filteredApplications,
+    String? activeFilter,
+    Map<String, int>? statusCounts,
+  }) {
+    return MyApplicationsLoaded(
+      allApplications: allApplications ?? this.allApplications,
+      filteredApplications: filteredApplications ?? this.filteredApplications,
+      activeFilter: activeFilter ?? this.activeFilter,
+      statusCounts: statusCounts ?? this.statusCounts,
+    );
+  }
+
   List<Object?> get props => [
     allApplications,
     filteredApplications,

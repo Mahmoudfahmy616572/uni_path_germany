@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // 🔥 مهم جداً عشان الـ DateFormat يشتغل بدون مشاكل
 
-import '../../../data/models/university_model.dart';
+import '../../data/models/university_model.dart';
 
 class QuickInfoMetrics extends StatelessWidget {
   final UniversityModel university;
@@ -11,10 +11,9 @@ class QuickInfoMetrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🎯 1. تجهيز تاريخ الديدلاين مع قيمة افتراضية آمنة
+    //  1. تجهيز تاريخ الديدلاين مع قيمة افتراضية آمنة
     final String deadlineStr = university.deadline ?? "15 Jul 2026";
 
-    // 🎯 2. حساب الأيام المتبقية هنا جوه الـ build لتجنب خطأ الكومبيلر وتفعيل ديناميكية الألوان
     int daysLeft = 30; // القيمة الافتراضية لو حصل مشكلة في قراءة التاريخ
     try {
       DateTime? deadlineDate = DateTime.tryParse(deadlineStr);
@@ -67,7 +66,7 @@ class QuickInfoMetrics extends StatelessWidget {
         // كارت مصاريف الدراسة (مجاني دايماً في الجامعات الحكومية الألمانية)
         _buildMetricItem(
           'Tuition (Year)',
-          '€0',
+          '${university.tuitionFeePerYear != null ? university.tuitionFeePerYear : "Free"}',
           'Free Program',
           const Color(0xFF10B981),
           const Color(0xFFDCFCE7),

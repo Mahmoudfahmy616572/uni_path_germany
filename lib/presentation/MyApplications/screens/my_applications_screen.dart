@@ -16,11 +16,20 @@ class MyApplicationsScreen extends StatefulWidget {
 }
 
 class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
+  // 🎯 وحدة التحكم في نص البحث
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // جلب البيانات عند فتح الشاشة لأول مرة
     context.read<MyApplicationsCubit>().loadApplications();
+  }
+
+  @override
+  void dispose() {
+    // 🎯 تنظيف الـ controller عند إغلاق الشاشة
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -56,21 +65,83 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                 ? (sumMatch / state.allApplications.length).round()
                 : 0;
 
-            // ✅ تغليف المحتوى داخل RefreshIndicator للسحب لأسفل
             return RefreshIndicator(
               color: const Color(0xFF4F46E5),
               onRefresh: () async {
-                // سحب البيانات من السيرفر فوراً عند السحب
+                _searchController.clear(); // مسح البحث عند السحب للتحديث
                 await context.read<MyApplicationsCubit>().loadApplications();
               },
               child: Column(
                 children: [
+                  // 🎯 شريط البحث الجميل والاحترافي
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        // استدعاء دالة البحث في الكيوبيت فوراً عند الكتابة
+                        context.read<MyApplicationsCubit>().searchApplications(
+                          value,
+                        );
+                      },
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search by university or program...',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFF94A3B8),
+                          size: 20,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Color(0xFF94A3B8),
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  context
+                                      .read<MyApplicationsCubit>()
+                                      .searchApplications('');
+                                  FocusScope.of(context).unfocus();
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: const Color(0xFFF1F5F9),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+
                   PipelineFilterBar(
                     activeFilter: state.activeFilter,
                     statusCounts: state.statusCounts,
-                    onFilterSelected: (filter) => context
-                        .read<MyApplicationsCubit>()
-                        .filterApplications(filter),
+                    onFilterSelected: (filter) {
+                      _searchController
+                          .clear(); // مسح السيرش بار عند الانتقال بين التابات
+                      context.read<MyApplicationsCubit>().filterApplications(
+                        filter,
+                      );
+                    },
                   ),
                   PipelineMetricsHub(
                     upcomingDeadlines: state.allApplications.length,
@@ -79,7 +150,6 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                   Expanded(
                     child: state.filteredApplications.isEmpty
                         ? ListView(
-                            // ListView بسيط عشان الـ RefreshIndicator يشتغل حتى لو القائمة فاضية
                             children: const [
                               SizedBox(height: 100),
                               Center(

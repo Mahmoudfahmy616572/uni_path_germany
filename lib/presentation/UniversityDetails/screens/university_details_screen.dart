@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/services/services_locator.dart';
+import '../../../core/utils/build_notes_section.dart';
+import '../../../core/utils/quick_info_metrics.dart';
 import '../../../data/models/university_model.dart';
 import '../../../domain/repositories/applications_repository.dart';
 import '../cubit/university_details_cubit.dart';
+import '../cubit/university_details_state.dart';
 import '../widgets/about_program_section.dart';
 import '../widgets/admission_analysis_tables.dart';
-import '../widgets/custom_category_bar.dart'; // الـ Bar الجديد
+import '../widgets/custom_category_bar.dart';
 import '../widgets/details_header.dart';
-import '../widgets/notes_section.dart';
 import '../widgets/premium_match_progress_bar.dart';
-import '../widgets/quick_info_metrics.dart';
 import '../widgets/sticky_bottom_bar.dart';
-// استدعاء كافة الـ Widgets (الكاوتشات المنفصلة) لضمان عدم النقصان
 import '../widgets/university_image_carousel.dart';
 import '../widgets/university_stats_section.dart';
 
@@ -28,7 +28,6 @@ class UniversityDetailsScreen extends StatefulWidget {
 }
 
 class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
-  // الخانات الأربعة كاملة دون نقصان أي واحدة
   final List<String> _tabs = ['Overview', 'Curriculum', 'Checklist', 'Notes'];
   int _currentSelectionIndex = 0;
 
@@ -46,14 +45,13 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
         : ['broken_link_to_trigger_errorBuilder'];
 
     return BlocProvider(
-      create: (context) =>
-          UniversityDetailsCubit(sl<ApplicationsRepository>())
-            ..checkInitialSaveStatus(widget.university.id),
+      create: (context) => UniversityDetailsCubit(sl<ApplicationsRepository>())
+        ..setInitialMatchPercentage(widget.university.matchPercentage)
+        ..checkInitialSaveStatus(widget.university.id),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         body: CustomScrollView(
           slivers: [
-            // الكاروسيل العلوي الثابت بالـ Sliver مع معالجة حماية الـ Red X
             SliverAppBar(
               expandedHeight: 220,
               pinned: true,
@@ -92,7 +90,6 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                   QuickInfoMetrics(university: widget.university),
                   const SizedBox(height: 24),
 
-                  // 🔥 استدعاء الـ Bar الجديد بالشكل المطابق للصورة تماماً
                   CustomCategoryBar(
                     tabs: _tabs,
                     selectedIndex: _currentSelectionIndex,
@@ -104,7 +101,6 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // عرض الداتا بالكامل بناءً على البار المختار
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
                     child: _buildDynamicContent(),
@@ -124,11 +120,9 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
     );
   }
 
-  // فرز وعرض الأقسام بالكامل وبنفس محتواها دون نقصان
-  // فرز وعرض الأقسام بعد نقل البار وإضافة جداول التحليل
   Widget _buildDynamicContent() {
     switch (_currentSelectionIndex) {
-      case 0: // Overview (شيلنا البار من هنا)
+      case 0:
         return Column(
           key: const ValueKey(0),
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +135,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
             ),
           ],
         );
-      case 1: // Curriculum
+      case 1:
         return Column(
           key: const ValueKey(1),
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,28 +169,42 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
             ),
           ],
         );
-      case 2: // Checklist (هنا حطينا البار والجدولين سوا)
-        return Column(
-          key: const ValueKey(2),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. بار النسبة المئوية المطور
-            PremiumMatchProgressBar(
-              totalScore: widget.university.matchPercentage,
-            ),
-            const SizedBox(height: 16),
+      case 2:
+        return BlocBuilder<UniversityDetailsCubit, UniversityDetailsState>(
+          builder: (context, state) {
+            int displayPercentage = widget.university.matchPercentage;
 
-            // 2. 🔥 جدولين التحليل جمب بعض لشرح تفاصيل النسبة
-            AdmissionAnalysisTables(university: widget.university),
-            const SizedBox(height: 28),
+            if (state is UniversitySaveStatus) {
+              displayPercentage = state.matchPercentage;
+            }
 
-            // 3. قائمة المتطلبات التفاعلية الاصلية
-          ],
+            return Column(
+              key: const ValueKey(2),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PremiumMatchProgressBar(totalScore: displayPercentage),
+                const SizedBox(height: 16),
+                AdmissionAnalysisTables(university: widget.university),
+                const SizedBox(height: 28),
+              ],
+            );
+          },
         );
-      case 3: // Notes
-        return NotesSection(
+      case 3: // 🎯 قسم الـ Notes المطور والمحمي بالـ Builder
+        return Builder(
           key: const ValueKey(3),
-          university: widget.university,
+          builder: (innerContext) {
+            return BuildNotesSection(
+              university: widget.university,
+              onSaveNotes: (String newNotes) async {
+                // استخدام الـ innerContext لضمان رؤية الـ Cubit الموجود في الـ BlocProvider أعلاه
+                await innerContext.read<UniversityDetailsCubit>().updateNotes(
+                  universityId: widget.university.id,
+                  newNotes: newNotes,
+                );
+              },
+            );
+          },
         );
       default:
         return const SizedBox.shrink();

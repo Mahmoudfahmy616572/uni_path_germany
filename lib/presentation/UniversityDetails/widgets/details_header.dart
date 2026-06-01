@@ -58,6 +58,18 @@ class DetailsHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
+
+              Text(
+                university.degreeType.isNotEmpty
+                    ? university.degreeType
+                    : "Master's Program",
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 university.program.isNotEmpty
                     ? university.program
@@ -68,6 +80,8 @@ class DetailsHeader extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 4),
+
               if (university.location != null) ...[
                 const SizedBox(height: 4),
                 Row(

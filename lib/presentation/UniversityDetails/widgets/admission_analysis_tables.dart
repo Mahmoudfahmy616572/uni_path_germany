@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/university_model.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
-import 'requirements_check_list.dart';
+import '../../../core/utils/requirements_check_list.dart';
 
 class AdmissionAnalysisTables extends StatelessWidget {
   final UniversityModel university;
