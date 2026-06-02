@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -25,10 +26,10 @@ class UniversityCard extends StatelessWidget {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.r),
           border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
@@ -47,7 +48,7 @@ class UniversityCard extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 color: const Color(0xFFEEF2FF),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: Center(
                 child: Text(
@@ -59,7 +60,7 @@ class UniversityCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             // University Info
             Expanded(
               child: Column(
@@ -73,7 +74,8 @@ class UniversityCard extends StatelessWidget {
                           university.name, // 👈 بنجيبها من الـ object
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 15.sp,
+
                             color: const Color(0xFF1A202C),
                           ),
                         ),
@@ -82,21 +84,21 @@ class UniversityCard extends StatelessWidget {
                         "${university.matchPercentage}% Match", // 👈 بنجيبها من الـ object
                         style: GoogleFonts.poppins(
                           color: Colors.green,
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     university.program, // 👈 بنجيبها من الـ object
                     style: GoogleFonts.poppins(
                       color: Colors.grey.shade600,
-                      fontSize: 13,
+                      fontSize: 13.sp,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
                   // Tags
                   Row(
                     children: [
@@ -106,7 +108,7 @@ class UniversityCard extends StatelessWidget {
                             ? "IELTS Required"
                             : "No IELTS",
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                       _buildTag("English Program"),
                     ],
                   ),
@@ -124,12 +126,12 @@ class UniversityCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: Text(
         text,
         style: GoogleFonts.poppins(
-          fontSize: 10,
+          fontSize: 10.sp,
           color: const Color(0xFF5A67D8),
           fontWeight: FontWeight.w500,
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -13,25 +14,25 @@ class IeltsStepWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'English Language\nProficiency',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'Have you taken the IELTS exam?',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40.h),
 
           // خيار: نعم (Yes)
           _buildSelectionCard(
@@ -42,7 +43,7 @@ class IeltsStepWidget extends StatelessWidget {
             onTap: () => cubit.updateIeltsStatus(true),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
 
           // خيار: لا (No)
           _buildSelectionCard(
@@ -67,12 +68,12 @@ class IeltsStepWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withOpacity(0.08)
               : AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
             width: 2,
@@ -85,25 +86,25 @@ class IeltsStepWidget extends StatelessWidget {
               color: isSelected ? AppColors.primary : AppColors.textGrey,
               size: 32,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textDark,
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textGrey,
-                      fontSize: 13,
+                      fontSize: 13.sp,
                     ),
                   ),
                 ],

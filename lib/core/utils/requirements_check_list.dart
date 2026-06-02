@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../data/models/university_model.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
@@ -35,10 +36,10 @@ class RequirementsChecklistList extends StatelessWidget {
         bool isDone = item['value'] as bool;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(14.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.r),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Row(
@@ -59,11 +60,11 @@ class RequirementsChecklistList extends StatelessWidget {
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Text(
                 item['title'] as String,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                   color: isDone
                       ? const Color(0xFF0F172A)
@@ -74,7 +75,7 @@ class RequirementsChecklistList extends StatelessWidget {
               Text(
                 isDone ? 'Completed' : 'Missing',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.bold,
                   color: isDone
                       ? const Color(0xFF10B981)

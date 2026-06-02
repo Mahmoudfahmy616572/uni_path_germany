@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../data/models/university_model.dart';
 
@@ -26,16 +27,16 @@ class PipelineUniversityCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       color: Colors.white,
       elevation: 0,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -48,7 +49,7 @@ class PipelineUniversityCard extends StatelessWidget {
                     height: 48,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     alignment: Alignment.center,
@@ -60,24 +61,26 @@ class PipelineUniversityCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           app.name,
-                          style: const TextStyle(
-                            fontSize: 15,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2.h),
                         Text(
                           app.program,
-                          style: const TextStyle(
-                            fontSize: 13,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+
                             color: Color(0xFF64748B),
                           ),
                         ),
@@ -87,7 +90,7 @@ class PipelineUniversityCard extends StatelessWidget {
                   _buildMatchBadge(app.matchPercentage),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
 
               // الـ Deadlines والـ Missing Docs سريعا
               Row(
@@ -116,7 +119,7 @@ class PipelineUniversityCard extends StatelessWidget {
 
               // الـ AI Recommendation Banner الذكي
               if (!app.hasSop) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 _buildAiSuggestionBanner(
                   "Improving your SOP could increase your chances by 10%.",
                 ),
@@ -133,23 +136,23 @@ class PipelineUniversityCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFFE2E8F0)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'View Details',
                         style: TextStyle(
                           color: Color(0xFF334155),
-                          fontSize: 13,
+                          fontSize: 13.sp,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: IconButton(
                       icon: const Icon(
@@ -185,8 +188,8 @@ class PipelineUniversityCard extends StatelessWidget {
         ),
         Text(
           '$match%',
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.sp,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
           ),
@@ -202,7 +205,7 @@ class PipelineUniversityCard extends StatelessWidget {
         Row(
           children: [
             Icon(icon, size: 14, color: const Color(0xFF94A3B8)),
-            const SizedBox(width: 4),
+            SizedBox(width: 4.w),
             Text(
               title,
               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
@@ -214,7 +217,7 @@ class PipelineUniversityCard extends StatelessWidget {
           child: Text(
             sub,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -226,20 +229,20 @@ class PipelineUniversityCard extends StatelessWidget {
 
   Widget _buildAiSuggestionBanner(String text) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(10.r),
       decoration: BoxDecoration(
         color: const Color(0xFFEEF2F6),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
       ),
       child: Row(
         children: [
           const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF4F46E5)),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+                fontSize: 11.sp,
                 color: Color(0xFF4F46E5),
                 fontWeight: FontWeight.w500,
               ),

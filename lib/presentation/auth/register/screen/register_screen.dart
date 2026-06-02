@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -91,20 +92,21 @@ class RegisterScreen extends StatelessWidget {
               Text(
                 "Create Account 🚀",
                 style: GoogleFonts.poppins(
-                  fontSize: 28,
+                  fontSize: 28.sp,
+
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 "Join thousands of students achieving their study abroad dreams",
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: AppColors.textGrey,
                 ),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30.h),
 
               // صف الاسم ورقم التليفون
               Row(
@@ -116,7 +118,7 @@ class RegisterScreen extends StatelessWidget {
                       controller: _usernameController,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Expanded(
                     child: CustomAuthField(
                       hint: "Phone number",
@@ -146,7 +148,7 @@ class RegisterScreen extends StatelessWidget {
                 controller: _confirmPasswordController,
               ),
 
-              const SizedBox(height: 15),
+              SizedBox(height: 15.h),
 
               // الـ 3 كروت التعريفية (Info Cards) بنفس التصميم
               _buildInfoCard(
@@ -168,7 +170,7 @@ class RegisterScreen extends StatelessWidget {
                 Colors.indigo.shade700,
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
 
               // زرار الإنشاء مع الـ Loading Logic
               BlocBuilder<RegisterCubit, RegisterState>(
@@ -180,7 +182,7 @@ class RegisterScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         elevation: 0,
                       ),
@@ -260,11 +262,11 @@ class RegisterScreen extends StatelessWidget {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               "Create Account",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -286,7 +288,7 @@ class RegisterScreen extends StatelessWidget {
                 iconColor: Colors.black,
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               // الـ Footer
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -310,7 +312,7 @@ class RegisterScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30.h),
             ],
           ),
         ),
@@ -327,10 +329,10 @@ class RegisterScreen extends StatelessWidget {
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
@@ -343,24 +345,21 @@ class RegisterScreen extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, color: color, size: 28),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                   ),
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textGrey,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppColors.textGrey, fontSize: 12.sp),
                 ),
               ],
             ),
@@ -371,13 +370,13 @@ class RegisterScreen extends StatelessWidget {
   }
 
   Widget _buildDivider() {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: 24),
       child: Row(
         children: [
           Expanded(child: Divider()),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16.r),
             child: Text("or", style: TextStyle(color: AppColors.textGrey)),
           ),
           Expanded(child: Divider()),

@@ -19,7 +19,7 @@ import '../../presentation/auth/register/cubit/register_cubit.dart';
 import '../../presentation/auth/register/screen/register_screen.dart';
 import '../../presentation/onboarding/cubit/onboarding_cubit.dart';
 import '../../presentation/onboarding/screens/OnboardingScreen.dart';
-import '../../presentation/profile/cubit/screen/profile_screen.dart';
+import '../../presentation/profile/screen/profile_screen.dart';
 import '../../presentation/saved/screen/saved_screen.dart';
 import '../../presentation/search/screen/university_search_screen.dart';
 import '../services/services_locator.dart';

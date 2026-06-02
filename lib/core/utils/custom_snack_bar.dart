@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomSnackBar {
   static void show(
@@ -17,13 +18,13 @@ class CustomSnackBar {
               isError ? Icons.error_outline : Icons.check_circle_outline,
               color: Colors.white,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -31,11 +32,12 @@ class CustomSnackBar {
           ],
         ),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
-        behavior: SnackBarBehavior.floating, // عشان تكون عايمة ومش لازقة في الشاشة من تحت
+        behavior: SnackBarBehavior
+            .floating, // عشان تكون عايمة ومش لازقة في الشاشة من تحت
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
         ),
-        margin: const EdgeInsets.all(20), // مسافة من الحواف
+        margin: EdgeInsets.all(20.r), // مسافة من الحواف
         elevation: 4,
         duration: const Duration(seconds: 4),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../cubit/my_applications_cubits.dart';
 import '../cubit/my_applications_states.dart';
@@ -37,12 +38,13 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'My Applications',
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 18.sp,
+        
           ),
         ),
         backgroundColor: Colors.white,
@@ -88,15 +90,15 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                           value,
                         );
                       },
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF0F172A),
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search by university or program...',
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           color: Color(0xFF94A3B8),
-                          fontSize: 14,
+                          fontSize: 14.sp,
                         ),
                         prefixIcon: const Icon(
                           Icons.search,
@@ -125,7 +127,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                           vertical: 10,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -162,7 +164,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                           )
                         : ListView.builder(
                             key: ValueKey(state.filteredApplications.length),
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.all(16.r),
                             itemCount: state.filteredApplications.length,
                             itemBuilder: (context, index) {
                               final app = state.filteredApplications[index];

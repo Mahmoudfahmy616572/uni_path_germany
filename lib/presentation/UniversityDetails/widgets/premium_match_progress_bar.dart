@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PremiumMatchProgressBar extends StatelessWidget {
   final int totalScore; // النسبة الكلية القادمة من الـ Repository
@@ -16,19 +17,19 @@ class PremiumMatchProgressBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // هيدر بسيط وأنيق فوق البار
-        const Text(
+        Text(
           'Admission Chance Evaluation',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1E293B),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
 
         // 📊 البار الذكي والنصوص جواه
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           child: SizedBox(
             height: 28, // كبرنا الارتفاع عشان النص يظهر براحته
             child: Row(
@@ -46,9 +47,9 @@ class PremiumMatchProgressBar extends StatelessWidget {
                               .scaleDown, // تصغير الخط تلقائياً لو المساحة ضيقة
                           child: Text(
                             'Academic Match ($academicEarned%)',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -63,14 +64,14 @@ class PremiumMatchProgressBar extends StatelessWidget {
                     flex: academicMissed,
                     child: Container(
                       color: const Color(0xFFF1F5F9), // رمادي ناعم جداً
-                      child: const Center(
+                      child: Center(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
                             '', // سيبناه فاضي عشان الشكل الجمالي، أو ممكن تكتب (-)
                             style: TextStyle(
                               color: Color(0xFF94A3B8),
-                              fontSize: 10,
+                              fontSize: 10.sp,
                             ),
                           ),
                         ),
@@ -82,12 +83,12 @@ class PremiumMatchProgressBar extends StatelessWidget {
                 Expanded(
                   flex: premiumLocked,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Color(0xFFE2E8F0), // رمادي أغمق ليوحي بالقفل
                       border: Border(
                         left: BorderSide(
                           color: Colors.white,
-                          width: 2,
+                          width: 2.w,
                         ), // فاصل شيك جداً
                       ),
                     ),
@@ -97,18 +98,18 @@ class PremiumMatchProgressBar extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.lock,
-                              size: 12,
+                              size: 12.sp,
                               color: Color(0xFF64748B),
                             ),
-                            SizedBox(width: 4),
+                            SizedBox(width: 4.w),
                             Text(
                               'AI Premium (20%)',
                               style: TextStyle(
                                 color: Color(0xFF64748B),
-                                fontSize: 11,
+                                fontSize: 11.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -123,47 +124,46 @@ class PremiumMatchProgressBar extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
 
         // ⚡ كارت التسويق السريع تحت البار مباشرة
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           decoration: BoxDecoration(
             color: const Color(0xFFF5F3FF),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: const Color(0xFFEDE9FE)),
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.auto_awesome,
-                color: Color(0xFF8B5CF6),
-                size: 20,
-              ),
-              const SizedBox(width: 10),
+              Icon(Icons.auto_awesome, color: Color(0xFF8B5CF6), size: 20.sp),
+              SizedBox(width: 10.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Want to unlock the remaining 20%?',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF4C1D95),
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 2.h),
                     Text(
                       'Optimize your CV & SOP via our AI Tailoring service to match this program.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF6D28D9)),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Color(0xFF6D28D9),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios,
-                size: 12,
+                size: 12.sp,
                 color: Color(0xFF8B5CF6),
               ),
             ],

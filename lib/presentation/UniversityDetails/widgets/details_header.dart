@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../data/models/university_model.dart';
 
@@ -17,7 +18,7 @@ class DetailsHeader extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             color: const Color(0xFFF1F5F9), // خلفية رمادية هادية
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           clipBehavior: Clip.antiAlias,
@@ -42,7 +43,7 @@ class DetailsHeader extends StatelessWidget {
                 )
               : _buildFallbackLogo(),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16.w),
 
         // 2. اسم الجامعة والبرنامج
         Expanded(
@@ -51,51 +52,51 @@ class DetailsHeader extends StatelessWidget {
             children: [
               Text(
                 university.name,
-                style: const TextStyle(
-                  fontSize: 20,
+                style:  TextStyle(
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
 
               Text(
                 university.degreeType.isNotEmpty
                     ? university.degreeType
                     : "Master's Program",
-                style: const TextStyle(
-                  fontSize: 14,
+                style:  TextStyle(
+                  fontSize: 14.sp,
                   color: Color(0xFF64748B),
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
               Text(
                 university.program.isNotEmpty
                     ? university.program
                     : "Master's Program",
-                style: const TextStyle(
-                  fontSize: 14,
+                style:  TextStyle(
+                  fontSize: 14.sp,
                   color: Color(0xFF64748B),
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
 
               if (university.location != null) ...[
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Row(
                   children: [
-                    const Icon(
+                     Icon(
                       Icons.location_on_outlined,
-                      size: 14,
+                      size: 14.sp,
                       color: Color(0xFF94A3B8),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       university.location!,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style:  TextStyle(
+                        fontSize: 12.sp,
                         color: Color(0xFF64748B),
                       ),
                     ),
@@ -105,15 +106,15 @@ class DetailsHeader extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
 
         // 3. دائرة الـ Match Percentage
         Stack(
           alignment: Alignment.center,
           children: [
             SizedBox(
-              width: 50,
-              height: 50,
+              width: 50.w,
+              height: 50.h,
               child: CircularProgressIndicator(
                 value: university.matchPercentage / 100,
                 backgroundColor: const Color(0xFFDCFCE7),
@@ -123,8 +124,8 @@ class DetailsHeader extends StatelessWidget {
             ),
             Text(
               '${university.matchPercentage}%',
-              style: const TextStyle(
-                fontSize: 12,
+              style:  TextStyle(
+                fontSize: 12.sp,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF15803D),
               ),
@@ -140,8 +141,8 @@ class DetailsHeader extends StatelessWidget {
     return Center(
       child: Text(
         university.logoText.isNotEmpty ? university.logoText : "UNI",
-        style: const TextStyle(
-          fontSize: 14,
+        style:  TextStyle(
+          fontSize: 14.sp,
           fontWeight: FontWeight.bold,
           color: Color(0xFF4F46E5), // لون براند أنيق
         ),

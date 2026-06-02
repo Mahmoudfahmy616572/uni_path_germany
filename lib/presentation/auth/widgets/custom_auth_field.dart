@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/themes/app_colors.dart';
 
 class CustomAuthField extends StatelessWidget {
@@ -24,7 +25,7 @@ class CustomAuthField extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: TextFormField(
@@ -33,7 +34,7 @@ class CustomAuthField extends StatelessWidget {
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 14),
+          hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 14.sp),
           prefixIcon: Icon(prefixIcon, color: AppColors.textGrey, size: 20),
           suffixIcon: isPassword
               ? const Icon(

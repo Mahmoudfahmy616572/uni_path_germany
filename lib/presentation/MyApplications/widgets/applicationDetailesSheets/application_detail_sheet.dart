@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/utils/build_notes_section.dart';
 import '../../../../core/utils/quick_info_metrics.dart';
@@ -41,18 +42,18 @@ class ApplicationDetailSheet extends StatelessWidget {
         children: [
           // الـ Body القابل للإسكورل
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24).copyWith(bottom: 100),
+            padding: EdgeInsets.all(24.r).copyWith(bottom: 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Center(child: SheetDragHandle()),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 _buildHeader(app),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 QuickInfoMetrics(university: app),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.h),
                 _buildRequirementChecklist(app),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.h),
 
                 // 🎯 استدعاء قسم النوتس بدون تعديلات داخلية لأن الـ Context أصبح يرى الـ Cubit بفضل الـ .value
                 BuildNotesSection(
@@ -89,21 +90,22 @@ class ApplicationDetailSheet extends StatelessWidget {
             children: [
               Text(
                 app.name,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: 18.sp,
+
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
               ),
               Text(
                 app.program,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 14.sp, color: Color(0xFF64748B)),
               ),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           decoration: const BoxDecoration(
             color: Color(0xFFECFDF5),
             shape: BoxShape.circle,
@@ -126,15 +128,15 @@ class ApplicationDetailSheet extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Requirements Checklist',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14.sp,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         RequirementsChecklistList(university: app),
       ],
     );
@@ -142,7 +144,7 @@ class ApplicationDetailSheet extends StatelessWidget {
 
   Widget _buildStickyFooter(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       color: Colors.white,
       child: Row(
         children: [
@@ -150,7 +152,7 @@ class ApplicationDetailSheet extends StatelessWidget {
             icon: const Icon(Icons.auto_awesome, color: Color(0xFF4F46E5)),
             onPressed: () {},
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           Expanded(
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -158,7 +160,7 @@ class ApplicationDetailSheet extends StatelessWidget {
                 backgroundColor: const Color(0xFF4F46E5),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: const Text(
@@ -185,7 +187,7 @@ class SheetDragHandle extends StatelessWidget {
       height: 4,
       decoration: BoxDecoration(
         color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(2.r),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 
@@ -19,16 +20,16 @@ class WelcomeStepWidget extends StatelessWidget {
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Text('🎓', style: TextStyle(fontSize: 80)),
+            child:  Center(
+              child: Text('🎓', style: TextStyle(fontSize: 80.sp)),
             ),
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40.h),
           RichText(
             textAlign: TextAlign.center,
-            text: const TextSpan(
+            text:  TextSpan(
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 32.sp,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
               ),
@@ -44,13 +45,13 @@ class WelcomeStepWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16.h),
+           Text(
             'We\'ll ask you a few questions to find the best universities and programs for you.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textGrey,
-              fontSize: 16,
+              fontSize: 16.sp,
               height: 1.5,
             ),
           ),

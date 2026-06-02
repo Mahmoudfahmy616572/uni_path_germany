@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -24,25 +25,25 @@ class BudgetStepWidget extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'What is your tuition\nbudget per year?',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'Select the maximum tuition fees you can afford',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32.h),
 
           Expanded(
             child: ListView.builder(
@@ -56,12 +57,12 @@ class BudgetStepWidget extends StatelessWidget {
                   onTap: () => cubit.updateBudget(budget['label']!),
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(18),
+                    padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.08)
                           : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
@@ -78,25 +79,25 @@ class BudgetStepWidget extends StatelessWidget {
                               : AppColors.textGrey,
                           size: 26,
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 budget['label']!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.textDark,
-                                  fontSize: 16,
+                                  fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4.h),
                               Text(
                                 budget['sub']!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.textGrey,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                 ),
                               ),
                             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../cubit/home_cubit.dart';
@@ -12,6 +13,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("Width: ${MediaQuery.of(context).size.width}");
+    print("Height: ${MediaQuery.of(context).size.height}");
     return Scaffold(
       backgroundColor: const Color(
         0xFFFFF7FAFC,
@@ -33,7 +36,10 @@ class HomeScreen extends StatelessWidget {
               return Center(
                 child: Text(
                   state.message,
-                  style: GoogleFonts.poppins(color: Colors.red, fontSize: 16),
+                  style: GoogleFonts.poppins(
+                    color: Colors.red,
+                    fontSize: 16.sp,
+                  ),
                 ),
               );
             }
@@ -41,7 +47,7 @@ class HomeScreen extends StatelessWidget {
             // 3. حالة نجاح جلب البيانات (Loaded)
             if (state is HomeLoaded) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(24.r),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -49,30 +55,31 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       "Hello, Mahmoud 👋",
                       style: GoogleFonts.poppins(
-                        fontSize: 24,
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1A202C),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: 30.h),
 
                     // الداتا الدايناميك المحسوبة جاية من الـ State هنا!
                     MatchScoreCard(score: state.matchScore),
-                    const SizedBox(height: 30),
+                    SizedBox(height: 30.h),
 
                     // Quick Actions (الـ Row بتاع الزراير الأربعة)
                     // يمكنك استدعاء الـ Widget المخصص ليها هنا لو منقصلة
-                    const SizedBox(height: 35),
+                    SizedBox(height: 35.h),
 
                     Text(
                       "Recommended for you",
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
+                        fontSize: 18.sp,
+                       
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1A202C),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
 
                     // الـ Loop الذكي بتاعك على اللستة الحقيقية اللي جاية من الكوبيت والـ Repository
                     // 🎯 الـ Loop بعد تنظيف الـ parameters المتداخلة

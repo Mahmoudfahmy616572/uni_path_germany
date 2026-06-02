@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileToolItem extends StatelessWidget {
   final IconData icon;
@@ -22,7 +23,7 @@ class ProfileToolItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -33,20 +34,20 @@ class ProfileToolItem extends StatelessWidget {
       ),
       child: ListTile(
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8.r),
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
           ),
           child: Icon(icon, color: iconColor),
         ),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
+          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
         ),
         trailing: const Icon(
           Icons.arrow_forward_ios,

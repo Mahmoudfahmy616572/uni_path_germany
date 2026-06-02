@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/presentation/onboarding/cubit/onboarding_cubit.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -35,25 +36,25 @@ class StudyLevelStepWidget extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'What level of study are\nyou looking for?',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'You can select your target degree',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32.h),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -66,12 +67,12 @@ class StudyLevelStepWidget extends StatelessWidget {
                 onTap: () => cubit.updateStudyLevel(level['title'] as String),
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.all(18),
+                  padding: EdgeInsets.all(18.r),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary.withOpacity(0.08)
                         : AppColors.inputBackground,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.primary
@@ -88,24 +89,24 @@ class StudyLevelStepWidget extends StatelessWidget {
                             : AppColors.textGrey,
                         size: 28,
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16.w),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             level['title'] as String,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textDark,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4.h),
                           Text(
                             level['sub'] as String,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textGrey,
-                              fontSize: 13,
+                              fontSize: 13.sp,
                             ),
                           ),
                         ],

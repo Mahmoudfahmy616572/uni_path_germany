@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../cubit/university_search_cubit.dart';
 
@@ -69,8 +70,8 @@ class SearchDropdownsRow extends StatelessWidget {
                       value: val,
                       child: Text(
                         val == 'All' ? '🌍 Country' : '${_getFlag(val)} $val',
-                        style: const TextStyle(
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1E293B),
                         ),
@@ -85,7 +86,7 @@ class SearchDropdownsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
 
         // 2. دروب داون الدرجة العلمية
         Expanded(
@@ -104,8 +105,8 @@ class SearchDropdownsRow extends StatelessWidget {
                   value: val,
                   child: Text(
                     val == 'All' ? '🎓 Degree' : val,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1E293B),
                     ),
@@ -120,7 +121,7 @@ class SearchDropdownsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
 
         // 3. دروب داون التخصصات
         Expanded(
@@ -146,8 +147,8 @@ class SearchDropdownsRow extends StatelessWidget {
                       value: val,
                       child: Text(
                         val == 'All' ? '🔬 Major' : val,
-                        style: const TextStyle(
-                          fontSize: 12,
+                        style: TextStyle(
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1E293B),
                           overflow: TextOverflow.ellipsis,
@@ -172,7 +173,7 @@ class SearchDropdownsRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       height: 40,

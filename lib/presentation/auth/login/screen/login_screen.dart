@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:germany_travel/presentation/auth/login/cubit/login_cubit.dart';
 import 'package:germany_travel/presentation/auth/login/cubit/login_state.dart';
@@ -71,7 +72,7 @@ class LoginScreen extends StatelessWidget {
                       height: 80,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
@@ -80,13 +81,13 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           "TUM",
                           style: TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.bold,
-                            fontSize: 24,
+                            fontSize: 24.sp,
                           ),
                         ),
                       ),
@@ -96,7 +97,7 @@ class LoginScreen extends StatelessWidget {
               ),
 
               Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(24.r),
                 child: Form(
                   key: _formKey, // 2. ربط الـ Form بالمفتاح
                   child: Column(
@@ -105,20 +106,20 @@ class LoginScreen extends StatelessWidget {
                       Text(
                         "Welcome Back! 👋",
                         style: GoogleFonts.poppins(
-                          fontSize: 28,
+                          fontSize: 28.sp,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textDark,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       Text(
                         "Login to continue your study abroad journey",
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           color: AppColors.textGrey,
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30.h),
 
                       // 3. إضافة الـ validator لحقل الإيميل/اليوزر نيم
                       CustomAuthField(
@@ -160,7 +161,7 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10.h),
 
                       SizedBox(
                         width: double.infinity,
@@ -169,7 +170,7 @@ class LoginScreen extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                             elevation: 0,
                           ),
@@ -183,24 +184,24 @@ class LoginScreen extends StatelessWidget {
                               );
                             }
                           },
-                          child: const Text(
+                          child: Text(
                             "Login",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ),
 
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Row(
                           children: [
                             Expanded(child: Divider()),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(horizontal: 16.r),
                               child: Text(
                                 "or",
                                 style: TextStyle(color: AppColors.textGrey),
@@ -227,7 +228,7 @@ class LoginScreen extends StatelessWidget {
                         iconColor: Colors.blue,
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

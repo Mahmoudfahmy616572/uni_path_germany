@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -63,6 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           final cubit = context.read<OnboardingCubit>();
 
           return Scaffold(
+            resizeToAvoidBottomInset: false,
             backgroundColor: AppColors.background,
             appBar: AppBar(
               backgroundColor: Colors.transparent,
@@ -95,9 +97,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 if (state.currentStep == 0)
                   TextButton(
                     onPressed: () => context.go('/home'),
-                    child: const Text(
+                    child: Text(
                       'Skip',
-                      style: TextStyle(color: AppColors.textGrey, fontSize: 16),
+                      style: TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 16.sp,
+                      ),
                     ),
                   ),
               ],
@@ -117,20 +122,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         children: [
                           Text(
                             'Step ${state.currentStep} of ${_totalSteps - 1}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textGrey,
-                              fontSize: 14,
+                              fontSize: 14.sp,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           LinearProgressIndicator(
                             value: state.currentStep / (_totalSteps - 1),
                             backgroundColor: AppColors.inputBackground,
                             valueColor: const AlwaysStoppedAnimation<Color>(
                               AppColors.primary,
                             ),
-                            minHeight: 6,
-                            borderRadius: BorderRadius.circular(10),
+                            minHeight: 6.h,
+                            borderRadius: BorderRadius.circular(10.r),
                           ),
                         ],
                       ),
@@ -164,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   // 3️⃣ أزرار التحكم السفلية الثابتة
                   Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: EdgeInsets.all(24.r),
                     child: SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -172,7 +177,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                           elevation: 0,
                         ),
@@ -185,8 +190,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               )
                             : Text(
                                 _getButtonText(state.currentStep),
-                                style: const TextStyle(
-                                  fontSize: 18,
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),

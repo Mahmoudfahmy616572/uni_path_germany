@@ -17,7 +17,6 @@ import '../../domain/repositories/universities_repository.dart';
 import '../../presentation/Home/cubit/home_cubit.dart';
 import '../../presentation/MyApplications/cubit/my_applications_cubits.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
-import '../../presentation/auth/complete_profile/cubit/complete_profile_cubit.dart';
 import '../../presentation/auth/login/cubit/login_cubit.dart';
 import '../../presentation/auth/logout/cubit/logout_cubit.dart';
 import '../../presentation/auth/register/cubit/register_cubit.dart';
@@ -58,9 +57,9 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton(() => LogoutCubit(sl()));
-  sl.registerLazySingleton(
-    () => CompleteProfileCubit(sl<UniversitiesRepository>()),
-  );
+  // sl.registerLazySingleton(
+  //   () => CompleteProfileCubit(sl<UniversitiesRepository>()),
+  // );
   sl.registerLazySingleton(
     () => UniversityDetailsCubit(sl<ApplicationsRepository>()),
   );

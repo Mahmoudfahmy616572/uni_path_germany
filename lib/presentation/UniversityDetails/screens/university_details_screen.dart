@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/services/services_locator.dart';
 import '../../../core/utils/build_notes_section.dart';
@@ -58,7 +59,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
               backgroundColor: Colors.white,
               elevation: 0,
               leading: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
                 child: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: IconButton(
@@ -81,14 +82,14 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
 
             // محتوى الشاشة الديناميكي
             SliverPadding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.r),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   DetailsHeader(university: widget.university),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
 
                   QuickInfoMetrics(university: widget.university),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24.h),
 
                   CustomCategoryBar(
                     tabs: _tabs,
@@ -99,14 +100,14 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                       });
                     },
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: 28.h),
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
                     child: _buildDynamicContent(),
                   ),
 
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40.h),
                 ]),
               ),
             ),
@@ -128,7 +129,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AboutProgramSection(description: widget.university.description),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             UniversityStatsSection(
               uniName: widget.university.name,
               qsRanking: widget.university.rankings,
@@ -140,28 +141,28 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
           key: const ValueKey(1),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Program Curriculum',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Text(
                 widget.university.curriculum ??
                     "No custom curriculum details provided for this track yet.",
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: 13.sp,
                   color: Color(0xFF475569),
                   height: 1.5,
                 ),
@@ -183,9 +184,9 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 PremiumMatchProgressBar(totalScore: displayPercentage),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 AdmissionAnalysisTables(university: widget.university),
-                const SizedBox(height: 28),
+                SizedBox(height: 28.h),
               ],
             );
           },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../data/models/university_model.dart';
 
@@ -53,10 +54,10 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Your Notes',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
               ),
@@ -116,23 +117,20 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                   ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: const Color(0xFFF1F5F9)),
           ),
           child: _isEditing
               ? TextField(
                   controller: _notesController,
                   maxLines: 3,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF334155),
-                  ),
+                  style: TextStyle(fontSize: 13.sp, color: Color(0xFF334155)),
                   decoration: const InputDecoration(
                     hintText: 'Type your notes here...',
                     border: InputBorder.none,
@@ -143,10 +141,10 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                   _notesController.text.isEmpty
                       ? 'No notes added yet. Click Edit to add your thoughts.'
                       : _notesController.text,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: 13.sp,
                     color: Color(0xFF334155),
-                    height: 1.4,
+                    height: 1.4.h,
                   ),
                 ),
         ),

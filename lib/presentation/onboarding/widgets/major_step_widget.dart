@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -23,25 +24,25 @@ class MajorStepWidget extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Select your major\nfield of study',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'Choose the discipline that matches your academic background',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32.h),
 
           Expanded(
             child: ListView.builder(
@@ -57,12 +58,12 @@ class MajorStepWidget extends StatelessWidget {
                   ), // 🎯 استدعاء الميثود الصحيحة في الـ Cubit
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.all(18),
+                    padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.08)
                           : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
@@ -77,7 +78,7 @@ class MajorStepWidget extends StatelessWidget {
                             majorName,
                             style: TextStyle(
                               color: AppColors.textDark,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.normal,

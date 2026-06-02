@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class UniversityStatsSection extends StatelessWidget {
   final String uniName;
@@ -13,10 +14,10 @@ class UniversityStatsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
@@ -26,33 +27,33 @@ class UniversityStatsSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8.r),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: const Icon(
                   Icons.account_balance,
                   color: Color(0xFF64748B),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'About the University',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     Text(
                       '$uniName is one of Europe\'s leading research universities.',
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         color: Color(0xFF64748B),
                       ),
                     ),
@@ -61,16 +62,16 @@ class UniversityStatsSection extends StatelessWidget {
               ),
               Column(
                 children: [
-                  const Text(
+                  Text(
                     'QS Ranking',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 10.sp, color: Color(0xFF64748B)),
                   ),
                   Text(
                     qsRanking != null && qsRanking! > 0
                         ? '= $qsRanking'
                         : 'N/A',
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF4F46E5),
                     ),
@@ -97,17 +98,17 @@ class UniversityStatsSection extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 18, color: const Color(0xFF64748B)),
-        const SizedBox(width: 6),
+        SizedBox(width: 6.w),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 10.sp, color: Color(0xFF94A3B8)),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../data/models/university_model.dart';
 import '../cubit/university_details_cubit.dart';
@@ -27,8 +28,8 @@ class StickyBottomBar extends StatelessWidget {
         boxShadow: [
           // شادو خفيف جداً بيدي عمق لفوق
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.04),
-            blurRadius: 10,
+            color: Color(0xFF0F172A).withOpacity(0.04),
+            blurRadius: 10.r,
             offset: const Offset(0, -4),
           ),
         ],
@@ -38,24 +39,24 @@ class StickyBottomBar extends StatelessWidget {
           children: [
             // 1. زرار الـ AI الصغير (مظبوط كـ مربع نفس الصورة)
             Container(
-              height: 56, // نفس ارتفاع الزرار الرئيسي
-              width: 56,
+              height: 56.h, // نفس ارتفاع الزرار الرئيسي
+              width: 56.w,
               decoration: BoxDecoration(
                 color: const Color(0xFFEEF2FF), // خلفية فاتحة رايقة
-                borderRadius: BorderRadius.circular(16), // كيرف ناعم
+                borderRadius: BorderRadius.circular(16.r), // كيرف ناعم
               ),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.auto_awesome,
                   color: Color(0xFF4F46E5),
-                  size: 26,
+                  size: 26.sp,
                 ),
                 onPressed: () {
                   // ضيف الأكشن بتاع الـ AI هنا
                 },
               ),
             ),
-            const SizedBox(width: 16), // المسافة بين الزرارين
+            SizedBox(width: 16.w), // المسافة بين الزرارين
             // 2. الزرار الرئيسي (Add to Pipeline)
             Expanded(
               child:
@@ -73,7 +74,7 @@ class StickyBottomBar extends StatelessWidget {
                       }
 
                       return SizedBox(
-                        height: 56, // عشان يكون نفس ارتفاع زرار الـ AI
+                        height: 56.h, // عشان يكون نفس ارتفاع زرار الـ AI
                         child: ElevatedButton(
                           onPressed: isLoading
                               ? null
@@ -91,15 +92,15 @@ class StickyBottomBar extends StatelessWidget {
                                   ), // اللون الأساسي (Indigo)
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                16,
+                                16.r,
                               ), // نفس كيرف زرار الـ AI
                             ),
                             elevation: 0,
                           ),
                           child: isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
+                              ?  SizedBox(
+                                  width: 24.w,
+                                  height: 24.h,
                                   child: CircularProgressIndicator(
                                     color: Colors.white,
                                     strokeWidth: 2.5,
@@ -109,10 +110,10 @@ class StickyBottomBar extends StatelessWidget {
                                   isSaved
                                       ? 'Saved (Remove)'
                                       : 'Add to Pipeline',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: 16.sp,
                                   ),
                                 ),
                         ),

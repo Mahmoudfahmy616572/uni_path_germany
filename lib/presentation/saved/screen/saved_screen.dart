@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SavedScreen extends StatelessWidget {
   const SavedScreen({super.key});
@@ -7,10 +8,10 @@ class SavedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFC), // لون الخلفية الفاتح
-      body: const Center(
+      body:  Center(
         child: Text(
           "Saved Screen",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
         ),
       ),
     );

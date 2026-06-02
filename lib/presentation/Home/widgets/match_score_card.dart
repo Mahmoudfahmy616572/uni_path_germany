@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class MatchScoreCard extends StatelessWidget {
   final int score;
@@ -55,7 +56,7 @@ class MatchScoreCard extends StatelessWidget {
 
           // 2. المحتوى الأساسي (النصوص والدايرة)
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24.r),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -65,39 +66,40 @@ class MatchScoreCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Your Match Score",
                         style: TextStyle(
                           color: Colors.white70,
-                          fontSize: 13,
+                          fontSize: 13.sp,
+                     
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2.h),
                       Text(
                         "$score%",
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 42,
+                          fontSize: 42.sp,
                           fontWeight: FontWeight.bold,
                           height: 1.1,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         _statusText,
                         style: TextStyle(
                           color: _statusColor,
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
+                      SizedBox(height: 8.h),
+                      Text(
                         "Keep improving! You have good\nchances for most programs.",
                         style: TextStyle(
                           color: Colors.white70,
-                          fontSize: 11,
+                          fontSize: 11.sp,
                           height: 1.4,
                         ),
                       ),

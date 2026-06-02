@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../auth/logout/cubit/logout_cubit.dart';
 // import 'path_to_your_logout_cubit.dart';
@@ -15,17 +16,22 @@ class SideNavigationBar extends StatelessWidget {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              
               decoration: const BoxDecoration(color: Color(0xFF4F46E5)),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white.withOpacity(0.2),
                 child: const Icon(Icons.person, size: 40, color: Colors.white),
               ),
-              accountName: const Text('Ahmed Hassan', style: TextStyle(fontWeight: FontWeight.bold)),
+              accountName: const Text(
+                'Ahmed Hassan',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               accountEmail: const Text('ahmed.hassan@example.com'),
             ),
             ListTile(
-              leading: const Icon(Icons.manage_accounts_outlined, color: Colors.grey),
+              leading: const Icon(
+                Icons.manage_accounts_outlined,
+                color: Colors.grey,
+              ),
               title: const Text('Account Settings'),
               subtitle: const Text('Update email, password, username'),
               onTap: () {},
@@ -48,7 +54,10 @@ class SideNavigationBar extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined, color: Colors.grey),
+              leading: const Icon(
+                Icons.privacy_tip_outlined,
+                color: Colors.grey,
+              ),
               title: const Text('Privacy Policy'),
               onTap: () {},
             ),
@@ -56,15 +65,21 @@ class SideNavigationBar extends StatelessWidget {
             SafeArea(
               child: ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                title: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context); // يقفل الـ Drawer
                   // بننادي الـ Cubit مباشرة من الـ context المحيط
-                  context.read<LogoutCubit>().logout(); 
+                  context.read<LogoutCubit>().logout();
                 },
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
           ],
         ),
       ),

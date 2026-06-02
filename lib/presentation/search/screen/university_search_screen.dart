@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../data/models/university_model.dart';
@@ -42,12 +43,12 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          title: const Text(
+          title: Text(
             'Find Programs',
             style: TextStyle(
               color: Color(0xFF0F172A),
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 18.sp,
             ),
           ),
           centerTitle: true,
@@ -86,7 +87,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(14.r),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: TextField(
@@ -96,12 +97,12 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                                   .read<UniversitySearchCubit>()
                                   .updateFilters(query: val);
                             },
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText:
                                   'Search by degree, course or university...',
                               hintStyle: TextStyle(
                                 color: Color(0xFF94A3B8),
-                                fontSize: 14,
+                                fontSize: 14.sp,
                               ),
                               prefixIcon: Icon(
                                 Icons.search,
@@ -115,13 +116,13 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         SearchDropdownsRow(
                           currentCountry: state.selectedCountry,
                           currentDegree: state.selectedDegree,
                           currentMajor: state.selectedMajor,
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.h),
                         AdvancedFilterPanel(
                           requiresIelts: state.requiresIelts,
                           maxTuition: state.maxTuition,
@@ -151,7 +152,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6366F1),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                           elevation: 0,
                         ),
@@ -163,9 +164,9 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         },
                         child: Text(
                           'Show ${state.filteredResults.length} Programs',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -201,35 +202,35 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         ),
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Container(
               width: 40,
               height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10.r),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               '${filteredResults.length} Programs Found',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Expanded(
               child: filteredResults.isEmpty
                   ? const Center(
                       child: Text('No programs match these filters.'),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16.r),
                       itemCount: filteredResults.length,
                       itemBuilder: (bottomSheetContext, index) {
                         final uni = filteredResults[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: ListTile(
                             onTap: () {

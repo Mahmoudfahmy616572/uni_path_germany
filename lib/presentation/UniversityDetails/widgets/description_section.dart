@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class DescriptionSection extends StatelessWidget {
   final String? description;
@@ -9,30 +10,30 @@ class DescriptionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'About Program',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 16.sp,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.r),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Text(
             description ??
                 "No description available for this university program.",
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: 13.sp,
               color: Color(0xFF334155),
-              height: 1.5,
+              height: 1.5.h,
             ),
           ),
         ),

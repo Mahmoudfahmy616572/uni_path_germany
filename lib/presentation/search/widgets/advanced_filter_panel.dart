@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../cubit/university_search_cubit.dart';
 
@@ -20,7 +21,7 @@ class AdvancedFilterPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -40,13 +41,13 @@ class AdvancedFilterPanel extends StatelessWidget {
                     size: 18,
                     color: const Color(0xFF1E293B),
                   ),
-                  const SizedBox(width: 6),
-                  const Text(
+                  SizedBox(width: 6.w),
+                  Text(
                     'Filters',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E293B),
-                      fontSize: 15,
+                      fontSize: 15.sp,
                     ),
                   ),
                 ],
@@ -56,12 +57,12 @@ class AdvancedFilterPanel extends StatelessWidget {
                   // استدعاء دالة المسح الشامل للفلاتر
                   context.read<UniversitySearchCubit>().clearAllFilters();
                 },
-                child: const Text(
+                child: Text(
                   'Clear All',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF6366F1), // اللون البنفسجي الرايق للتفاعل
-                    fontSize: 13,
+                    fontSize: 13.sp,
                   ),
                 ),
               ),
@@ -108,25 +109,25 @@ class AdvancedFilterPanel extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Max Tuition / Year',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
-                  fontSize: 14,
+                  fontSize: 14.sp,
                 ),
               ),
               Text(
                 '€${maxTuition.toInt()}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF6366F1),
-                  fontSize: 14,
+                  fontSize: 14.sp,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: const Color(0xFF6366F1),
@@ -152,15 +153,15 @@ class AdvancedFilterPanel extends StatelessWidget {
           ),
 
           // 4. اختيار لغة الدراسة (English / German)
-          const Text(
+          Text(
             'Instruction Language',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
-              fontSize: 14,
+              fontSize: 14.sp,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Row(
             children: ['All', 'English', 'German'].map((lang) {
               final isSelected = selectedLanguage == lang;
@@ -178,7 +179,7 @@ class AdvancedFilterPanel extends StatelessWidget {
                       color: isSelected
                           ? const Color(0xFF6366F1)
                           : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF6366F1)
@@ -189,7 +190,7 @@ class AdvancedFilterPanel extends StatelessWidget {
                       child: Text(
                         lang,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.white
@@ -222,16 +223,16 @@ class AdvancedFilterPanel extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1E293B),
-                fontSize: 14,
+                fontSize: 14.sp,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: 2.h),
             Text(
               subtitle,
-              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.sp),
             ),
           ],
         ),
@@ -242,7 +243,7 @@ class AdvancedFilterPanel extends StatelessWidget {
             width: 48,
             height: 26,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(100.r),
               color: value ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 3),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/utils/requirements_check_list.dart';
 import '../../../data/models/university_model.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
-import '../../../core/utils/requirements_check_list.dart';
 
 class AdmissionAnalysisTables extends StatelessWidget {
   final UniversityModel university;
@@ -29,23 +30,23 @@ class AdmissionAnalysisTables extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. الجزء العلوي: تحليل الـ Profile
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Text(
                 'Your Profile Match',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
               ),
             ),
             _buildMetricRowInline('Academic', academicScore),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             _buildMetricRowInline('GPA Match', gpaScore),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             _buildMetricRowInline('English', englishScore),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             _buildMetricRowInline('Experience', workExpScore),
 
             // 🔥 صف الـ Overall المجموع
@@ -59,14 +60,14 @@ class AdmissionAnalysisTables extends StatelessWidget {
               isOverall: true,
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Text(
                 'Requirements Checklist',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
@@ -100,7 +101,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: isOverall ? FontWeight.bold : FontWeight.normal,
               color: isOverall
                   ? const Color(0xFF0F172A)
@@ -110,7 +111,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
         ),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(4.r),
             child: LinearProgressIndicator(
               value: score,
               minHeight: isOverall ? 8 : 6, // الـ Overall تخين شوية عشان يتميز
@@ -119,11 +120,11 @@ class AdmissionAnalysisTables extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12.w),
         Text(
           '$percentage%',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.bold,
             color: barColor,
           ),

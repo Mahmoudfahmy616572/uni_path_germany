@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -25,25 +26,25 @@ class CountryStepWidget extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Where do you want\nto study?',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'Select your preferred country',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           TextField(
             style: const TextStyle(color: AppColors.textDark),
             decoration: InputDecoration(
@@ -53,21 +54,21 @@ class CountryStepWidget extends StatelessWidget {
               filled: true,
               fillColor: AppColors.inputBackground,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 borderSide: BorderSide.none,
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24.h),
+          Text(
             'Popular Countries',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 16,
+              fontSize: 16.sp,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Expanded(
             child: ListView.builder(
               itemCount: countries.length,
@@ -79,12 +80,12 @@ class CountryStepWidget extends StatelessWidget {
                   onTap: () => cubit.updateCountry(country['name']!),
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.08)
                           : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
@@ -98,12 +99,12 @@ class CountryStepWidget extends StatelessWidget {
                           country['flag']!,
                           style: const TextStyle(fontSize: 24),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         Text(
                           country['name']!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textDark,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

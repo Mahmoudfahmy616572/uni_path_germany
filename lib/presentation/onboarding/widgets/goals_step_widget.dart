@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -22,25 +23,25 @@ class GoalsStepWidget extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'What are your primary\nstudy goals?',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+          Text(
             'Select all that apply to your future plans',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32.h),
 
           Expanded(
             child: ListView.builder(
@@ -54,12 +55,12 @@ class GoalsStepWidget extends StatelessWidget {
                   onTap: () => cubit.toggleGoal(goal['title'] as String),
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(18),
+                    padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.08)
                           : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
@@ -76,13 +77,13 @@ class GoalsStepWidget extends StatelessWidget {
                               : AppColors.textGrey,
                           size: 24,
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         Expanded(
                           child: Text(
                             goal['title'] as String,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textDark,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -91,7 +92,7 @@ class GoalsStepWidget extends StatelessWidget {
                           value: isSelected,
                           activeColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(6.r),
                           ),
                           onChanged: (_) =>
                               cubit.toggleGoal(goal['title'] as String),

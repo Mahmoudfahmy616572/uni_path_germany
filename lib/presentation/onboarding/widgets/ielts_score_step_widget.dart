@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -17,23 +18,23 @@ class IeltsScoreStepWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+           Text(
             'What is your overall\nIELTS band score?',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8.h),
+           Text(
             'Drag the slider to match your certificate score',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15),
+            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
           ),
           const Spacer(),
 
@@ -50,7 +51,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
               child: Center(
                 child: Text(
                   state.ieltsScore.toStringAsFixed(1),
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: AppColors.primary,
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
@@ -73,9 +74,9 @@ class IeltsScoreStepWidget extends StatelessWidget {
               overlayColor: AppColors.primary.withOpacity(0.2),
               valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
               valueIndicatorColor: AppColors.primary,
-              valueIndicatorTextStyle: const TextStyle(
+              valueIndicatorTextStyle:  TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 16.sp,
               ),
             ),
             child: Slider(

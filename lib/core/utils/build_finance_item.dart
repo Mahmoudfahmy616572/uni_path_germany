@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
 Widget buildFinanceItem(
@@ -9,11 +10,11 @@ Widget buildFinanceItem(
   Color bgColor,
 ) {
   return Container(
-    width: 104,
-    padding: const EdgeInsets.all(12),
+    width: 104.w,
+    padding: EdgeInsets.all(12.r),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       border: Border.all(color: const Color(0xFFE2E8F0)),
     ),
     child: Column(
@@ -21,23 +22,23 @@ Widget buildFinanceItem(
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.sp,
             color: Color(0xFF64748B),
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6.h),
         // استخدام FittedBox عشان لو صيغة التاريخ طويلة شوية متعملش Overflow وتصغر تلقائي
         SizedBox(
-          height: 20,
+          height: 20.h,
           child: Alignment.centerLeft == Alignment.centerLeft
               ? FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 15.sp,
                       fontWeight: FontWeight.bold,
                       color: valColor,
                     ),
@@ -45,17 +46,17 @@ Widget buildFinanceItem(
                 )
               : null,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(4.r),
           ),
           child: Text(
             sub,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 9.sp,
               color: valColor,
               fontWeight: FontWeight.w600,
             ),

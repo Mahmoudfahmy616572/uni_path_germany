@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomCategoryBar extends StatelessWidget {
   final List<String> tabs;
@@ -17,12 +18,12 @@ class CustomCategoryBar extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 48,
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4.r),
       decoration: BoxDecoration(
         color: const Color(
           0xFFF1F5F9,
         ), // خلفية الشريط الكامل النظيفة المماثلة للتصميم
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
       child: Row(
@@ -38,7 +39,7 @@ class CustomCategoryBar extends StatelessWidget {
                   color: isSelected
                       ? Colors.white
                       : Colors.transparent, // البار المختار يرتفع بخلفية بيضاء
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
@@ -53,7 +54,7 @@ class CustomCategoryBar extends StatelessWidget {
                   child: Text(
                     tabs[index],
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.sp,
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.w500,

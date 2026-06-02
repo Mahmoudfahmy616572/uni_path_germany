@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileNavItem extends StatelessWidget {
   final IconData icon;
@@ -26,11 +27,11 @@ class ProfileNavItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: isActive ? activeColor : inactiveColor, size: 26),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 11.sp,
               color: isActive ? activeColor : inactiveColor,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
