@@ -7,7 +7,7 @@ import '../cubit/my_applications_states.dart';
 import '../widgets/MyApplicatons/pipeline_filter_bar.dart';
 import '../widgets/MyApplicatons/pipeline_metrics_hub.dart';
 import '../widgets/MyApplicatons/pipeline_university_card.dart';
-import '../widgets/applicationDetailesSheets/application_detail_sheet.dart';
+import '../widgets/application_detail_sheet.dart';
 
 class MyApplicationsScreen extends StatefulWidget {
   const MyApplicationsScreen({super.key});
@@ -17,18 +17,21 @@ class MyApplicationsScreen extends StatefulWidget {
 }
 
 class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
-  // 🎯 وحدة التحكم في نص البحث
   final TextEditingController _searchController = TextEditingController();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    context.read<MyApplicationsCubit>().loadApplications();
+  void initState() {
+    super.initState();
+    // جلب البيانات عند فتح الشاشة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<MyApplicationsCubit>().loadApplications();
+      }
+    });
   }
 
   @override
   void dispose() {
-    // 🎯 تنظيف الـ controller عند إغلاق الشاشة
     _searchController.dispose();
     super.dispose();
   }
@@ -39,16 +42,16 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          'My Applications',
+          'My Pipeline',
           style: TextStyle(
-            color: Color(0xFF0F172A),
+            color: const Color(0xFF0F172A),
             fontWeight: FontWeight.bold,
             fontSize: 18.sp,
-        
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
       ),
       body: BlocBuilder<MyApplicationsCubit, MyApplicationsState>(
         builder: (context, state) {
@@ -58,112 +61,96 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
             );
           }
 
-          if (state is MyApplicationsLoaded) {
-            double sumMatch = state.allApplications.fold(
-              0,
-              (sum, item) => sum + item.matchPercentage,
-            );
-            int dynamicAverage = state.allApplications.isNotEmpty
-                ? (sumMatch / state.allApplications.length).round()
-                : 0;
-
-            return RefreshIndicator(
-              color: const Color(0xFF4F46E5),
-              onRefresh: () async {
-                _searchController.clear(); // مسح البحث عند السحب للتحديث
-                await context.read<MyApplicationsCubit>().loadApplications();
-              },
+          if (state is MyApplicationsError) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 🎯 شريط البحث الجميل والاحترافي
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        // استدعاء دالة البحث في الكيوبيت فوراً عند الكتابة
-                        context.read<MyApplicationsCubit>().searchApplications(
-                          value,
-                        );
-                      },
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 14.sp,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search by university or program...',
-                        hintStyle: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 14.sp,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Color(0xFF94A3B8),
-                          size: 20,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.clear,
-                                  color: Color(0xFF94A3B8),
-                                  size: 18,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  context
-                                      .read<MyApplicationsCubit>()
-                                      .searchApplications('');
-                                  FocusScope.of(context).unfocus();
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: const Color(0xFFF1F5F9),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  SizedBox(height: 16.h),
+                  Text(
+                    "Error: ${state.message}",
+                    style: const TextStyle(color: Colors.red),
                   ),
+                  TextButton(
+                    onPressed: () =>
+                        context.read<MyApplicationsCubit>().loadApplications(),
+                    child: const Text("Retry"),
+                  ),
+                ],
+              ),
+            );
+          }
 
-                  PipelineFilterBar(
-                    activeFilter: state.activeFilter,
-                    statusCounts: state.statusCounts,
-                    onFilterSelected: (filter) {
-                      _searchController
-                          .clear(); // مسح السيرش بار عند الانتقال بين التابات
-                      context.read<MyApplicationsCubit>().filterApplications(
-                        filter,
-                      );
-                    },
+          if (state is MyApplicationsLoaded) {
+            return Column(
+              children: [
+                // شريط البحث
+                Container(
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 8.h,
                   ),
-                  PipelineMetricsHub(
-                    upcomingDeadlines: state.allApplications.length,
-                    matchAverage: dynamicAverage,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => context
+                        .read<MyApplicationsCubit>()
+                        .searchApplications(value),
+                    decoration: InputDecoration(
+                      hintText: 'Search programs or universities...',
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
-                  Expanded(
+                ),
+
+                // شريط الفلاتر
+                PipelineFilterBar(
+                  activeFilter: state.activeFilter,
+                  statusCounts: state.statusCounts,
+                  onFilterSelected: (filter) {
+                    context.read<MyApplicationsCubit>().filterApplications(
+                      filter,
+                    );
+                  },
+                ),
+
+                // كارت الإحصائيات (Metrics)
+                PipelineMetricsHub(
+                  upcomingDeadlines: state.allApplications.length,
+                  matchAverage: 80, // يمكن ربطها بحسبة ديناميكية
+                ),
+
+                // قائمة الطلبات
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () =>
+                        context.read<MyApplicationsCubit>().loadApplications(),
                     child: state.filteredApplications.isEmpty
                         ? ListView(
-                            children: const [
-                              SizedBox(height: 100),
+                            children: [
+                              SizedBox(height: 100.h),
                               Center(
                                 child: Text(
                                   'No applications found',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14.sp,
+                                  ),
                                 ),
                               ),
                             ],
                           )
                         : ListView.builder(
-                            key: ValueKey(state.filteredApplications.length),
                             padding: EdgeInsets.all(16.r),
                             itemCount: state.filteredApplications.length,
                             itemBuilder: (context, index) {
@@ -176,21 +163,12 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                             },
                           ),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
-          if (state is MyApplicationsError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
-
-          return const Center(child: Text('Initialize your applications'));
+          return const SizedBox.shrink();
         },
       ),
     );

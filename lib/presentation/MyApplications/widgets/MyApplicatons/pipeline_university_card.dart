@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../data/models/university_model.dart';
+import '../../../../domain/entities/university_entity.dart';
 
 class PipelineUniversityCard extends StatelessWidget {
-  final UniversityModel app;
+  final UniversityEntity app;
   final VoidCallback onTap;
 
   const PipelineUniversityCard({
@@ -15,52 +16,43 @@ class PipelineUniversityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // حسبة الـ Progress
-    int docsCount = [
-      app.hasTranscripts,
-      app.hasCv,
-      app.hasSop,
-      app.hasBachelorCert,
-    ].where((c) => c).length;
-    double progress = docsCount / 4;
+    final program = app.programs.isNotEmpty ? app.programs.first : null;
+    final String programName = program?.programName ?? "General Track";
+    final String degreeType = program?.degreeType ?? "Master";
+    final String deadline = program?.deadline ?? "No Deadline";
+
+    // 🎯 تصليح الحسبة هنا: نعد المستندات اللي قيمتها عبارة عن رابط (تبدأ بـ http)
+    int docsCount =
+        [app.hasTranscripts, app.hasCv, app.hasSop, app.hasBachelorCert].where((
+          c,
+        ) {
+          if (c == null) return false;
+          if (c is bool) return c; // لدعم البيانات القديمة لو لسه موجودة
+          return c.toString().startsWith('http'); // لو رابط يبقى مرفوع
+        }).length;
+
+    final String remainingDaysText = _calculateRemainingDays(deadline);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16.h),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(20.r),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
-      color: Colors.white,
       elevation: 0,
+      color: Colors.white,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16.r),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20.r),
         child: Padding(
           padding: EdgeInsets.all(16.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // السطر العلوي: اللوجو والاسم والنسبة
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      app.logoText,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ),
+                  _buildLogo(app.logoText),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
@@ -70,19 +62,37 @@ class PipelineUniversityCard extends StatelessWidget {
                           app.name,
                           style: TextStyle(
                             fontSize: 15.sp,
-
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                            color: const Color(0xFF0F172A),
                           ),
                         ),
                         SizedBox(height: 2.h),
-                        Text(
-                          app.program,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-
-                            color: Color(0xFF64748B),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              degreeType,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                            Text(
+                              " • ",
+                              style: TextStyle(color: Colors.grey.shade300),
+                            ),
+                            Expanded(
+                              child: Text(
+                                programName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: const Color(0xFF4F46E5),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -91,43 +101,32 @@ class PipelineUniversityCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 16.h),
-
-              // الـ Deadlines والـ Missing Docs سريعا
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildMetaInfo(
                     Icons.calendar_today,
-                    '15 Jul 2026',
-                    'In 18 days',
-                    Colors.red,
+                    'Deadline',
+                    remainingDaysText,
+                    remainingDaysText == 'Expired'
+                        ? Colors.red
+                        : const Color(0xFF0F172A),
                   ),
                   _buildMetaInfo(
                     Icons.assignment_outlined,
-                    'Missing',
-                    app.hasBachelorCert ? 'None' : 'Bachelor Certificate',
-                    const Color(0xFF4F46E5),
+                    'Docs',
+                    '$docsCount/4 Ready',
+                    docsCount == 4 ? Colors.green : const Color(0xFFF59E0B),
                   ),
                   _buildMetaInfo(
                     Icons.trending_up,
                     'Chance',
-                    'High',
+                    app.matchPercentage >= 70 ? "High" : "Medium",
                     const Color(0xFF10B981),
                   ),
                 ],
               ),
-
-              // الـ AI Recommendation Banner الذكي
-              if (!app.hasSop) ...[
-                SizedBox(height: 12.h),
-                _buildAiSuggestionBanner(
-                  "Improving your SOP could increase your chances by 10%.",
-                ),
-              ],
-
-              const Divider(height: 24, color: Color(0xFFF1F5F9)),
-
-              // أزرار التحكم السفلية للكارد
+              const Divider(height: 32, color: Color(0xFFF1F5F9)),
               Row(
                 children: [
                   Expanded(
@@ -136,37 +135,43 @@ class PipelineUniversityCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFFE2E8F0)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
                         'View Details',
                         style: TextStyle(
-                          color: Color(0xFF334155),
+                          color: const Color(0xFF475569),
                           fontSize: 13.sp,
                         ),
                       ),
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.auto_awesome,
-                        color: Color(0xFF4F46E5),
-                        size: 18,
-                      ),
-                      onPressed: () {}, // Ask AI Button
-                    ),
-                  ),
+                  _buildAiActionButton(),
                 ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo(String text) {
+    return Container(
+      width: 48.w,
+      height: 48.w,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF4F46E5),
         ),
       ),
     );
@@ -177,22 +182,20 @@ class PipelineUniversityCard extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         SizedBox(
-          width: 42,
-          height: 42,
+          width: 44.w,
+          height: 44.w,
           child: CircularProgressIndicator(
             value: match / 100,
             backgroundColor: const Color(0xFFF1F5F9),
-            color: const Color(0xFF10B981),
+            color: match >= 70
+                ? const Color(0xFF10B981)
+                : const Color(0xFFF59E0B),
             strokeWidth: 4,
           ),
         ),
         Text(
           '$match%',
-          style: TextStyle(
-            fontSize: 11.sp,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-          ),
+          style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -204,57 +207,49 @@ class PipelineUniversityCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 14, color: const Color(0xFF94A3B8)),
+            Icon(icon, size: 14.sp, color: const Color(0xFF94A3B8)),
             SizedBox(width: 4.w),
             Text(
               title,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
             ),
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 18.0),
-          child: Text(
-            sub,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+        SizedBox(height: 2.h),
+        Text(
+          sub,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAiSuggestionBanner(String text) {
+  Widget _buildAiActionButton() {
     return Container(
-      padding: EdgeInsets.all(10.r),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2F6),
-        borderRadius: BorderRadius.circular(10.r),
+        color: const Color(0xFF4F46E5),
+        borderRadius: BorderRadius.circular(12.r),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF4F46E5)),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 11.sp,
-                color: Color(0xFF4F46E5),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 12,
-            color: Color(0xFF4F46E5),
-          ),
-        ],
+      child: IconButton(
+        icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+        onPressed: () {},
       ),
     );
+  }
+
+  String _calculateRemainingDays(String deadlineStr) {
+    try {
+      DateTime deadline = DateFormat("d MMM yyyy").parse(deadlineStr);
+      final diff = deadline.difference(DateTime.now()).inDays;
+      if (diff < 0) return 'Expired';
+      if (diff == 0) return 'Today';
+      return 'In $diff days';
+    } catch (e) {
+      return deadlineStr;
+    }
   }
 }

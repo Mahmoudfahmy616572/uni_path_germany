@@ -1,20 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/match_score_calculator.dart';
+
 abstract class UniversitiesRemoteDataSource {
-  Future<void> updateStudentProfile({
-    required double gpa,
-    required double maxGpa,
-    required double minGpa,
-    required bool hasMoi,
-    required bool hasIelts,
-    double? ieltsScore,
-    required String targetMajor,
-    required String targetCountry,
-  });
+  Future<void> updateStudentProfile(Map<String, dynamic> data);
   Future<Map<String, dynamic>> getCurrentStudentProfile(String userId);
-  Future<List<Map<String, dynamic>>> fetchUniversitiesWithApplicationStatus(
-    String userId,
-  );
+  Future<List<Map<String, dynamic>>> fetchMatchedUniversitiesRaw({
+    required String userId,
+    required int page,
+    required int limit,
+  });
 }
 
 class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
@@ -22,63 +17,88 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
   UniversitiesRemoteDataSourceImpl(this.client);
 
   @override
-  Future<void> updateStudentProfile({
-    required double gpa,
-    required double maxGpa,
-    required double minGpa,
-    required bool hasMoi,
-    required bool hasIelts,
-    double? ieltsScore,
-    required String targetMajor,
-    required String targetCountry,
-  }) async {
+  Future<void> updateStudentProfile(Map<String, dynamic> data) async {
     final user = client.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
-
-    await client
-        .from('profiles')
-        .update({
-          'gpa': gpa,
-          'max_gpa': maxGpa,
-          'min_gpa': minGpa,
-          'has_moi': hasMoi,
-          'has_ielts': hasIelts,
-          'ielts_score': hasIelts ? ieltsScore : null,
-          'target_major': targetMajor,
-          'target_country': targetCountry,
-        })
-        .eq('id', user.id);
+    // 🎯 استخدام الحقول الصحيحة التي أصلحناها في الـ SQL
+    await client.from('profiles').update(data).eq('id', user.id);
   }
 
   @override
   Future<Map<String, dynamic>> getCurrentStudentProfile(String userId) async {
-    // 🔥 تم تحديث الـ select لتجلب الحقول الجديدة من سوبابيز بنجاح ومنع الكراش
-    return await client
-        .from('profiles')
-        .select(
-          'gpa, max_gpa, min_gpa, has_moi, has_ielts, ielts_score, target_major, target_country',
-        )
-        .eq('id', userId)
-        .single();
+    return await client.from('profiles').select().eq('id', userId).single();
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchUniversitiesWithApplicationStatus(
-    String userId,
-  ) async {
+  Future<List<Map<String, dynamic>>> fetchMatchedUniversitiesRaw({
+    required String userId,
+    required int page,
+    required int limit,
+  }) async {
     try {
-      // 🔥 التصحيح المليمتري هنا: استخدام الفلترة المضمنة جوه الـ select لجدول الـ Join
-      // ده بيخلي الـ left join يرجع الجامعة حتى لو اليوزر مش عامل لها save، فـ تتحدث الحالة فوراً محلياً!
-      final List<dynamic> data = await client
-          .from('test_universities')
-          .select('*, my_applications!left(*).where(user_id.eq.$userId)');
+      final studentData = await getCurrentStudentProfile(userId);
 
-      return data.map<Map<String, dynamic>>((element) {
-        return Map<String, dynamic>.from(element as Map);
-      }).toList();
+      String searchDegree = "Master";
+      String rawDegree = studentData['degree_level'].toString().toLowerCase();
+      if (rawDegree.contains("bachelor"))
+        searchDegree = "Bachelor";
+      else if (rawDegree.contains("doctor") || rawDegree.contains("phd"))
+        searchDegree = "Doctorate";
+
+      final int from = (page - 1) * limit;
+      final int to = from + limit - 1;
+
+      // 🎯 جلب فقط البرامج التي تطابق درجة الطالب الحالية من السيرفر
+      final response = await client
+          .from('universities')
+          .select('*, university_programs(*)')
+          .eq('country', 'Germany')
+          .ilike('university_programs.degree_type', '%$searchDegree%')
+          .range(from, to)
+          .order('name', ascending: true);
+
+      final List<Map<String, dynamic>> unis = List<Map<String, dynamic>>.from(
+        response as List,
+      );
+      List<Map<String, dynamic>> finalFilteredUnis = [];
+
+      for (var uni in unis) {
+        final rawPrograms = uni['university_programs'] as List;
+        int maxScore = 0;
+        List<Map<String, dynamic>> validPrograms = [];
+
+        for (var p in rawPrograms) {
+          final int score = MatchScoreCalculator.calculate(
+            studentProfile: studentData,
+            programRequiredGpa: (p['required_gpa'] as num?)?.toDouble() ?? 4.0,
+            programRequiresIelts: p['requires_ielts'] ?? false,
+            programMinIelts: (p['min_ielts_score'] as num?)?.toDouble() ?? 0.0,
+            programAcceptsMoi: p['accepts_moi'] ?? false,
+            programMajor: p['major']?.toString() ?? '',
+            programName: p['program_name']?.toString() ?? '',
+            programIntake: p['intake_type']?.toString() ?? 'Winter',
+            programLanguage: p['instruction_language']?.toString() ?? 'English',
+            programDegree: p['degree_type']?.toString() ?? '',
+          );
+
+          if (score > 0) {
+            p['calculated_score'] = score;
+            p['is_recommended'] = score >= 60;
+            validPrograms.add(p);
+            if (score > maxScore) maxScore = score;
+          }
+        }
+
+        if (validPrograms.isNotEmpty) {
+          uni['university_programs'] = validPrograms;
+          uni['calculated_score'] = maxScore;
+          finalFilteredUnis.add(uni);
+        }
+      }
+      return finalFilteredUnis;
     } catch (e) {
-      print("❌ Error in fetchUniversitiesWithApplicationStatus: $e");
-      throw Exception('فشل جلب بيانات الجامعات: ${e.toString()}');
+      print("❌ Error in DataSource: $e");
+      throw Exception('Failed to fetch data');
     }
   }
 }

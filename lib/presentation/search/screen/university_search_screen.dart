@@ -2,21 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../data/models/university_model.dart';
 import '../../../domain/entities/university_entity.dart';
-import '../../Home/cubit/home_cubit.dart';
-import '../../Home/cubit/home_state.dart';
 import '../cubit/university_search_cubit.dart';
 import '../cubit/university_search_state.dart';
 import '../widgets/advanced_filter_panel.dart';
 import '../widgets/search_dropdowns_row.dart';
-
-// المكان المركزي الموحد لحساب النسبة لو مش جاية من الباك إند
-// مستقبلاً لما تضيف الـ AI، هتدخل تعدل الرقم ده فقط في الأبلكيشن كله!
-int centralEvaluateUniversity(UniversityModel uni) {
-  return 80; // القيمة الافتراضية للتوافق مع الهوم سكرين حالياً
-}
 
 class UniversitySearchScreen extends StatefulWidget {
   const UniversitySearchScreen({super.key});
@@ -44,81 +36,40 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
           backgroundColor: Colors.white,
           elevation: 0,
           title: Text(
-            'Find Programs',
-            style: TextStyle(
-              color: Color(0xFF0F172A),
+            'Study in Germany',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF0F172A),
               fontWeight: FontWeight.bold,
               fontSize: 18.sp,
             ),
           ),
           centerTitle: true,
-          iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
         ),
         body: BlocBuilder<UniversitySearchCubit, UniversitySearchState>(
           builder: (context, state) {
-            if (state is UniversitySearchLoading) {
+            if (state is UniversitySearchLoading)
               return const Center(
                 child: CircularProgressIndicator(color: Color(0xFF6366F1)),
               );
-            }
-            if (state is UniversitySearchError) {
-              return Center(
-                child: Text(
-                  'Error: ${state.message}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            }
 
             if (state is UniversitySearchLoaded) {
+              final int totalProgramsCount = state.filteredResults.fold(
+                0,
+                (sum, uni) => sum + uni.programs.length,
+              );
+
               return Stack(
                 children: [
                   SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 16,
-                      bottom: 100,
-                    ),
+                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14.r),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: TextField(
-                            controller: _textSearchController,
-                            onChanged: (val) {
-                              context
-                                  .read<UniversitySearchCubit>()
-                                  .updateFilters(query: val);
-                            },
-                            decoration: InputDecoration(
-                              hintText:
-                                  'Search by degree, course or university...',
-                              hintStyle: TextStyle(
-                                color: Color(0xFF94A3B8),
-                                fontSize: 14.sp,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Color(0xFF64748B),
-                                size: 20,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                        ),
+                        _buildSearchBar(context),
                         SizedBox(height: 16.h),
+                        // 🎯 تم تعديل هذا الـ Widget ليشمل اختيار الـ Intake
                         SearchDropdownsRow(
-                          currentCountry: state.selectedCountry,
+                          currentIntake: (state as UniversitySearchLoaded)
+                              .selectedCountry, // استخدمنا الحقل مؤقتاً لتمرير الـ Intake
                           currentDegree: state.selectedDegree,
                           currentMajor: state.selectedMajor,
                         ),
@@ -132,46 +83,10 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                       ],
                     ),
                   ),
-                  Positioned(
-                    bottom: 20,
-                    left: 16,
-                    right: 16,
-                    child: Container(
-                      width: double.infinity,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          elevation: 0,
-                        ),
-                        onPressed: () {
-                          _showResultsBottomSheet(
-                            context,
-                            state.filteredResults,
-                          );
-                        },
-                        child: Text(
-                          'Show ${state.filteredResults.length} Programs',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                  _buildFloatingShowButton(
+                    context,
+                    totalProgramsCount,
+                    state.filteredResults,
                   ),
                 ],
               );
@@ -183,16 +98,68 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
     );
   }
 
+  Widget _buildSearchBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: TextField(
+        controller: _textSearchController,
+        onChanged: (val) =>
+            context.read<UniversitySearchCubit>().updateFilters(query: val),
+        decoration: InputDecoration(
+          hintText: 'Search for courses or universities...',
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingShowButton(
+    BuildContext context,
+    int count,
+    List<UniversityEntity> results,
+  ) {
+    return Positioned(
+      bottom: 20.h,
+      left: 16.w,
+      right: 16.w,
+      child: SizedBox(
+        height: 54.h,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6366F1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+          ),
+          onPressed: () => _showResultsBottomSheet(context, results),
+          child: Text(
+            'Show $count Available Programs',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showResultsBottomSheet(
     BuildContext context,
-    List<UniversityModel> filteredResults,
+    List<UniversityEntity> results,
   ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) => Container(
-        height: MediaQuery.of(bottomSheetContext).size.height * 0.75,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
         decoration: const BoxDecoration(
           color: Color(0xFFF8FAFC),
           borderRadius: BorderRadius.only(
@@ -202,93 +169,39 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         ),
         child: Column(
           children: [
-            SizedBox(height: 12.h),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
             SizedBox(height: 16.h),
             Text(
-              '${filteredResults.length} Programs Found',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              '${results.length} Universities Found',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 12.h),
             Expanded(
-              child: filteredResults.isEmpty
-                  ? const Center(
-                      child: Text('No programs match these filters.'),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(16.r),
-                      itemCount: filteredResults.length,
-                      itemBuilder: (bottomSheetContext, index) {
-                        final uni = filteredResults[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: ListTile(
-                            onTap: () {
-                              final homeCubit = context.read<HomeCubit>();
-                              UniversityEntity evaluatedUni = uni;
-
-                              if (homeCubit.state is HomeLoaded) {
-                                final homeLoaded =
-                                    homeCubit.state as HomeLoaded;
-
-                                // محاولة إيجاد الكارد بنسبته الـ 80% المحسوبة مسبقاً في الهوم
-                                final existingUni = homeLoaded.recommendations
-                                    .firstWhere(
-                                      (element) => element.id == uni.id,
-                                      orElse: () => uni,
-                                    );
-
-                                if (existingUni.matchPercentage > 0) {
-                                  evaluatedUni = existingUni;
-                                } else {
-                                  final centralScore =
-                                      centralEvaluateUniversity(uni);
-                                  // 🎯 تعديل مباشر على الـ Entity بدون أي كاستنج مسبب للكراشات
-                                  evaluatedUni = uni.copyWith(
-                                    matchPercentage: centralScore,
-                                  );
-                                }
-                              } else {
-                                final centralScore = centralEvaluateUniversity(
-                                  uni,
-                                );
-                                // 🎯 تعديل مباشر على الـ Entity بدون أي كاستنج مسبب للكراشات
-                                evaluatedUni = uni.copyWith(
-                                  matchPercentage: centralScore,
-                                );
-                              }
-
-                              // تمرير النسخة المتقيمة والمطابقة للهوم تماماً
-                              context.push(
-                                '/university_details',
-                                extra: evaluatedUni,
-                              );
-                            },
-                            title: Text(
-                              uni.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(uni.program),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                            ),
-                          ),
-                        );
-                      },
+              child: ListView.builder(
+                padding: EdgeInsets.all(16.r),
+                itemCount: results.length,
+                itemBuilder: (context, index) {
+                  final uni = results[index];
+                  return Card(
+                    child: ListTile(
+                      onTap: () =>
+                          context.push('/university_details', extra: uni),
+                      title: Text(
+                        uni.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        '${uni.programs.length} Matching Programs',
+                      ),
+                      trailing: Text(
+                        '${uni.matchPercentage}%',
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
+                  );
+                },
+              ),
             ),
           ],
         ),

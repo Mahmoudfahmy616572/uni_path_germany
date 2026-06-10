@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/university_entity.dart';
 import '../../domain/repositories/universities_repository.dart';
 import '../models/university_model.dart';
 import '../sources/universities_remote_data_source.dart';
@@ -19,78 +20,53 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
     required bool hasIelts,
     double? ieltsScore,
     required String targetMajor,
-    required String targetCountry,
+    required String intake,
+    required String languagePreference,
   }) async {
     try {
-      await remoteDataSource.updateStudentProfile(
-        gpa: gpa,
-        maxGpa: maxGpa,
-        minGpa: minGpa,
-        hasMoi: hasMoi,
-        hasIelts: hasIelts,
-        ieltsScore: ieltsScore,
-        targetMajor: targetMajor,
-        targetCountry: targetCountry,
-      );
+      // تمرير البيانات للمصدر لتحديثها في قاعدة البيانات
+      await remoteDataSource.updateStudentProfile({
+        'gpa': gpa,
+        'max_gpa': maxGpa,
+        'min_gpa': minGpa,
+        'has_moi': hasMoi,
+        'has_ielts': hasIelts,
+        'ielts_score': ieltsScore,
+        'target_major': targetMajor,
+        'intake': intake,
+        'language_preference': languagePreference,
+        'target_country': 'Germany', // ثابت دائماً
+      });
     } catch (e) {
-      throw Exception('فشل تحديث البيانات: ${e.toString()}');
+      throw Exception('Failed to update profile: ${e.toString()}');
     }
   }
 
   @override
-  Future<List<UniversityModel>> fetchMatchedUniversities() async {
+  Future<List<UniversityEntity>> fetchMatchedUniversities({
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
       final user = supabaseClient.auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      // 1. جلب بروفايل الطالب كاملاً بالحقول الجديدة
-      final studentData = await remoteDataSource.getCurrentStudentProfile(
-        user.id,
+      // نداء المصدر لجلب البيانات الخام مع مراعاة رقم الصفحة
+      final rawMatchedData = await remoteDataSource.fetchMatchedUniversitiesRaw(
+        userId: user.id,
+        page: page,
+        limit: limit,
       );
 
-      String studentCountry = (studentData['target_country'] as String? ?? '')
-          .trim()
-          .toLowerCase();
-
-      // 2. جلب داتا الجامعات المشبوكة بـ Left Join المرن
-      final rawUnis = await remoteDataSource
-          .fetchUniversitiesWithApplicationStatus(user.id);
-
-      List<UniversityModel> matchedList = [];
-
-      for (var json in rawUnis) {
-        String uniCountry = (json['country'] ?? '')
-            .toString()
-            .trim()
-            .toLowerCase();
-
-        // فلترة الدولة لو الطالب محدد بلد مستهدف
-        if (studentCountry.isNotEmpty && uniCountry != studentCountry) continue;
-
-        final myAppsList = json['my_applications'] as List?;
-        String currentStatus = 'unsaved';
-
-        if (myAppsList != null && myAppsList.isNotEmpty) {
-          currentStatus = myAppsList.first['status'] ?? 'saved';
-        }
-
-        // بناء الموديل وتمرير البروفايل للحسبة الموحدة
-        matchedList.add(
-          UniversityModel.fromJson(
-            json,
-            studentProfile: studentData, // 👈 التمرير السحري لتوحيد النسب
-            status: currentStatus,
-          ),
-        );
-      }
-
-      matchedList.sort(
-        (a, b) => b.matchPercentage.compareTo(a.matchPercentage),
-      );
-      return matchedList;
+      // تحويل لستة الـ Maps إلى لستة Entities
+      return rawMatchedData.map((uniJson) {
+        return UniversityModel.fromJson(
+          uniJson,
+          calculatedScore: uniJson['calculated_score'] ?? 0,
+        ).toEntity();
+      }).toList();
     } catch (e) {
-      throw Exception(e.toString());
+      throw Exception('Failed to process matched universities: $e');
     }
   }
 }
-  

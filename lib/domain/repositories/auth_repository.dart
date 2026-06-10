@@ -1,3 +1,5 @@
+import '../entities/user_entity.dart';
+
 abstract class AuthRepository {
   Future<void> login({
     required String emailOrUsername,
@@ -9,8 +11,16 @@ abstract class AuthRepository {
     required String password,
     required String username,
     String? phone,
-    required String targetCountry,
   });
 
   Future<void> logout();
+
+  // 🎯 جلب بيانات المستخدم الحالي كاملة ككيان (Entity)
+  Future<UserEntity?> getCurrentUser();
+
+  // 🎯 تحديث بيانات البروفايل (Settings)
+  Future<void> updateProfile({
+    required String userId,
+    required Map<String, dynamic> updates,
+  });
 }

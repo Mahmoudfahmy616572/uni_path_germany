@@ -2,15 +2,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/models/university_model.dart';
+import '../../../domain/entities/university_entity.dart';
 import 'university_search_state.dart';
 
 class UniversitySearchCubit extends Cubit<UniversitySearchState> {
   final SupabaseClient _supabase = Supabase.instance.client;
+  List<UniversityEntity> _cachedUniversities = [];
 
-  List<UniversityModel> _cachedUniversities = [];
-
-  String _currentQuery = '';
-  String _country = 'All';
+  String _query = '';
+  String _intake = 'All'; // تم استبدال الدولة بالفصل الدراسي
   String _degree = 'All';
   String _major = 'All';
   bool _requiresIelts = false;
@@ -21,30 +21,29 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
   UniversitySearchCubit() : super(UniversitySearchInitial());
 
   void clearAllFilters() {
-    _currentQuery = '';
-    _country = 'All';
+    _query = '';
+    _intake = 'All';
     _degree = 'All';
     _major = 'All';
     _requiresIelts = false;
     _acceptsMoi = false;
     _maxTuition = 20000.0;
     _language = 'All';
-    updateFilters();
+    _applyFilters();
   }
 
   void updateFilters({
     String? query,
-    String? country,
+    String? intake,
     String? degree,
     String? major,
     bool? requiresIelts,
     bool? acceptsMoi,
     double? maxTuition,
     String? language,
-    bool forceRefresh = false,
   }) async {
-    if (query != null) _currentQuery = query;
-    if (country != null) _country = country;
+    if (query != null) _query = query;
+    if (intake != null) _intake = intake;
     if (degree != null) _degree = degree;
     if (major != null) _major = major;
     if (requiresIelts != null) _requiresIelts = requiresIelts;
@@ -52,73 +51,84 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
     if (maxTuition != null) _maxTuition = maxTuition;
     if (language != null) _language = language;
 
-    if (_cachedUniversities.isEmpty || forceRefresh) {
-      emit(UniversitySearchLoading());
-      try {
-        final response = await _supabase.from('test_universities').select();
-        _cachedUniversities = (response as List)
-            .map((json) => UniversityModel.fromJson(json))
-            .toList();
-      } catch (e) {
-        emit(UniversitySearchError(e.toString()));
-        return;
-      }
+    if (_cachedUniversities.isEmpty) {
+      await _fetchData();
+    } else {
+      _applyFilters();
     }
+  }
 
-    List<UniversityModel> filtered = _cachedUniversities.where((uni) {
-      // 1. فلتر نص البحث (الاسم أو البرنامج)
-      final matchesQuery =
-          _currentQuery.isEmpty ||
-          uni.name.toLowerCase().contains(_currentQuery.toLowerCase()) ||
-          uni.program.toLowerCase().contains(_currentQuery.toLowerCase());
+  Future<void> _fetchData() async {
+    emit(UniversitySearchLoading());
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception("User not logged in");
 
-      // 2. فلتر الدولة (بما إنك هترسي على ألمانيا، السطر ده هيظبطها تماماً)
-      final matchesCountry =
-          _country == 'All' ||
-          uni.country.toLowerCase() == _country.toLowerCase();
+      // جلب الجامعات الموجودة في "ألمانيا" فقط
+      final response = await _supabase
+          .from('universities')
+          .select('*, university_programs(*)')
+          .eq('country', 'Germany');
 
-      // 3. فلتر الدرجة العلمية (Master / Bachelor,phD)
-      final matchesDegree =
-          _degree == 'All' ||
-          uni.degreeType.toLowerCase() == _degree.toLowerCase();
+      _cachedUniversities = (response as List).map((json) {
+        return UniversityModel.fromJson(
+          Map<String, dynamic>.from(json),
+        ).toEntity();
+      }).toList();
 
-      // 4. فلتر التخصص (Major)
-      final matchesMajor =
-          _major == 'All' ||
-          uni.program.toLowerCase().contains(_major.toLowerCase());
+      _applyFilters();
+    } catch (e) {
+      emit(UniversitySearchError(e.toString()));
+    }
+  }
 
-      // 5. فلتر الآيلتس (IELTS)
-      final matchesIelts = !_requiresIelts || uni.requiresIelts == true;
+  void _applyFilters() {
+    final filtered = _cachedUniversities
+        .map((uni) {
+          final matchedPrograms = uni.programs.where((p) {
+            final matchesDegree = _degree == 'All' || p.degreeType == _degree;
+            final matchesMajor =
+                _major == 'All' ||
+                p.major.contains(_major) ||
+                p.programName.contains(_major);
+            final matchesIelts = !_requiresIelts || p.requiresIelts == true;
+            final matchesTuition = p.tuitionFeePerYear <= _maxTuition;
+            final matchesLang =
+                _language == 'All' || p.instructionLanguage == _language;
 
-      // 6. فلتر الـ MOI الحقيقي بناءً على حقل الداتابيز الجديد
-      final matchesMoi = !_acceptsMoi || uni.acceptsMoi == true;
+            // 🎯 فلترة الفصل الدراسي (Intake)
+            bool matchesIntake = false;
+            if (_intake == 'All' || _intake == 'Both Semesters') {
+              matchesIntake = true;
+            } else {
+              // إذا كان البرنامج "Both" يظهر للجميع، وإلا يجب التطابق
+              matchesIntake =
+                  p.intakeType == 'Both' || _intake.contains(p.intakeType);
+            }
 
-      // 7. فلتر الرسوم الدراسية (Tuition Fees)
-      final matchesTuition = (uni.tuitionFeePerYear ?? 0) <= _maxTuition;
+            return matchesDegree &&
+                matchesMajor &&
+                matchesIelts &&
+                matchesTuition &&
+                matchesLang &&
+                matchesIntake;
+          }).toList();
 
-      // 8. الفلتر الذكي والمحدد للغة التدريس (إنجليزي أو ألماني بالملي) 🔥
-      bool matchesLanguage = true;
-      if (_language != 'All') {
-        // هنا بنقارن القيمة اللي جاية من السيرفر مباشرة (بعد تحويلها لـ lowercase عشان نتفادي أي اختلاف حروف)
-        // لو الكولم لسه مش متهندل في الموديل، هنقراه مؤقتاً كدة من الـ description أو من الـ dynamic json لو بتمرره
-        final uniLang = uni.instructionLanguage?.toLowerCase() ?? 'english';
-        matchesLanguage = uniLang == _language.toLowerCase();
-      }
+          if (matchedPrograms.isNotEmpty &&
+              (_query.isEmpty ||
+                  uni.name.toLowerCase().contains(_query.toLowerCase()))) {
+            return uni.copyWith(programs: matchedPrograms);
+          }
+          return null;
+        })
+        .whereType<UniversityEntity>()
+        .toList();
 
-      return matchesQuery &&
-          matchesCountry &&
-          matchesDegree &&
-          matchesMajor &&
-          matchesIelts &&
-          matchesMoi &&
-          matchesTuition &&
-          matchesLanguage;
-    }).toList();
     emit(
       UniversitySearchLoaded(
         allResults: _cachedUniversities,
         filteredResults: filtered,
-        selectedCountry: _country,
+        selectedCountry: 'Germany',
         selectedDegree: _degree,
         selectedMajor: _major,
         requiresIelts: _requiresIelts,
@@ -127,5 +137,15 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
         selectedLanguage: _language,
       ),
     );
+  }
+
+  bool isProgramMatchingFilters(dynamic program) {
+    // دالة مساعدة لشاشة الـ UI
+    final matchesIntake =
+        _intake == 'All' ||
+        _intake == 'Both Semesters' ||
+        program.intakeType == 'Both' ||
+        _intake.contains(program.intakeType);
+    return matchesIntake && (program.tuitionFeePerYear <= _maxTuition);
   }
 }

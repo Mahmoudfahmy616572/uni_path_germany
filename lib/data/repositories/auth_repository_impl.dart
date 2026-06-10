@@ -1,4 +1,8 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../models/user_model.dart';
 import '../sources/auth_remote_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -10,11 +14,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String emailOrUsername,
     required String password,
   }) async {
-    try {
-      await remoteDataSource.login(emailOrUsername, password);
-    } catch (e) {
-      throw Exception(e.toString());
-    }
+    await remoteDataSource.login(
+      emailOrUsername: emailOrUsername,
+      password: password,
+    );
   }
 
   @override
@@ -23,27 +26,32 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String username,
     String? phone,
-    required String targetCountry,
   }) async {
-    try {
-      await remoteDataSource.register(
-        email,
-        password,
-        username,
-        phone,
-        targetCountry: targetCountry,
-      );
-    } catch (e) {
-      throw Exception(e.toString());
-    }
+    await remoteDataSource.register(
+      email: email,
+      password: password,
+      username: username,
+      phone: phone,
+      targetCountry: 'Germany',
+    );
   }
 
   @override
-  Future<void> logout() async {
-    try {
-      await remoteDataSource.logout();
-    } catch (e) {
-      throw Exception("Logout Failed: ${e.toString()}");
-    }
+  Future<void> logout() async => await remoteDataSource.logout();
+
+  @override
+  Future<UserEntity?> getCurrentUser() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return null;
+    final data = await remoteDataSource.getCurrentUserProfile(user.id);
+    return UserModel.fromJson(data);
+  }
+
+  @override
+  Future<void> updateProfile({
+    required String userId,
+    required Map<String, dynamic> updates,
+  }) async {
+    await remoteDataSource.updateProfile(userId: userId, updates: updates);
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "80391256079",
+    "project_id": "unipathnotifications",
+    "storage_bucket": "unipathnotifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:80391256079:android:031027b3c325acaeca0b7a",
+        "android_client_info": {
+          "package_name": "com.example.germany_travel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwhFjod_7XiVWc4EC8pBIoUKxTqKhsQz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

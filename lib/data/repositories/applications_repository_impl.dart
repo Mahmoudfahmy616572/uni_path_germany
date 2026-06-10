@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/university_entity.dart';
 import '../../domain/repositories/applications_repository.dart';
 import '../models/university_model.dart';
 import '../sources/applications_remote_data_source.dart';
@@ -9,99 +12,145 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
   ApplicationsRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<void> saveUniversity(String universityId) async {
-    await remoteDataSource.saveUniversity(universityId);
+  Future<void> saveProgram({
+    required String universityId,
+    required String programId,
+  }) async {
+    await remoteDataSource.saveProgram(
+      universityId: universityId,
+      programId: programId,
+    );
   }
 
   @override
-  Future<List<UniversityModel>> getMyApplications() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+  Future<List<UniversityEntity>> getMyApplications() async {
+    final rawApps = await remoteDataSource.getMyApplicationsWithScores();
 
-    final List<dynamic> rawApplications = await remoteDataSource
-        .getMyApplications();
-    if (rawApplications.isEmpty) return [];
+    return rawApps.map((item) {
+      final uniData = Map<String, dynamic>.from(item['universities'] as Map);
+      final userData = item['user_profile_data'] as Map<String, dynamic>;
 
-    final studentData = await Supabase.instance.client
-        .from('profiles')
-        .select(
-          'gpa, max_gpa, min_gpa, has_ielts, ielts_score, target_major, has_moi',
-        )
-        .eq('id', user.id)
-        .single();
-
-    return rawApplications.map((item) {
-      final uniData = Map<String, dynamic>.from(
-        item['test_universities'] as Map<String, dynamic>,
-      );
-
-      // 🎯 السر هنا: نضمن يقيناً إن الـ id الممرر للموديل هو الـ university_id الحقيقي المربوط بالطلب
-      // عشان لما الـ UI يرجعه للـ Cubit يروح للـ Supabase يطابق الـ eq('university_id') علطول!
-      if (item['university_id'] != null) {
-        uniData['id'] = item['university_id'].toString();
+      // ✅ إصلاح الـ Delete Bug:
+      // كل صف في my_applications له program_id محدد (البرنامج المحفوظ فعلاً).
+      // لكن uniData['university_programs'] بيجيب كل برامج الجامعة مش البرنامج المحفوظ بس.
+      // النتيجة: app.programs.first.id بيكون أول برنامج في الجامعة مش البرنامج المحفوظ،
+      // وبالتالي الـ delete query بتبقى غلط وما بتلاقيش الصف.
+      //
+      // الحل: نفلتر university_programs عشان يفضل فيها البرنامج المحفوظ بس.
+      final String savedProgramId = item['program_id'].toString();
+      if (uniData['university_programs'] != null) {
+        final allPrograms = List<Map<String, dynamic>>.from(
+          (uniData['university_programs'] as List).map(
+            (p) => Map<String, dynamic>.from(p as Map),
+          ),
+        );
+        final savedProg = allPrograms.firstWhere(
+          (p) => p['id'].toString() == savedProgramId,
+          orElse: () => allPrograms.first, // fallback لو ما لقاش (نادر جداً)
+        );
+        uniData['university_programs'] = [savedProg];
       }
 
+      // الموديل يقوم فقط بالتحويل (Mapping)
       return UniversityModel.fromJson(
         uniData,
-        studentProfile: studentData,
-        status: item['status'] ?? 'saved',
+        calculatedScore: item['calculated_score'],
+        currentStatus: item['status'],
+      ).copyWith(
         notes: item['notes'] ?? '',
-        hasTranscripts: item['has_transcripts'] ?? false,
-        hasCv: item['has_cv'] ?? false,
-        hasSop: item['has_sop'] ?? false,
-        hasBachelorCert: item['has_bachelor_cert'] ?? false,
+        hasTranscripts: userData['has_transcripts'],
+        hasCv: userData['has_cv'],
+        hasSop: userData['has_sop'],
+        hasBachelorCert: userData['has_bachelor_cert'],
       );
     }).toList();
   }
 
   @override
-  Future<bool> checkIfSaved(String universityId) async {
-    return await remoteDataSource.checkIfSaved(universityId);
+  Future<bool> checkIfSaved(String universityId, {String? programId}) async {
+    return await remoteDataSource.checkIfSaved(
+      universityId,
+      programId: programId,
+    );
   }
 
   @override
-  Future<void> removeSavedUniversity(String universityId) async {
-    await remoteDataSource.removeSavedUniversity(universityId);
-    // تأخير بسيط لضمان تزامن قاعدة البيانات قبل جلب البيانات المحدثة
-    await Future.delayed(const Duration(milliseconds: 300));
-  }
-
-  @override
-  Future<void> updateApplicationNotes({
+  Future<void> removeSavedProgram({
     required String universityId,
-    required String newNotes,
+    required String programId,
   }) async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('User not logged in');
+    await remoteDataSource.removeSavedProgram(
+      universityId: universityId,
+      programId: programId,
+    );
+  }
 
-      await Supabase.instance.client
-          .from('my_applications')
-          .update({'notes': newNotes})
-          .eq('user_id', user.id)
-          .eq('university_id', universityId);
-    } catch (e) {
-      throw Exception('Failed to update notes: ${e.toString()}');
-    }
+  @override
+  Future<String> uploadDocument({
+    required String universityId,
+    required String columnName,
+    required File file,
+  }) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    return await remoteDataSource.uploadDocument(
+      userId: user!.id,
+      universityId: universityId,
+      columnName: columnName,
+      file: file,
+    );
   }
 
   @override
   Future<void> updateApplicationDocument({
     required String universityId,
+    String? programId,
     required String columnName,
-    required bool newValue,
+    required dynamic newValue,
   }) async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('User not logged in');
+    final user = Supabase.instance.client.auth.currentUser;
+    await remoteDataSource.updateDocumentStatus(
+      userId: user!.id,
+      columnName: columnName,
+      newValue: newValue,
+    );
+  }
 
-      await Supabase.instance.client
-          .from('my_applications')
-          .update({columnName: newValue})
-          .eq('user_id', user.id)
-          .eq('university_id', universityId);
-    } catch (e) {
-      throw Exception('Failed to update $columnName: ${e.toString()}');
-    }
+  @override
+  Future<void> updateApplicationNotes({
+    required String universityId,
+    String? programId,
+    required String newNotes,
+  }) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    await remoteDataSource.updateNotes(
+      userId: user!.id,
+      universityId: universityId,
+      programId: programId,
+      newNotes: newNotes,
+    );
+  }
+
+  @override
+  Future<void> updateApplicationStatus({
+    required String universityId,
+    required String programId,
+    required String newStatus,
+  }) async {
+    await remoteDataSource.updateApplicationStatus(
+      universityId: universityId,
+      programId: programId,
+      newStatus: newStatus,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getApplicationDetails({
+    required String universityId,
+    required String programId,
+  }) async {
+    return await remoteDataSource.getApplicationDetails(
+      universityId: universityId,
+      programId: programId,
+    );
   }
 }

@@ -3,11 +3,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../data/models/university_model.dart';
+import '../../../domain/entities/university_entity.dart';
 
 class UniversityImageCarousel extends StatelessWidget {
   final List<String> images;
-  final UniversityModel university;
+  final UniversityEntity university;
 
   const UniversityImageCarousel({
     super.key,
@@ -30,11 +30,9 @@ class UniversityImageCarousel extends StatelessWidget {
       ),
       items: images.map((image) {
         return CachedNetworkImage(
-          imageUrl: university.logoUrl ?? '', // لو الـ URL null هيتبعت فاضي
+          imageUrl: image, // ✅ مصلح: استخدم image مش university.logoUrl
           fit: BoxFit.cover,
           width: double.infinity,
-          // لما الصورة بتحمل
-          // استبدل الجزء الخاص بالـ placeholder والـ errorWidget بـ:
           placeholder: (context, url) => const Center(
             child: SizedBox(
               width: 20,
@@ -43,17 +41,14 @@ class UniversityImageCarousel extends StatelessWidget {
             ),
           ),
           errorWidget: (context, url, error) {
-            print(
-              "Error loading image: $error",
-            ); // بص على الـ Debug Console لما الصورة تفشل
-            return const Icon(Icons.broken_image, color: Colors.grey);
+            print('Error loading carousel image: $error');
+            return _buildPlaceholder();
           },
         );
       }).toList(),
     );
   }
 
-  // ده شكل الـ Placeholder الشيك لما الصورة تغيب أو تفشل
   Widget _buildPlaceholder() {
     return Container(
       width: double.infinity,
@@ -64,7 +59,7 @@ class UniversityImageCarousel extends StatelessWidget {
           Icon(Icons.image_outlined, size: 50, color: Colors.grey[400]),
           SizedBox(height: 10.h),
           Text(
-            "Image not available",
+            'Image not available',
             style: TextStyle(color: Colors.grey[500]),
           ),
         ],

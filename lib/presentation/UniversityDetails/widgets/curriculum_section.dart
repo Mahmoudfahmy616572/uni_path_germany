@@ -24,7 +24,7 @@ class UniversityImageCarousel extends StatelessWidget {
             return Container(
               width: double.infinity.w,
               color: const Color(0xFFF1F5F9), // خلفية رمادي هادية
-              child:  Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(

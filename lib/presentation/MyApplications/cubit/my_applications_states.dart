@@ -1,28 +1,33 @@
-import '../../../data/models/university_model.dart';
+import 'package:equatable/equatable.dart';
 
-abstract class MyApplicationsState {}
+import '../../../domain/entities/university_entity.dart';
+
+abstract class MyApplicationsState extends Equatable {
+  const MyApplicationsState();
+  @override
+  List<Object?> get props => [];
+}
 
 class MyApplicationsInitial extends MyApplicationsState {}
 
 class MyApplicationsLoading extends MyApplicationsState {}
 
 class MyApplicationsLoaded extends MyApplicationsState {
-  final List<UniversityModel> allApplications;
-  final List<UniversityModel> filteredApplications;
-  final String activeFilter; // 'all', 'saved', 'preparing', 'applied', etc.
+  final List<UniversityEntity> allApplications;
+  final List<UniversityEntity> filteredApplications;
+  final String activeFilter;
   final Map<String, int> statusCounts;
 
-  MyApplicationsLoaded({
+  const MyApplicationsLoaded({
     required this.allApplications,
     required this.filteredApplications,
     required this.activeFilter,
     required this.statusCounts,
   });
 
-  // 🎯 دالة الـ copyWith لتحديث حقول معينة (مثل حقل الـ filteredApplications عند البحث)
   MyApplicationsLoaded copyWith({
-    List<UniversityModel>? allApplications,
-    List<UniversityModel>? filteredApplications,
+    List<UniversityEntity>? allApplications,
+    List<UniversityEntity>? filteredApplications,
     String? activeFilter,
     Map<String, int>? statusCounts,
   }) {
@@ -34,6 +39,7 @@ class MyApplicationsLoaded extends MyApplicationsState {
     );
   }
 
+  @override
   List<Object?> get props => [
     allApplications,
     filteredApplications,
@@ -44,5 +50,7 @@ class MyApplicationsLoaded extends MyApplicationsState {
 
 class MyApplicationsError extends MyApplicationsState {
   final String message;
-  MyApplicationsError(this.message);
+  const MyApplicationsError(this.message);
+  @override
+  List<Object?> get props => [message];
 }

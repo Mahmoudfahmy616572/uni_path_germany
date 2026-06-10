@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../data/models/university_model.dart';
+import '../../domain/entities/university_entity.dart';
 
 class BuildNotesSection extends StatefulWidget {
-  final UniversityModel university;
+  final UniversityEntity university;
   // 🎯 دالة Callback يتم تنفيذها عند الضغط على حفظ وتمرر النص الجديد
   final Future<void> Function(String newNotes) onSaveNotes;
 

@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:germany_travel/domain/entities/program_entity.dart';
 
-import '../../../data/models/university_model.dart';
+import '../../../domain/entities/university_entity.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
 
 class StickyBottomBar extends StatelessWidget {
-  final UniversityModel university;
+  final UniversityEntity university;
+  final ProgramEntity programId;
   final bool initialSavedCheck;
 
   const StickyBottomBar({
     super.key,
     required this.university,
     required this.initialSavedCheck,
+    required this.programId,
   });
 
   @override
@@ -80,9 +83,10 @@ class StickyBottomBar extends StatelessWidget {
                               ? null
                               : () => context
                                     .read<UniversityDetailsCubit>()
-                                    .toggleSaveUniversity(
-                                      university.id,
-                                      isSaved,
+                                    .toggleSaveProgram(
+                                      universityId: university.id,
+                                      programId: programId.id,
+                                      currentStatus: isSaved,
                                     ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isSaved
@@ -98,7 +102,7 @@ class StickyBottomBar extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: isLoading
-                              ?  SizedBox(
+                              ? SizedBox(
                                   width: 24.w,
                                   height: 24.h,
                                   child: CircularProgressIndicator(

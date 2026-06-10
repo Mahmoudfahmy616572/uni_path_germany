@@ -1,110 +1,70 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:germany_travel/presentation/onboarding/cubit/onboarding_states.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'onboarding_states.dart';
+
 class OnboardingCubit extends Cubit<OnboardingState> {
-  OnboardingCubit() : super(OnboardingDataState());
+  OnboardingCubit() : super(const OnboardingDataState());
 
   final _supabase = Supabase.instance.client;
 
-  // تحديث الخطوة الحالية
-  void changeStep(int step) {
-    if (state is OnboardingDataState) {
-      final currentState = state as OnboardingDataState;
-      emit(currentState.copyWith(currentStep: step));
-    }
-  }
+  OnboardingDataState get _state => state as OnboardingDataState;
 
-  // تحديث البيانات خطوة بخطوة
-  void updateCountry(String country) {
-    if (state is OnboardingDataState) {
-      emit((state as OnboardingDataState).copyWith(targetCountry: country));
-    }
-  }
+  void changeStep(int step) => emit(_state.copyWith(currentStep: step));
 
-  void updateStudyLevel(String level) {
-    if (state is OnboardingDataState) {
-      emit((state as OnboardingDataState).copyWith(studyLevel: level));
-    }
-  }
+  void updateIntake(String intake) =>
+      emit(_state.copyWith(targetIntake: intake));
 
-  void updateField(String field) {
-    if (state is OnboardingDataState) {
-      emit((state as OnboardingDataState).copyWith(fieldOfInterest: field));
-    }
-  }
+  void updateStudyLevel(String level) =>
+      emit(_state.copyWith(studyLevel: level));
 
-  void updateIeltsStatus(bool hasIelts) {
-    if (state is OnboardingDataState) {
-      emit(
-        (state as OnboardingDataState).copyWith(
-          hasIELTS: hasIelts,
-          // لو مفيش آيلتس، صفر السكور تلقائياً
-          ieltsScore: hasIelts ? 6.0 : 0.0,
-        ),
-      );
-    }
-  }
+  void updateField(String field) =>
+      emit(_state.copyWith(fieldOfInterest: field));
 
-  void updateIeltsScore(double score) {
-    if (state is OnboardingDataState) {
-      emit((state as OnboardingDataState).copyWith(ieltsScore: score));
-    }
-  }
+  // 🎯 تحديث لغة الدراسة المفضلة
+  void updateLanguage(String lang) =>
+      emit(_state.copyWith(languagePreference: lang));
 
-  void updateGpa({double? gpa, String? scale}) {
-    if (state is OnboardingDataState) {
-      final currentState = state as OnboardingDataState;
-      emit(
-        currentState.copyWith(
-          gpa: gpa ?? currentState.gpa,
-          gpaScale: scale ?? currentState.gpaScale,
-        ),
-      );
-    }
-  }
+  void updateIeltsStatus(bool hasIelts) => emit(
+    _state.copyWith(hasIELTS: hasIelts, ieltsScore: hasIelts ? 6.0 : 0.0),
+  );
 
-  void updateBudget(String budget) {
-    if (state is OnboardingDataState) {
-      emit((state as OnboardingDataState).copyWith(tuitionBudget: budget));
-    }
-  }
+  void updateIeltsScore(double score) =>
+      emit(_state.copyWith(ieltsScore: score));
+
+  void updateGpa({double? gpa, String? scale}) => emit(
+    _state.copyWith(gpa: gpa ?? _state.gpa, gpaScale: scale ?? _state.gpaScale),
+  );
+
+  void updateBudget(String budget) =>
+      emit(_state.copyWith(tuitionBudget: budget));
 
   void toggleGoal(String goal) {
-    if (state is OnboardingDataState) {
-      final currentState = state as OnboardingDataState;
-      final updatedGoals = List<String>.from(currentState.studentGoals);
-
-      if (updatedGoals.contains(goal)) {
-        updatedGoals.remove(goal);
-      } else {
-        updatedGoals.add(goal);
-      }
-      emit(currentState.copyWith(studentGoals: updatedGoals));
+    final updatedGoals = List<String>.from(_state.studentGoals);
+    if (updatedGoals.contains(goal)) {
+      updatedGoals.remove(goal);
+    } else {
+      updatedGoals.add(goal);
     }
+    emit(_state.copyWith(studentGoals: updatedGoals));
   }
 
-  // 🔥 الرفع النهائي لقاعدة البيانات بسوبابيز في آخر خطوة (Looks Good!)
   Future<void> saveOnboardingData() async {
-    if (state is! OnboardingDataState) return;
-    final currentState = state as OnboardingDataState;
-
+    final currentState = _state;
     emit(currentState.copyWith(isLoading: true, errorMessage: null));
 
     try {
       final user = _supabase.auth.currentUser;
-
-      // 🔴 1. اعمل كومنت للسطر ده مؤقتاً عشان الإكسبشن ما يضربش وأنت بتجرب الـ UI
-      // if (user == null) throw Exception('User not logged in');
-
-      // 🔵 2. خلي كود الرفع يشتغل فقط لو الـ user موجود فعلاً (عشان ما يضربش إيرور من سوبابيز)
       if (user != null) {
         await _supabase
             .from('profiles')
             .update({
-              'target_country': currentState.targetCountry,
+              'target_country': 'Germany',
+              'intake': currentState.targetIntake,
               'degree_level': currentState.studyLevel,
               'target_major': currentState.fieldOfInterest,
+              'language_preference':
+                  currentState.languagePreference, // 🎯 حفظ اللغة
               'has_ielts': currentState.hasIELTS,
               'ielts_score': currentState.hasIELTS
                   ? currentState.ieltsScore
@@ -115,8 +75,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             })
             .eq('id', user.id);
       }
-
-      // 🎯 3. بنعمل emit للحالة دي في كل الأحوال عشان ينقلك لشاشة الـ Home فوراً
       emit(OnboardingSuccess());
     } catch (e) {
       emit(currentState.copyWith(isLoading: false, errorMessage: e.toString()));

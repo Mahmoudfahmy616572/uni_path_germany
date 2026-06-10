@@ -5,162 +5,112 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../cubit/university_search_cubit.dart';
 
 class SearchDropdownsRow extends StatelessWidget {
-  final String currentCountry;
+  final String currentIntake;
   final String currentDegree;
   final String currentMajor;
 
   const SearchDropdownsRow({
     super.key,
-    required this.currentCountry,
+    required this.currentIntake,
     required this.currentDegree,
     required this.currentMajor,
   });
-
-  // خريطة الأعلام السبعة بالملي المتاحة عندك في السيستم
-  String _getFlag(String country) {
-    switch (country.toLowerCase()) {
-      case 'germany':
-        return '🇩🇪';
-      case 'netherlands':
-        return '🇳🇱';
-      case 'united kingdom':
-      case 'uk':
-        return '🇬🇧';
-      case 'usa':
-        return '🇺🇸';
-      case 'canada':
-        return '🇨🇦';
-      case 'italy':
-        return '🇮🇹';
-      case 'spain':
-        return '🇪🇸';
-      default:
-        return '🌍';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // 1. دروب داون الدول بالأعلام
+        // 🎯 دروب داون الفصل الدراسي (Winter/Summer/Both)
         Expanded(
           child: _buildDropdownContainer(
             child: DropdownButton<String>(
-              value: currentCountry,
+              value:
+                  [
+                    'All',
+                    'Winter Semester',
+                    'Summer Semester',
+                    'Both Semesters',
+                  ].contains(currentIntake)
+                  ? currentIntake
+                  : 'All',
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(
-                Icons.arrow_drop_down,
-                color: Color(0xFF64748B),
-                size: 20,
-              ),
               items:
                   [
                     'All',
-                    'Germany',
-                    'Netherlands',
-                    'UK',
-                    'USA',
-                    'Canada',
-                    'Italy',
-                    'Spain',
+                    'Winter Semester',
+                    'Summer Semester',
+                    'Both Semesters',
                   ].map((String val) {
                     return DropdownMenuItem<String>(
                       value: val,
                       child: Text(
-                        val == 'All' ? '🌍 Country' : '${_getFlag(val)} $val',
+                        val == 'All' ? '📅 Intake' : val,
                         style: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
                         ),
                       ),
                     );
                   }).toList(),
-              onChanged: (value) {
-                context.read<UniversitySearchCubit>().updateFilters(
-                  country: value,
-                );
-              },
+              onChanged: (value) => context
+                  .read<UniversitySearchCubit>()
+                  .updateFilters(intake: value),
             ),
           ),
         ),
         SizedBox(width: 8.w),
-
-        // 2. دروب داون الدرجة العلمية
+        // دروب داون الدرجة العلمية
         Expanded(
           child: _buildDropdownContainer(
             child: DropdownButton<String>(
               value: currentDegree,
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(
-                Icons.arrow_drop_down,
-                color: Color(0xFF64748B),
-                size: 20,
-              ),
               items: ['All', 'Bachelor', 'Master', 'PhD'].map((String val) {
                 return DropdownMenuItem<String>(
                   value: val,
                   child: Text(
                     val == 'All' ? '🎓 Degree' : val,
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
                     ),
                   ),
                 );
               }).toList(),
-              onChanged: (value) {
-                context.read<UniversitySearchCubit>().updateFilters(
-                  degree: value,
-                );
-              },
+              onChanged: (value) => context
+                  .read<UniversitySearchCubit>()
+                  .updateFilters(degree: value),
             ),
           ),
         ),
         SizedBox(width: 8.w),
-
-        // 3. دروب داون التخصصات
+        // دروب داون التخصص
         Expanded(
           child: _buildDropdownContainer(
             child: DropdownButton<String>(
               value: currentMajor,
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(
-                Icons.arrow_drop_down,
-                color: Color(0xFF64748B),
-                size: 20,
-              ),
-              items:
-                  [
-                    'All',
-                    'Computer Science',
-                    'Medicine',
-                    'Data Science',
-                    'Biology',
-                  ].map((String val) {
-                    return DropdownMenuItem<String>(
-                      value: val,
-                      child: Text(
-                        val == 'All' ? '🔬 Major' : val,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+              items: ['All', 'Computer Science', 'Medicine', 'Engineering'].map(
+                (String val) {
+                  return DropdownMenuItem<String>(
+                    value: val,
+                    child: Text(
+                      val == 'All' ? '🔬 Major' : val,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    );
-                  }).toList(),
-              onChanged: (value) {
-                context.read<UniversitySearchCubit>().updateFilters(
-                  major: value,
-                );
-              },
+                    ),
+                  );
+                },
+              ).toList(),
+              onChanged: (value) => context
+                  .read<UniversitySearchCubit>()
+                  .updateFilters(major: value),
             ),
           ),
         ),
@@ -170,7 +120,7 @@ class SearchDropdownsRow extends StatelessWidget {
 
   Widget _buildDropdownContainer({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10.r),

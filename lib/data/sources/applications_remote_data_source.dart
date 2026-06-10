@@ -1,10 +1,46 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/match_score_calculator.dart';
+
 abstract class ApplicationsRemoteDataSource {
-  Future<void> saveUniversity(String universityId);
-  Future<List<Map<String, dynamic>>> getMyApplications();
-  Future<void> removeSavedUniversity(String universityId);
-  Future<bool> checkIfSaved(String universityId);
+  Future<void> saveProgram({
+    required String universityId,
+    required String programId,
+  });
+  Future<List<Map<String, dynamic>>> getMyApplicationsWithScores();
+  Future<void> removeSavedProgram({
+    required String universityId,
+    required String programId,
+  });
+  Future<bool> checkIfSaved(String universityId, {String? programId});
+  Future<String> uploadDocument({
+    required String userId,
+    required String universityId,
+    required String columnName,
+    required File file,
+  });
+  Future<void> updateNotes({
+    required String userId,
+    required String universityId,
+    String? programId,
+    required String newNotes,
+  });
+  Future<void> updateDocumentStatus({
+    required String userId,
+    required String columnName,
+    required dynamic newValue,
+  });
+  Future<void> updateApplicationStatus({
+    required String universityId,
+    required String programId,
+    required String newStatus,
+  });
+  Future<Map<String, dynamic>?> getApplicationDetails({
+    required String universityId,
+    required String programId,
+  });
 }
 
 class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
@@ -12,60 +48,194 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
   ApplicationsRemoteDataSourceImpl(this.client);
 
   @override
-  Future<void> saveUniversity(String universityId) async {
+  Future<void> saveProgram({
+    required String universityId,
+    required String programId,
+  }) async {
     final user = client.auth.currentUser;
-    if (user == null) throw Exception("User not logged in");
     await client.from('my_applications').insert({
-      'user_id': user.id,
+      'user_id': user!.id,
       'university_id': universityId,
+      'program_id': programId,
       'status': 'saved',
-      'created_at': DateTime.now().toIso8601String(), // للتأكد من الترتيب
+      'created_at': DateTime.now().toIso8601String(),
     });
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getMyApplications() async {
-    try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception("User not logged in");
-
-      // التعديل: الترتيب يجبر الكاش على التحديث
-      final response = await client
-          .from('my_applications')
-          .select('*, test_universities(*)')
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false);
-
-      return List<Map<String, dynamic>>.from(response as List);
-    } catch (e) {
-      throw Exception("Failed to fetch applications: $e");
-    }
-  }
-
-  @override
-  Future<bool> checkIfSaved(String universityId) async {
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) return false;
+  Future<List<Map<String, dynamic>>> getMyApplicationsWithScores() async {
+    final user = client.auth.currentUser;
+    if (user == null) return [];
 
     final response = await client
         .from('my_applications')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('university_id', universityId)
-        .maybeSingle();
+        .select('*, universities(*, university_programs(*))')
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false);
 
+    final rawApps = List<Map<String, dynamic>>.from(response as List);
+    final userData = await client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .single();
+
+    final hydratedApps = <Map<String, dynamic>>[];
+
+    for (var item in rawApps) {
+      final uniData = Map<String, dynamic>.from(item['universities'] as Map);
+      final String savedId = item['program_id'].toString();
+      final programs = uniData['university_programs'] as List? ?? [];
+      final selectedProg = programs
+          .whereType<Map>()
+          .map((p) => Map<String, dynamic>.from(p))
+          .firstWhere(
+        (p) => p['id'].toString() == savedId,
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (selectedProg.isEmpty) {
+        continue;
+      }
+
+      uniData['university_programs'] = [selectedProg];
+      item['universities'] = uniData;
+
+      item['calculated_score'] = MatchScoreCalculator.calculate(
+        studentProfile: userData,
+        programRequiredGpa:
+            (selectedProg['required_gpa'] as num?)?.toDouble() ?? 4.0,
+        programRequiresIelts: selectedProg['requires_ielts'] ?? false,
+        programMinIelts:
+            (selectedProg['min_ielts_score'] as num?)?.toDouble() ?? 0.0,
+        programAcceptsMoi: selectedProg['accepts_moi'] ?? false,
+        programMajor: selectedProg['major']?.toString() ?? '',
+        programName: selectedProg['program_name']?.toString() ?? '',
+        programIntake: selectedProg['intake_type']?.toString() ?? 'Winter',
+        programLanguage:
+            selectedProg['instruction_language']?.toString() ?? 'English',
+        programDegree: selectedProg['degree_type']?.toString() ?? '',
+      );
+      item['user_profile_data'] = userData;
+      hydratedApps.add(item);
+    }
+    return hydratedApps;
+  }
+
+  @override
+  Future<void> removeSavedProgram({
+    required String universityId,
+    required String programId,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) return;
+
+    print(
+      "🗑️ Attempting to delete from DB: User:${user.id}, Uni:$universityId, Prog:$programId",
+    );
+
+    // 🎯 الحذف باستخدام الثلاثة شروط لضمان الدقة واختفاء العنصر
+    final response = await client
+        .from('my_applications')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('university_id', universityId)
+        .eq('program_id', programId);
+
+    print("✅ DB Delete operation completed");
+  }
+
+  @override
+  Future<bool> checkIfSaved(String universityId, {String? programId}) async {
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+    var query = client
+        .from('my_applications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('university_id', universityId);
+    if (programId != null) query = query.eq('program_id', programId);
+    final response = await query.maybeSingle();
     return response != null;
   }
 
   @override
-  Future<void> removeSavedUniversity(String universityId) async {
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) return;
+  Future<String> uploadDocument({
+    required String userId,
+    required String universityId,
+    required String columnName,
+    required File file,
+  }) async {
+    final path = '$userId/global/$columnName.pdf';
+    await client.storage
+        .from('documents')
+        .upload(path, file, fileOptions: const FileOptions(upsert: true));
+    final url = client.storage.from('documents').getPublicUrl(path);
+    await client.from('profiles').update({columnName: url}).eq('id', userId);
+    return url;
+  }
+
+  @override
+  Future<void> updateNotes({
+    required String userId,
+    required String universityId,
+    String? programId,
+    required String newNotes,
+  }) async {
+    var query = client
+        .from('my_applications')
+        .update({'notes': newNotes})
+        .eq('user_id', userId)
+        .eq('university_id', universityId);
+    if (programId != null) query = query.eq('program_id', programId);
+    await query;
+  }
+
+  @override
+  Future<void> updateDocumentStatus({
+    required String userId,
+    required String columnName,
+    required dynamic newValue,
+  }) async {
+    await client
+        .from('profiles')
+        .update({columnName: newValue})
+        .eq('id', userId);
+  }
+
+  @override
+  Future<void> updateApplicationStatus({
+    required String universityId,
+    required String programId,
+    required String newStatus,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) return;
 
     await client
         .from('my_applications')
-        .delete()
-        .eq('user_id', userId)
-        .eq('university_id', universityId);
+        .update({'status': newStatus, 'updated_at': DateTime.now().toIso8601String()})
+        .eq('user_id', user.id)
+        .eq('university_id', universityId)
+        .eq('program_id', programId);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getApplicationDetails({
+    required String universityId,
+    required String programId,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) return null;
+
+    final response = await client
+        .from('my_applications')
+        .select('*, universities(name), university_programs(program_name)')
+        .eq('user_id', user.id)
+        .eq('university_id', universityId)
+        .eq('program_id', programId)
+        .maybeSingle();
+
+    return response;
   }
 }

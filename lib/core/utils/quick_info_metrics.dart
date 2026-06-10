@@ -1,82 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart'; // 🔥 مهم جداً عشان الـ DateFormat يشتغل بدون مشاكل
+import 'package:intl/intl.dart';
 
-import '../../data/models/university_model.dart';
+import '../../domain/entities/university_entity.dart';
 
 class QuickInfoMetrics extends StatelessWidget {
-  final UniversityModel university;
+  final UniversityEntity university;
 
-  // جعلنا الـ Constructor ثابت (const) وده أفضل للأداء في فلاتر
   const QuickInfoMetrics({super.key, required this.university});
 
   @override
   Widget build(BuildContext context) {
-    //  1. تجهيز تاريخ الديدلاين مع قيمة افتراضية آمنة
-    final String deadlineStr = university.deadline ?? "15 Jul 2026";
+    // 1. استخلاص البيانات بأمان (Defensive Programming)
+    final firstProgram = university.programs.isNotEmpty
+        ? university.programs.first
+        : null;
 
-    int daysLeft = 30; // القيمة الافتراضية لو حصل مشكلة في قراءة التاريخ
-    try {
-      DateTime? deadlineDate = DateTime.tryParse(deadlineStr);
-      if (deadlineDate == null) {
-        try {
-          deadlineDate = DateFormat("d MMM yyyy").parse(deadlineStr);
-        } catch (_) {
-          deadlineDate = DateFormat("d MMMM yyyy").parse(deadlineStr);
-        }
-      }
+    final String deadlineStr = firstProgram?.deadline ?? "";
+    final int appFee = firstProgram?.applicationFee ?? 0;
+    final int tuitionFee = firstProgram?.tuitionFeePerYear ?? 0;
 
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final targetDate = DateTime(
-        deadlineDate.year,
-        deadlineDate.month,
-        deadlineDate.day,
-      );
-      daysLeft = targetDate.difference(today).inDays;
-    } catch (_) {}
+    // 2. استخدام دالة المساعدة لمعالجة التاريخ (خارج الـ UI build منطقياً)
+    final String remainingDaysText = _calculateRemainingDays(deadlineStr);
 
-    // 🎨 3. تحديد ألوان كارت الـ Deadline بناءً على المدة المتبقية (أقل من أسبوع = خطر)
-    final bool isUrgent = daysLeft <= 7;
-    final Color deadlineValColor = isUrgent
+    // 3. تحديد الألوان بناءً على الحالة (بدون حسابات معقدة في الـ Build)
+    final bool isUrgent =
+        remainingDaysText.contains("In") &&
+        int.tryParse(remainingDaysText.replaceAll(RegExp(r'[^0-9]'), '')) !=
+            null &&
+        int.parse(remainingDaysText.replaceAll(RegExp(r'[^0-9]'), '')) <= 7;
+
+    final Color deadlineValColor = (isUrgent || remainingDaysText == 'Expired')
         ? const Color(0xFFEF4444)
-        : const Color(0xFF475569); // أحمر أو رمادي داكن
-    final Color deadlineBgColor = isUrgent
+        : const Color(0xFF475569);
+
+    final Color deadlineBgColor = (isUrgent || remainingDaysText == 'Expired')
         ? const Color(0xFFFEE2E2)
-        : const Color(0xFFF1F5F9); // خلفية حمراء فاتحة أو رمادي ناعم
+        : const Color(0xFFF1F5F9);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // كارت الـ Deadline بالألوان الذكية والنص الديناميكي
         _buildMetricItem(
           'Deadline',
-          deadlineStr,
-          _calculateRemainingDays(deadlineStr),
+          deadlineStr.isEmpty ? 'No deadline' : deadlineStr,
+          remainingDaysText,
           deadlineValColor,
           deadlineBgColor,
         ),
-        // كارت مصاريف التقديم
         _buildMetricItem(
-          'Application Fee',
-          "${university.applicationFee}",
+          'App Fee',
+          appFee <= 0 ? "Free" : "€$appFee",
           'Non-refundable',
           const Color(0xFF0F172A),
           const Color(0xFFF1F5F9),
         ),
-        // كارت مصاريف الدراسة (مجاني دايماً في الجامعات الحكومية الألمانية)
         _buildMetricItem(
-          'Tuition (Year)',
-          '${university.tuitionFeePerYear != null ? university.tuitionFeePerYear : "Free"}',
-          'Free Program',
-          const Color(0xFF10B981),
-          const Color(0xFFDCFCE7),
+          'Tuition',
+          tuitionFee <= 0 ? "Free" : "€$tuitionFee",
+          tuitionFee <= 0 ? 'Free Program' : 'Per Year',
+          tuitionFee <= 0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+          tuitionFee <= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
         ),
       ],
     );
   }
 
-  // الـ Widget الخاصة ببناء الكارت الصغير (تم إضافة FittedBox لتأمين النصوص الطويلة)
   Widget _buildMetricItem(
     String label,
     String value,
@@ -99,27 +88,24 @@ class QuickInfoMetrics extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11.sp,
-              color: Color(0xFF64748B),
+              color: const Color(0xFF64748B),
               fontWeight: FontWeight.w500,
             ),
           ),
           SizedBox(height: 6.h),
-          // استخدام FittedBox عشان لو صيغة التاريخ طويلة شوية متعملش Overflow وتصغر تلقائي
           SizedBox(
             height: 20.h,
-            child: Alignment.centerLeft == Alignment.centerLeft
-                ? FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                        color: valColor,
-                      ),
-                    ),
-                  )
-                : null,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.bold,
+                  color: valColor,
+                ),
+              ),
+            ),
           ),
           SizedBox(height: 4.h),
           Container(
@@ -143,13 +129,15 @@ class QuickInfoMetrics extends StatelessWidget {
   }
 }
 
-// 🌐 دالة حساب الأيام المتبقية (خارج الكلاس كـ Top-level function وممتازة جداً)
+// 🛡️ دالة معالجة التاريخ محمية تماماً من الكراش
 String _calculateRemainingDays(String? deadlineStr) {
   if (deadlineStr == null || deadlineStr.isEmpty) return 'No deadline';
 
   try {
-    DateTime? deadlineDate = DateTime.tryParse(deadlineStr);
+    DateTime? deadlineDate;
 
+    // محاولة البارس الآمن
+    deadlineDate = DateTime.tryParse(deadlineStr);
     if (deadlineDate == null) {
       try {
         deadlineDate = DateFormat("d MMM yyyy").parse(deadlineStr);
@@ -157,6 +145,8 @@ String _calculateRemainingDays(String? deadlineStr) {
         deadlineDate = DateFormat("d MMMM yyyy").parse(deadlineStr);
       }
     }
+
+    if (deadlineDate == null) return 'Invalid Date';
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -166,18 +156,12 @@ String _calculateRemainingDays(String? deadlineStr) {
       deadlineDate.day,
     );
 
-    final differenceInDays = targetDate.difference(today).inDays;
+    final diff = targetDate.difference(today).inDays;
 
-    if (differenceInDays < 0) {
-      return 'Expired';
-    } else if (differenceInDays == 0) {
-      return 'Today';
-    } else if (differenceInDays == 1) {
-      return 'Tomorrow';
-    } else {
-      return 'In $differenceInDays days';
-    }
+    if (diff < 0) return 'Expired';
+    if (diff == 0) return 'Today';
+    return 'In $diff days';
   } catch (e) {
-    return 'Error';
+    return 'N/A';
   }
 }

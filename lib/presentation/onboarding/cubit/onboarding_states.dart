@@ -1,26 +1,34 @@
-abstract class OnboardingState {}
+import 'package:equatable/equatable.dart';
+
+abstract class OnboardingState extends Equatable {
+  const OnboardingState();
+  @override
+  List<Object?> get props => [];
+}
 
 class OnboardingInitial extends OnboardingState {}
 
 class OnboardingDataState extends OnboardingState {
   final int currentStep;
-  final String targetCountry; // شاشة 1 (Where do you want to study)
-  final String studyLevel; // شاشة 2 (What level of study)
-  final String fieldOfInterest; // شاشة 3 (Field of interest)
-  final bool hasIELTS; // شاشة 4 (Do you have IELTS)
-  final double ieltsScore; // شاشة 4a (IELTS Score Band)
-  final double gpa; // شاشة 5 (GPA / CGPA)
-  final String gpaScale; // شاشة 5 (4.0 Scale or 10.0 Scale)
-  final String tuitionBudget; // شاشة 6 (Tuition Budget)
-  final List<String> studentGoals; // شاشة 7 (What are your goals)
+  final String targetIntake;
+  final String studyLevel;
+  final String fieldOfInterest;
+  final String languagePreference; // 🎯 الحقل الجديد المضاف
+  final bool hasIELTS;
+  final double ieltsScore;
+  final double gpa;
+  final String gpaScale;
+  final String tuitionBudget;
+  final List<String> studentGoals;
   final bool isLoading;
   final String? errorMessage;
 
-  OnboardingDataState({
+  const OnboardingDataState({
     this.currentStep = 0,
-    this.targetCountry = '',
+    this.targetIntake = '',
     this.studyLevel = '',
     this.fieldOfInterest = '',
+    this.languagePreference = 'English',
     this.hasIELTS = false,
     this.ieltsScore = 0.0,
     this.gpa = 0.0,
@@ -33,9 +41,10 @@ class OnboardingDataState extends OnboardingState {
 
   OnboardingDataState copyWith({
     int? currentStep,
-    String? targetCountry,
+    String? targetIntake,
     String? studyLevel,
     String? fieldOfInterest,
+    String? languagePreference,
     bool? hasIELTS,
     double? ieltsScore,
     double? gpa,
@@ -47,9 +56,10 @@ class OnboardingDataState extends OnboardingState {
   }) {
     return OnboardingDataState(
       currentStep: currentStep ?? this.currentStep,
-      targetCountry: targetCountry ?? this.targetCountry,
+      targetIntake: targetIntake ?? this.targetIntake,
       studyLevel: studyLevel ?? this.studyLevel,
       fieldOfInterest: fieldOfInterest ?? this.fieldOfInterest,
+      languagePreference: languagePreference ?? this.languagePreference,
       hasIELTS: hasIELTS ?? this.hasIELTS,
       ieltsScore: ieltsScore ?? this.ieltsScore,
       gpa: gpa ?? this.gpa,
@@ -60,7 +70,32 @@ class OnboardingDataState extends OnboardingState {
       errorMessage: errorMessage,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    currentStep,
+    targetIntake,
+    studyLevel,
+    fieldOfInterest,
+    languagePreference,
+    hasIELTS,
+    ieltsScore,
+    gpa,
+    gpaScale,
+    tuitionBudget,
+    studentGoals,
+    isLoading,
+    errorMessage,
+  ];
 }
 
-// State خاص بالنجاح النهائي للانتقال لشاشة الـ Home
 class OnboardingSuccess extends OnboardingState {}
+
+class OnboardingFailure extends OnboardingState {
+  final String errorMessage;
+
+  const OnboardingFailure(this.errorMessage);
+
+  @override
+  List<Object?> get props => [errorMessage];
+}

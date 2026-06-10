@@ -1,15 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<AuthResponse> login(String emailOrUsername, String password);
-  Future<AuthResponse> register(
-    String email,
-    String password,
-    String username,
-    String? phone, {
+  Future<AuthResponse> login({
+    required String emailOrUsername,
+    required String password,
+  });
+  Future<AuthResponse> register({
+    required String email,
+    required String password,
+    required String username,
+    String? phone,
     required String targetCountry,
   });
   Future<void> logout();
+  Future<Map<String, dynamic>> getCurrentUserProfile(String userId);
+  Future<void> updateProfile({
+    required String userId,
+    required Map<String, dynamic> updates,
+  });
+
+  // 🎯 وظيفة جديدة لتحديث البريد الإلكتروني في Supabase Auth
+  Future<void> updateEmail(String newEmail);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -17,13 +28,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl(this.client);
 
   @override
-  Future<AuthResponse> login(String emailOrUsername, String password) async {
+  Future<AuthResponse> login({
+    required String emailOrUsername,
+    required String password,
+  }) async {
     final cleanInput = emailOrUsername.trim();
-    if (cleanInput.isEmpty || password.trim().isEmpty) {
-      throw Exception(
-        'برجاء إدخال البريد الإلكتروني (أو اسم المستخدم) وكلمة المرور.',
-      );
-    }
     String targetEmail = cleanInput;
     if (!targetEmail.contains('@')) {
       final userData = await client
@@ -31,7 +40,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           .select('email')
           .eq('username', targetEmail)
           .maybeSingle();
-      if (userData == null) throw Exception('اسم المستخدم هذا غير مسجل لدينا.');
+      if (userData == null) throw Exception('User not found');
       targetEmail = userData['email'];
     }
     return await client.auth.signInWithPassword(
@@ -41,58 +50,53 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponse> register(
-    String email,
-    String password,
-    String username,
-    String? phone, {
+  Future<AuthResponse> register({
+    required String email,
+    required String password,
+    required String username,
+    String? phone,
     required String targetCountry,
   }) async {
-    if (email.trim().isEmpty ||
-        password.trim().isEmpty ||
-        username.trim().isEmpty) {
-      throw Exception('جميع الحقول الأساسية مطلوبة.');
-    }
-
-    final checkUsername = await client
-        .from('profiles')
-        .select('username')
-        .eq('username', username.trim())
-        .maybeSingle();
-    if (checkUsername != null)
-      throw Exception('اسم المستخدم هذا مأخوذ بالفعل، اختر اسماً آخر.');
-
-    final cleanPhone = (phone == null || phone.trim().isEmpty)
-        ? null
-        : phone.trim();
-
     final AuthResponse response = await client.auth.signUp(
       email: email.trim(),
       password: password,
-      phone: cleanPhone,
       data: {
         'username': username.trim(),
-        'phone': cleanPhone,
+        'phone': phone,
         'target_country': targetCountry,
       },
     );
-
-    final user = response.user;
-    if (user != null) {
+    if (response.user != null) {
       await client
           .from('profiles')
           .update({
             'username': username.trim(),
-            'phone': cleanPhone,
+            'phone': phone,
             'target_country': targetCountry,
           })
-          .eq('id', user.id);
+          .eq('id', response.user!.id);
     }
     return response;
   }
 
   @override
-  Future<void> logout() async {
-    await client.auth.signOut();
+  Future<void> logout() async => await client.auth.signOut();
+
+  @override
+  Future<Map<String, dynamic>> getCurrentUserProfile(String userId) async {
+    return await client.from('profiles').select().eq('id', userId).single();
+  }
+
+  @override
+  Future<void> updateProfile({
+    required String userId,
+    required Map<String, dynamic> updates,
+  }) async {
+    await client.from('profiles').update(updates).eq('id', userId);
+  }
+
+  @override
+  Future<void> updateEmail(String newEmail) async {
+    await client.auth.updateUser(UserAttributes(email: newEmail));
   }
 }

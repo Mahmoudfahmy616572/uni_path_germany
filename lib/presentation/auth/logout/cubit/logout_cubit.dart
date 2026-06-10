@@ -9,18 +9,21 @@ class LogoutCubit extends Cubit<LogoutState> {
   LogoutCubit(this.authRepository) : super(LogoutInitial());
 
   Future<void> logout() async {
+    // 🛡️ تأمين: إذا كان التطبيق يقوم بعملية تسجيل خروج بالفعل، نخرج
+    if (state is LogoutLoading) return;
+
     emit(LogoutLoading());
+
     try {
       await authRepository.logout();
 
-      // نتأكد إن الـ Cubit لسه مفتوح قبل ما نبعت الحالة
       if (!isClosed) {
         emit(LogoutSuccess());
       }
     } catch (e) {
-      // وهنا كمان نتأكد
+      // 🛡️ معالجة الخطأ: تحويل الخطأ التقني لرسالة مفهومة
       if (!isClosed) {
-        emit(LogoutError(e.toString()));
+        emit(LogoutError("تعذر تسجيل الخروج، يرجى المحاولة مرة أخرى."));
       }
     }
   }
