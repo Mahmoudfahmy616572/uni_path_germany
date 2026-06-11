@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../core/themes/app_colors.dart';
 
 class SocialAuthButton extends StatelessWidget {
   final String text;
-  final IconData icon;
+  final FaIconData icon;
   final Color iconColor;
 
   const SocialAuthButton({
@@ -30,7 +31,7 @@ class SocialAuthButton extends StatelessWidget {
           ),
         ),
         onPressed: () {},
-        icon: Icon(icon, color: iconColor),
+        icon: FaIcon(icon, color: iconColor),
         label: Text(
           text,
           style: const TextStyle(

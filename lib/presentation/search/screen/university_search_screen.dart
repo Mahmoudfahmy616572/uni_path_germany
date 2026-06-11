@@ -68,7 +68,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         SizedBox(height: 16.h),
                         // 🎯 تم تعديل هذا الـ Widget ليشمل اختيار الـ Intake
                         SearchDropdownsRow(
-                          currentIntake: (state as UniversitySearchLoaded)
+                          currentIntake: (state)
                               .selectedCountry, // استخدمنا الحقل مؤقتاً لتمرير الـ Intake
                           currentDegree: state.selectedDegree,
                           currentMajor: state.selectedMajor,
