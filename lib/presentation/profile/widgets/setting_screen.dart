@@ -68,6 +68,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _generalNotifications;
   late List<int> _reminderDaysBefore;
 
+  // ── Quiet Hours ────────────────────────────────────────────
+  late TimeOfDay? _quietStart;
+  late TimeOfDay? _quietEnd;
+
   static const List<int> _reminderDayOptions = [1, 3, 7, 14, 30];
 
   // ── Dropdown options (نفس الـ Onboarding) ─────────────────
@@ -130,10 +134,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // ✨ GPA Scale — بنقرأها من maxGpa في الـ entity
     final String scaleFromMax =
         widget.user.maxGpa.toStringAsFixed(1).replaceAll('.0', '') +
-        (widget.user.maxGpa % 1 == 0 ? '.0' : '');
-    _selectedGpaScale = _gpaScales.contains(scaleFromMax)
-        ? scaleFromMax
-        : '4.0';
+            (widget.user.maxGpa % 1 == 0 ? '.0' : '');
+    _selectedGpaScale =
+        _gpaScales.contains(scaleFromMax) ? scaleFromMax : '4.0';
 
     _hasIelts = widget.user.hasIelts;
 
@@ -144,6 +147,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _applicationUpdates = prefs.applicationUpdates;
     _generalNotifications = prefs.generalNotifications;
     _reminderDaysBefore = List.from(prefs.reminderDaysBefore);
+
+    // ✨ Quiet Hours — نقرأ من user
+    _quietStart = widget.user.quietStart;
+    _quietEnd = widget.user.quietEnd;
   }
 
   @override
@@ -202,8 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (state is ProfileUpdateSuccess) {
             // تحديث الـ HomeCubit بالبيانات الجديدة
             context.read<HomeCubit>().calculateAndFetchRecommendations(
-              forceRefresh: true,
-            );
+                  forceRefresh: true,
+                );
             // تحديث الـ MyApplicationsCubit
             sl<MyApplicationsCubit>().loadApplications();
 
@@ -295,37 +302,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SizedBox(height: 10.h),
                 _buildNotificationSection(),
 
-                // ── Save Button ───────────────────────────────
-                SizedBox(height: 32.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55.h,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: isLoading ? null : _onSave,
-                    child: isLoading
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          )
-                        : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
+                // Bottom padding for floating button
+                SizedBox(height: 100.h),
+              ],
+            ),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          final bool isLoading = state is ProfileLoading;
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: SizedBox(
+              width: double.infinity,
+              child: FloatingActionButton.extended(
+                onPressed: isLoading ? null : _onSave,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 8,
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.save, size: 20),
+                label: Text(
+                  isLoading ? 'Saving...' : 'Save Changes',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 24.h),
-              ],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+              ),
             ),
           );
         },
@@ -342,10 +359,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     context.read<ProfileCubit>().updateProfileData(
       updates: {
         'username': _nameController.text.trim(),
-        'degree_level': _selectedDegree, // ✅ Bug #1 fix
-        'target_major': _selectedMajor, // ✅ Bug #2 fix
+        'degree_level': _selectedDegree,
+        'target_major': _selectedMajor,
         'gpa': gpa,
-        'max_gpa': maxGpa, // ✨ GPA scale
+        'max_gpa': maxGpa,
         'has_ielts': _hasIelts,
         'ielts_score': _hasIelts ? ielts : 0.0,
         'intake': _selectedIntake,
@@ -356,6 +373,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'application_updates': _applicationUpdates,
         'general_notifications': _generalNotifications,
         'reminder_days_before': _reminderDaysBefore,
+        // ✨ Quiet Hours
+        'quiet_start': _quietStart != null
+            ? '${_quietStart!.hour.toString().padLeft(2, '0')}:${_quietStart!.minute.toString().padLeft(2, '0')}'
+            : null,
+        'quiet_end': _quietEnd != null
+            ? '${_quietEnd!.hour.toString().padLeft(2, '0')}:${_quietEnd!.minute.toString().padLeft(2, '0')}'
+            : null,
       },
     );
   }
@@ -735,6 +759,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Reminder days selector
           _buildReminderDaysSelector(),
+          SizedBox(height: 12.h),
+
+          // Quiet Hours selector
+          _buildQuietHoursSelector(),
         ],
       ],
     );
@@ -788,7 +816,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, color: const Color(0xFF64748B), size: 22),
+              Icon(Icons.timer_outlined,
+                  color: const Color(0xFF64748B), size: 22),
               SizedBox(width: 12.w),
               Text(
                 'Remind me before deadline',
@@ -820,7 +849,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 backgroundColor: const Color(0xFFF1F5F9),
                 checkmarkColor: Colors.white,
                 side: BorderSide(
-                  color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                  color:
+                      isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
                 ),
                 onSelected: (selected) {
                   setState(() {
@@ -836,6 +866,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuietHoursSelector() {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bedtime_outlined, color: const Color(0xFF64748B), size: 22),
+              SizedBox(width: 12.w),
+              Text(
+                'Quiet Hours',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTimePicker(
+                  label: 'Start',
+                  initialTime: _quietStart,
+                  onChanged: (time) => setState(() => _quietStart = time),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildTimePicker(
+                  label: 'End',
+                  initialTime: _quietEnd,
+                  onChanged: (time) => setState(() => _quietEnd = time),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimePicker({
+    required String label,
+    required TimeOfDay? initialTime,
+    required ValueChanged<TimeOfDay?> onChanged,
+  }) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: initialTime ?? TimeOfDay.now(),
+        );
+        if (picked != null) onChanged(picked);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              initialTime != null
+                  ? initialTime.format(context)
+                  : 'Select',
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: const Color(0xFF1E293B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

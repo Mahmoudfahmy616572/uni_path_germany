@@ -1,10 +1,16 @@
 // lib/core/services/notification_service.dart
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart'; // for TimeOfDay
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:workmanager/workmanager.dart';
+
+final _logger = Logger();
 
 class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
@@ -17,6 +23,10 @@ class NotificationService {
   // INIT
   // ──────────────────────────────────────────────
   static Future<void> init() async {
+    // Initialize timezone database
+    tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('UTC'));
+
     // 1. طلب الإذن
     await _messaging.requestPermission(
       alert: true,
@@ -62,8 +72,14 @@ class NotificationService {
     // 8. استمع لتحديث التوكن
     _messaging.onTokenRefresh.listen(_saveFCMToken);
 
-    // 9. جدولة فحص المواعيد
+    // 9. Initialize WorkManager for background tasks (MUST be before scheduling)
+    await Workmanager().initialize(callbackDispatcher);
+
+    // 10. جدولة فحص المواعيد (WorkManager للـ background)
     await _scheduleDeadlineChecks();
+
+    // 11. جدولة الإشعارات المحلية (تعمل offline)
+    await _scheduleLocalDeadlineNotifications();
   }
 
   // ──────────────────────────────────────────────
@@ -91,25 +107,131 @@ class NotificationService {
         await Supabase.instance.client
             .from('profiles')
             .update({'fcm_token': fcmToken}).eq('id', user.id);
-        print('✅ FCM Token saved: ${fcmToken.substring(0, 20)}...');
+        _logger.i('✅ FCM Token saved: ${fcmToken.substring(0, 20)}...');
       }
     } catch (e) {
-      print('❌ Error saving FCM token: $e');
+      _logger.e('❌ Error saving FCM token: $e');
     }
   }
 
   // ──────────────────────────────────────────────
-  // SCHEDULE DEADLINE CHECKS (WorkManager)
+  // SCHEDULE DEADLINE CHECKS (WorkManager - for background sync)
   // ──────────────────────────────────────────────
   static Future<void> _scheduleDeadlineChecks() async {
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
     await Workmanager().registerPeriodicTask(
       'deadline_check_task',
       'checkDeadlines',
       frequency: const Duration(hours: 24),
       initialDelay: const Duration(minutes: 1),
       constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
+  }
+
+  // ──────────────────────────────────────────────
+  // SCHEDULE LOCAL NOTIFICATIONS (offline, using timezone)
+  // ──────────────────────────────────────────────
+  static Future<void> _scheduleLocalDeadlineNotifications() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Fetch user preferences - only select columns that exist
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('notifications_enabled, deadline_reminders, reminder_days_before')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (profile == null) return;
+
+      final bool notificationsEnabled = profile['notifications_enabled'] ?? true;
+      final bool deadlineReminders = profile['deadline_reminders'] ?? true;
+      final List<dynamic> reminderDaysRaw =
+          profile['reminder_days_before'] ?? [7, 3, 1];
+      final List<int> reminderDays = reminderDaysRaw.map((e) => e as int).toList();
+
+      // Quiet hours - not available in DB yet, use defaults
+      TimeOfDay? quietStart = null;
+      TimeOfDay? quietEnd = null;
+
+      if (!notificationsEnabled || !deadlineReminders) return;
+
+      // Cancel existing scheduled notifications for deadlines
+      await _localNotifications.cancelAll();
+
+      // Fetch applications with deadlines
+      final apps = await Supabase.instance.client
+          .from('my_applications')
+          .select(
+              '*, universities(*, university_programs(deadline, program_name))')
+          .eq('user_id', user.id)
+          .inFilter('status', ['saved', 'applied']);
+
+      for (final app in apps) {
+        final programs = (app['universities']['university_programs'] as List);
+        for (final prog in programs) {
+          final deadlineStr = prog['deadline'];
+          if (deadlineStr == null) continue;
+
+          final deadline = DateTime.parse(deadlineStr);
+          final programName = prog['program_name'] as String;
+
+          for (final daysBefore in reminderDays) {
+            final notificationTime = deadline.subtract(Duration(days: daysBefore));
+            
+            // Skip if notification time is in the past
+            if (notificationTime.isBefore(DateTime.now())) continue;
+
+            // Check quiet hours
+            if (_isInQuietHours(notificationTime, quietStart, quietEnd)) continue;
+
+            // Schedule notification
+            await _localNotifications.zonedSchedule(
+              deadline.hashCode + daysBefore.hashCode,
+              '⏰ موعد تقديم قريب',
+              '$programName - المتبقي: $daysBefore أيام (${_formatDate(deadlineStr)})',
+              tz.TZDateTime.from(notificationTime, tz.local),
+              NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'deadline_channel',
+                  'Deadline Reminders',
+                  channelDescription: 'إشعارات مواعيد التقديم',
+                  importance: Importance.high,
+                  priority: Priority.high,
+                ),
+                iOS: const DarwinNotificationDetails(),
+              ),
+              androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.absoluteTime,
+              payload: 'deadline:$programName',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      _logger.e('❌ Error scheduling local notifications: $e');
+    }
+  }
+
+  static bool _isInQuietHours(
+    DateTime dateTime,
+    TimeOfDay? quietStart,
+    TimeOfDay? quietEnd,
+  ) {
+    if (quietStart == null || quietEnd == null) return false;
+    
+    final currentMinutes = dateTime.hour * 60 + dateTime.minute;
+    final startMinutes = quietStart.hour * 60 + quietStart.minute;
+    final endMinutes = quietEnd.hour * 60 + quietEnd.minute;
+
+    // Overnight quiet hours (e.g., 22:00 - 08:00)
+    if (startMinutes > endMinutes) {
+      return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+    }
+    // Same day quiet hours
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
   }
 
   // ──────────────────────────────────────────────
@@ -165,7 +287,7 @@ class NotificationService {
         }
       }
     } catch (e) {
-      print('❌ Error checking deadlines: $e');
+      _logger.e('❌ Error checking deadlines: $e');
     }
   }
 
@@ -305,25 +427,17 @@ class NotificationService {
       _router?.go('/my-applications');
     }
   }
-
-  // ──────────────────────────────────────────────
-  // WORKMANAGER CALLBACK (top-level)
-  // ──────────────────────────────────────────────
-  @pragma('vm:entry-point')
-  static void callbackDispatcher() {
-    Workmanager().executeTask((task, inputData) async {
-      if (task == 'checkDeadlines') {
-        await _checkAndNotifyDeadlines();
-      }
-      return Future.value(true);
-    });
-  }
 }
 
 // ──────────────────────────────────────────────
-// WORKMANAGER CALLBACK (خارج الكلاس - مطلوب)
+// WORKMANAGER CALLBACK (top-level function required by WorkManager)
 // ──────────────────────────────────────────────
 @pragma('vm:entry-point')
 void callbackDispatcher() {
-  NotificationService.callbackDispatcher();
+  Workmanager().executeTask((task, inputData) async {
+    if (task == 'checkDeadlines') {
+      await NotificationService._checkAndNotifyDeadlines();
+    }
+    return Future.value(true);
+  });
 }

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/themes/app_colors.dart';
+import '../../../core/utils/custom_snack_bar.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_states.dart';
 import '../widgets/budget_step_widget.dart';
@@ -39,6 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       create: (context) => OnboardingCubit(),
       child: BlocConsumer<OnboardingCubit, OnboardingState>(
         listener: (context, state) {
+          print('🔄 ONBOARDING LISTENER: ${state.runtimeType}');
           if (state is OnboardingDataState && state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -47,13 +49,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             );
           }
-          if (state is OnboardingSuccess) context.go('/home');
+          if (state is OnboardingSuccess) {
+            print('🔄 ONBOARDING SUCCESS - going to /home');
+            context.go('/home');
+          }
         },
         builder: (context, state) {
-          if (state is! OnboardingDataState)
+          if (state is! OnboardingDataState) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
+          }
 
           final cubit = context.read<OnboardingCubit>();
           return Scaffold(
@@ -140,9 +146,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
-                        onPressed: state.isLoading
-                            ? null
-                            : () => _handleNextAction(state, cubit),
+                      onPressed: state.isLoading
+                          ? null
+                          : () {
+                              print('🔘 BUTTON PRESSED: Step ${state.currentStep}, isLoading: ${state.isLoading}');
+                              _handleNextAction(state, cubit);
+                            },
                         child: state.isLoading
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
@@ -172,6 +181,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       : (step == _totalSteps - 1 ? 'Looks Good! →' : 'Continue');
 
   void _handleNextAction(OnboardingDataState state, OnboardingCubit cubit) {
+    // 🎯 Validate current step before proceeding
+    final errorMessage = _validateCurrentStep(state);
+    if (errorMessage != null) {
+      print('🔴 ONBOARDING VALIDATION FAILED: $errorMessage');
+      print('🔴 Current step: ${state.currentStep}, Goals: ${state.studentGoals}');
+      CustomSnackBar.show(context, message: errorMessage, isError: true);
+      return;
+    }
+
+    print('✅ ONBOARDING VALIDATION PASSED: Step ${state.currentStep}');
+
     // 🎯 Skip IELTS Score if user doesn't have it
     if (state.currentStep == 5 && state.hasIELTS == false) {
       _pageController.animateToPage(
@@ -196,6 +216,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'budgetRange': state.tuitionBudget,
         'goals': state.studentGoals,
       };
+      print('🚀 Navigating to /register with data: $collectedData');
       context.push('/register', extra: collectedData);
     } else {
       _pageController.nextPage(
@@ -203,5 +224,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     }
+  }
+
+  String? _validateCurrentStep(OnboardingDataState state) {
+    switch (state.currentStep) {
+      case 1: // Intake
+        if (state.targetIntake.isEmpty) return 'Please select when you want to start studying';
+        break;
+      case 2: // Study Level
+        if (state.studyLevel.isEmpty) return 'Please select your study level';
+        break;
+      case 3: // Major
+        if (state.fieldOfInterest.isEmpty) return 'Please select your field of interest';
+        break;
+      case 4: // Language
+        if (state.languagePreference.isEmpty) return 'Please select your language preference';
+        break;
+      case 5: // IELTS
+        if (!state.hasIELTS && state.ieltsScore == 0.0) {
+          // This step is just yes/no, validation happens in score step
+        }
+        break;
+      case 6: // IELTS Score
+        if (state.hasIELTS && state.ieltsScore <= 0) return 'Please enter your IELTS score';
+        break;
+      case 7: // GPA
+        if (state.gpa <= 0) return 'Please enter your GPA';
+        if (state.gpaScale.isEmpty) return 'Please select your GPA scale';
+        break;
+      case 8: // Budget
+        if (state.tuitionBudget.isEmpty) return 'Please select your budget range';
+        break;
+      case 9: // Goals
+        if (state.studentGoals.isEmpty) return 'Please select at least one goal';
+        break;
+    }
+    return null;
   }
 }

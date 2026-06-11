@@ -8,6 +8,8 @@
 //     لأن الأغلبية بيبدأوا بالـ Bachelor
 //  ✅ أضفنا NotificationPreferences للإشعارات
 
+import 'package:flutter/material.dart';
+
 class NotificationPreferences {
   final bool notificationsEnabled;
   final bool deadlineReminders;
@@ -57,6 +59,8 @@ class UserEntity {
   final String budgetRange;
   final List<String> goals;
   final NotificationPreferences notificationPreferences; 
+  final TimeOfDay? quietStart; // ✨ Quiet hours
+  final TimeOfDay? quietEnd;   // ✨ Quiet hours
 
   UserEntity({
     required this.id,
@@ -75,5 +79,7 @@ class UserEntity {
     this.budgetRange = '',
     this.goals = const [],
     this.notificationPreferences = const NotificationPreferences(), // ✅ جديد
+    this.quietStart, // ✨ Quiet hours
+    this.quietEnd,   // ✨ Quiet hours
   });
 }

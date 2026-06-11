@@ -25,11 +25,13 @@ class RegisterCubit extends Cubit<RegisterState> {
     String? targetMajor,
     required String intake,
     required String languagePreference, // 🎯 الحقل الجديد
+    String? degreeLevel, // 🎯 Added degree level
   }) async {
     // حماية أساسية
     if (email.isEmpty || password.length < 6) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(RegisterError("تأكد من صحة البريد وكلمة المرور (6 رموز فأكثر)"));
+      }
       return;
     }
 
@@ -59,6 +61,7 @@ class RegisterCubit extends Cubit<RegisterState> {
           targetMajor: targetMajor ?? '',
           intake: intake,
           languagePreference: languagePreference, // 🎯 تمرير اللغة
+          degreeLevel: degreeLevel ?? '', // 🎯 تمرير مستوى الدرجة
         );
       } catch (profileError) {
         print("❌ Profile Sync Error (Non-blocking): $profileError");
@@ -71,9 +74,51 @@ class RegisterCubit extends Cubit<RegisterState> {
     } catch (e) {
       if (!isClosed) {
         String errorMessage = e.toString().replaceAll('Exception:', '').trim();
-        if (errorMessage.contains("already exists")) {
-          errorMessage = "هذا البريد الإلكتروني أو اسم المستخدم مأخوذ بالفعل.";
+        
+        // LOG THE ACTUAL ERROR FOR DEBUGGING
+        print('🔴 REGISTER ERROR: $errorMessage');
+        
+        // Handle specific Supabase errors
+        final lowerError = errorMessage.toLowerCase();
+        if (lowerError.contains('email_confirmation_required') ||
+            lowerError.contains('email_confirm') ||
+            lowerError.contains('confirm your email') ||
+            lowerError.contains('email_not_confirmed')) {
+          errorMessage = 'Please check your email and confirm your account before logging in.';
+        } else if (lowerError.contains("already exists") ||
+                   lowerError.contains("duplicate") ||
+                   lowerError.contains("user_already_exists") ||
+                   lowerError.contains("email_exists")) {
+          errorMessage = 'This email or username is already registered. Try logging in.';
+        } else if (lowerError.contains("weak password") ||
+                   lowerError.contains("password_too_short") ||
+                   lowerError.contains("password should be at least")) {
+          errorMessage = 'Password is too weak. Use at least 6 characters.';
+        } else if (lowerError.contains("invalid email") ||
+                   lowerError.contains("email format") ||
+                   lowerError.contains("malformed")) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (lowerError.contains("network") ||
+                   lowerError.contains("connection") ||
+                   lowerError.contains("timeout") ||
+                   lowerError.contains("socket") ||
+                   lowerError.contains("dns")) {
+          errorMessage = 'Connection failed. Check your internet and try again.';
+        } else if (lowerError.contains("row level security") ||
+                   lowerError.contains("permission denied") ||
+                   lowerError.contains("policy") ||
+                   lowerError.contains("rls")) {
+          errorMessage = 'Server configuration error. Please contact support.';
+        } else if (lowerError.contains("username") && lowerError.contains("taken")) {
+          errorMessage = 'This username is already taken. Choose another.';
+        } else if (lowerError.contains("signup_disabled") ||
+                   lowerError.contains("registration disabled")) {
+          errorMessage = 'Registration is currently disabled. Contact support.';
+        } else {
+          // Include actual error for debugging
+          errorMessage = 'Registration failed: $errorMessage';
         }
+        
         emit(RegisterError(errorMessage));
       }
     }

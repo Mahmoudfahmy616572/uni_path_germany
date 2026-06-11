@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../auth/logout/cubit/logout_cubit.dart';
 import '../cubit/profile_cubit.dart';
@@ -46,12 +47,26 @@ class SideNavigationBar extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.manage_accounts_outlined),
                   title: const Text('Account Settings'),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/settings', extra: context.read<ProfileCubit>());
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.translate_outlined),
                   title: const Text('Language & Intake'),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/settings', extra: context.read<ProfileCubit>());
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('Notifications'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/settings', extra: context.read<ProfileCubit>());
+                  },
                 ),
                 const Divider(),
                 const Spacer(),
@@ -67,7 +82,7 @@ class SideNavigationBar extends StatelessWidget {
                     ),
                     onTap: () {
                       Navigator.pop(context);
-                      context.read<LogoutCubit>().logout();
+                      _showLogoutConfirmation(context);
                     },
                   ),
                 ),
@@ -77,6 +92,31 @@ class SideNavigationBar extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: const Color(0xFF64748B))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<LogoutCubit>().logout();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
   }
 }

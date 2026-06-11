@@ -25,7 +25,7 @@ class QuickActionButton extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -45,10 +45,10 @@ class QuickActionButton extends StatelessWidget {
               },
               splashColor: const Color(
                 0xFF5A67D8,
-              ).withOpacity(0.2), // لون الموجة
+              ).withValues(alpha: 0.2), // لون الموجة
               highlightColor: const Color(
                 0xFF5A67D8,
-              ).withOpacity(0.1), // لون الهالة وقت اللمس
+              ).withValues(alpha: 0.1), // لون الهالة وقت اللمس
               child: SizedBox(
                 width: 60,
                 height: 60,

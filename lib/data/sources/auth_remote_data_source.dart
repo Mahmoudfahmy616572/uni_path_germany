@@ -66,16 +66,24 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'target_country': targetCountry,
       },
     );
+
     if (response.user != null) {
-      await client
-          .from('profiles')
-          .update({
-            'username': username.trim(),
-            'phone': phone,
-            'target_country': targetCountry,
-          })
-          .eq('id', response.user!.id);
+      // Use upsert to create or update profile (handles missing row)
+      await client.from('profiles').upsert({
+        'id': response.user!.id,
+        'email': email.trim(),
+        'username': username.trim(),
+        'phone': phone,
+        'target_country': targetCountry,
+        'created_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'id');
     }
+
+    // Check if email confirmation is required
+    if (response.session == null && response.user != null) {
+      throw Exception('EMAIL_CONFIRMATION_REQUIRED');
+    }
+
     return response;
   }
 

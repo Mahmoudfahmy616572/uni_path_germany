@@ -17,11 +17,10 @@ import '../../presentation/auth/register/screen/register_screen.dart';
 import '../../presentation/onboarding/cubit/onboarding_cubit.dart';
 import '../../presentation/onboarding/screens/OnboardingScreen.dart';
 import '../../presentation/profile/cubit/profile_cubit.dart';
-import '../../presentation/profile/cubit/profile_state.dart'; // 🎯 مهم جداً
+import '../../presentation/profile/cubit/profile_state.dart';
 import '../../presentation/profile/screen/profile_screen.dart';
 import '../../presentation/profile/widgets/documents_screen.dart';
 import '../../presentation/profile/widgets/setting_screen.dart';
-import '../../presentation/saved/screen/saved_screen.dart';
 import '../../presentation/search/screen/university_search_screen.dart';
 import '../services/services_locator.dart';
 
@@ -29,22 +28,29 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/onboarding',
   refreshListenable: GoRouterRefreshStream(sl<AuthService>().authStateChanges),
   redirect: (context, state) {
-    final bool isLoggedIn =
-        Supabase.instance.client.auth.currentSession != null;
+    // Synchronous check for redirect
+    final session = Supabase.instance.client.auth.currentSession;
+    final bool isLoggedIn = session != null;
     final String currentLocation = state.matchedLocation;
+
+    print('🔀 ROUTER REDIRECT: location=$currentLocation, isLoggedIn=$isLoggedIn');
 
     if (!isLoggedIn &&
         currentLocation != '/login' &&
         currentLocation != '/register' &&
         currentLocation != '/onboarding') {
+      print('🔀 REDIRECT -> /login');
       return '/login';
     }
     if (isLoggedIn &&
         (currentLocation == '/login' ||
             currentLocation == '/register' ||
             currentLocation == '/onboarding')) {
+      // For profile completeness, let the screen handle it (HomeScreen checks)
+      print('🔀 REDIRECT -> /home');
       return '/home';
     }
+    print('🔀 NO REDIRECT');
     return null;
   },
   routes: [
@@ -115,7 +121,7 @@ final GoRouter appRouter = GoRouter(
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
           onTap: (index) {
-            if (index == 3) sl<MyApplicationsCubit>().loadApplications();
+            if (index == 2) sl<MyApplicationsCubit>().loadApplications();
             navigationShell.goBranch(index);
           },
           items: const [
@@ -124,10 +130,6 @@ final GoRouter appRouter = GoRouter(
               label: "Home",
             ),
             BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_outline),
-              label: "Saved",
-            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.description_outlined),
               label: "Applications",
@@ -153,14 +155,6 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: '/search',
               builder: (context, state) => const UniversitySearchScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/saved',
-              builder: (context, state) => const SavedScreen(),
             ),
           ],
         ),

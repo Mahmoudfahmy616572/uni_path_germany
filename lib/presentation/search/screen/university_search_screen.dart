@@ -47,10 +47,11 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         ),
         body: BlocBuilder<UniversitySearchCubit, UniversitySearchState>(
           builder: (context, state) {
-            if (state is UniversitySearchLoading)
+            if (state is UniversitySearchLoading) {
               return const Center(
                 child: CircularProgressIndicator(color: Color(0xFF6366F1)),
               );
+            }
 
             if (state is UniversitySearchLoaded) {
               final int totalProgramsCount = state.filteredResults.fold(

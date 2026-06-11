@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/domain/entities/university_entity.dart';
+import 'package:germany_travel/domain/entities/program_entity.dart';
 
+import '../../../core/utils/match_score_calculator.dart';
 import '../../../core/utils/requirements_check_list.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
@@ -16,30 +18,47 @@ class AdmissionAnalysisTables extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UniversityDetailsCubit, UniversityDetailsState>(
       builder: (context, state) {
-        // 🎯 التصليح السحري: سحب القيم بأمان من أول برنامج متاح في الجامعة لتجنب الـ Errors
         final bool hasPrograms = university.programs.isNotEmpty;
-        final firstProgram = hasPrograms ? university.programs.first : null;
+        final ProgramEntity? firstProgram = hasPrograms ? university.programs.first : null;
 
-        // حساب النسب بناءً على الكيان الجديد المستقل
-        double academicScore = 0.85; // نسبة ثابتة أو ديناميكية للـ Major Match
+        // Get student profile from state (populated by checkInitialSaveStatus)
+        final Map<String, dynamic>? studentProfile =
+            (state is UniversitySaveStatus) ? state.studentProfile : null;
 
-        // تشيك الـ GPA من أول برنامج متاح
-        double gpaScore = (firstProgram != null && firstProgram.requiredGpa > 0)
-            ? 0.80
-            : 0.50;
+        // Calculate real breakdown using MatchScoreCalculator
+        final breakdown = (studentProfile != null && firstProgram != null)
+            ? MatchScoreCalculator.getBreakdown(
+                studentProfile: studentProfile,
+                programRequiredGpa: firstProgram.requiredGpa,
+                programRequiresIelts: firstProgram.requiresIelts,
+                programMinIelts: firstProgram.minIeltsScore,
+                programAcceptsMoi: firstProgram.acceptsMoi,
+                programMajor: firstProgram.major,
+                programName: firstProgram.programName,
+                programIntake: firstProgram.intakeType,
+                programLanguage: firstProgram.instructionLanguage,
+                programDegree: firstProgram.degreeType,
+              )
+            : null;
 
-        // تشيك الـ IELTS من أول برنامج متاح
-        double englishScore =
-            (firstProgram != null && !firstProgram.requiresIelts) ? 0.95 : 0.70;
+        // Extract scores from breakdown (0.0 to 1.0 for progress bars)
+        final double academicScore = breakdown != null
+            ? (breakdown['breakdown']['major']['score'] as int) / 25.0
+            : 0.0;
+        final double gpaScore = breakdown != null
+            ? (breakdown['breakdown']['gpa']['score'] as int) / 35.0
+            : 0.0;
+        final double englishScore = breakdown != null
+            ? (breakdown['breakdown']['ielts']['score'] as int) / 15.0
+            : 0.0;
+        final double workExpScore = breakdown != null
+            ? (breakdown['breakdown']['language']['score'] as int) / 15.0
+            : 0.0;
+        // Note: intake score is separate (10 pts), we'll show it as 5th metric if needed
 
-        // تشيك الـ CV والخبرة من حقول الجامعة
-        double workExpScore = (university.hasCv ?? false) ? 0.75 : 0.30;
-
-        // 🎯 الاستفادة من النسبة الكلية المحسوبة مسبقاً بدقة بالمعادلة الألمانية جوه الـ Entity
-        // لو مبعوتة بـ 0 أو مش موجودة بنحسبها مجمعاً كـ fallback
-        double overallScore = university.matchPercentage > 0
-            ? (university.matchPercentage / 100)
-            : (academicScore + gpaScore + englishScore + workExpScore) / 4;
+        final double overallScore = breakdown != null
+            ? (breakdown['total'] as int) / 100.0
+            : 0.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,13 +75,13 @@ class AdmissionAnalysisTables extends StatelessWidget {
                 ),
               ),
             ),
-            _buildMetricRowInline('Academic', academicScore),
+            _buildMetricRowInline('Major Match', academicScore),
             SizedBox(height: 8.h),
             _buildMetricRowInline('GPA Match', gpaScore),
             SizedBox(height: 8.h),
             _buildMetricRowInline('English', englishScore),
             SizedBox(height: 8.h),
-            _buildMetricRowInline('Experience', workExpScore),
+            _buildMetricRowInline('Language Pref', workExpScore),
 
             // صف الـ Overall المجموع
             const Padding(

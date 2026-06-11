@@ -27,7 +27,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
   void initState() {
     super.initState();
     _notesController = TextEditingController(
-      text: widget.university.notes ?? '',
+      text: widget.university.notes,
     );
   }
 
@@ -36,7 +36,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
     super.didUpdateWidget(oldWidget);
     // لو الـ Model اتحدث من بره، نحدث النص المكتوب
     if (oldWidget.university.notes != widget.university.notes && !_isEditing) {
-      _notesController.text = widget.university.notes ?? '';
+      _notesController.text = widget.university.notes;
     }
   }
 
@@ -82,6 +82,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                           // 🎯 نداء الدالة الممررة من الشاشة الأب بشكل آمن تماماً
                           await widget.onSaveNotes(newText);
 
+                          if (!mounted) return;
                           setState(() {
                             _isEditing = false;
                             _isLoading = false;
@@ -93,6 +94,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                             ),
                           );
                         } catch (e) {
+                          if (!mounted) return;
                           setState(() => _isLoading = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

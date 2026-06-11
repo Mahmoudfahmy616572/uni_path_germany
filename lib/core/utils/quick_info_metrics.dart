@@ -146,8 +146,6 @@ String _calculateRemainingDays(String? deadlineStr) {
       }
     }
 
-    if (deadlineDate == null) return 'Invalid Date';
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final targetDate = DateTime(

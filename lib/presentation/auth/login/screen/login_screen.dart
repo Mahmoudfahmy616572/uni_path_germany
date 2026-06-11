@@ -8,14 +8,23 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/errors/message_error_handler.dart';
+import '../../../../core/services/auth/auth_service.dart';
+import '../../../../core/services/services_locator.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../widgets/custom_auth_field.dart';
+import '../../widgets/loading_button.dart';
 import '../../widgets/social_auth_button.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailOrUsernameController =
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -23,12 +32,56 @@ class LoginScreen extends StatelessWidget {
   // 1. تعريف المفتاح الخاص بالـ Form لعمل الـ Validation
   final _formKey = GlobalKey<FormState>();
 
+  // Remember me
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final creds = LocalStorageService.getCredentials();
+    if (creds != null && creds.rememberMe) {
+      setState(() {
+        _rememberMe = true;
+        _emailOrUsernameController.text = creds.email;
+        _passwordController.text = creds.password;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    if (_rememberMe) {
+      await LocalStorageService.saveCredentials(
+        email: _emailOrUsernameController.text.trim(),
+        password: _passwordController.text,
+        rememberMe: true,
+      );
+    } else {
+      await LocalStorageService.clearCredentials();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<LoginCubit, LoginState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is LoginSuccess) {
-          context.go('/');
+          await LocalStorageService.saveCredentials(
+            email: _emailOrUsernameController.text.trim(),
+            password: _passwordController.text,
+            rememberMe: _rememberMe,
+          );
+
+          final authService = sl<AuthService>();
+          final profileComplete = await authService.isProfileComplete();
+          if (profileComplete) {
+            context.go('/home');
+          } else {
+            context.go('/onboarding');
+          }
         } else if (state is LoginError) {
           final friendlyMessage = AuthErrorHandler.getFriendlyErrorMessage(
             context,
@@ -126,6 +179,7 @@ class LoginScreen extends StatelessWidget {
                         hint: "Email address or Username",
                         prefixIcon: Icons.email_outlined,
                         controller: _emailOrUsernameController,
+                        autofocus: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email or username';
@@ -163,36 +217,44 @@ class LoginScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 10.h),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            elevation: 0,
+                      // Remember me checkbox
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                            activeColor: AppColors.primary,
                           ),
-                          onPressed: () {
-                            // 5. التشيك السحري قبل مناداة الكيوبيت
-                            if (_formKey.currentState!.validate()) {
-                              context.read<LoginCubit>().login(
-                                emailOrUsername: _emailOrUsernameController.text
-                                    .trim(),
-                                password: _passwordController.text,
-                              );
-                            }
-                          },
-                          child: Text(
-                            "Login",
+                          Text(
+                            'Remember me',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
+                              color: AppColors.textGrey,
+                              fontSize: 14.sp,
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+
+                      BlocBuilder<LoginCubit, LoginState>(
+                        builder: (context, state) {
+                          return LoadingButton(
+                            text: "Login",
+                            isLoading: state is LoginLoading,
+                            onPressed: state is LoginLoading
+                                ? null
+                                : () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      await _saveCredentials();
+                                      context.read<LoginCubit>().login(
+                                        emailOrUsername: _emailOrUsernameController.text
+                                            .trim(),
+                                        password: _passwordController.text,
+                                      );
+                                    }
+                                  },
+                          );
+                        },
                       ),
 
                       Padding(
