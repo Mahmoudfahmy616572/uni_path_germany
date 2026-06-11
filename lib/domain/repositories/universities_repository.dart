@@ -12,6 +12,7 @@ abstract class UniversitiesRepository {
     required String targetMajor,
     required String intake,
     required String languagePreference,
+    required String degreeLevel, // 🎯 Added degree level
   });
 
   // 🎯 جلب الجامعات مع دعم الصفحات (Pagination)

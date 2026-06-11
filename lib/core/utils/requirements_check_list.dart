@@ -9,6 +9,18 @@ import '../../domain/entities/university_entity.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_state.dart';
 
+class _ChecklistItem {
+  final String title;
+  final String column;
+  final dynamic value;
+
+  const _ChecklistItem({
+    required this.title,
+    required this.column,
+    required this.value,
+  });
+}
+
 class RequirementsChecklistList extends StatelessWidget {
   final UniversityEntity university;
   const RequirementsChecklistList({super.key, required this.university});
@@ -24,29 +36,33 @@ class RequirementsChecklistList extends StatelessWidget {
             : university;
 
         final items = [
-          {
-            'title': 'Academic Transcripts',
-            'col': 'has_transcripts',
-            'value': uni.hasTranscripts,
-          },
-          {
-            'title': 'Bachelor Certificate',
-            'col': 'has_bachelor_cert',
-            'value': uni.hasBachelorCert,
-          },
-          {
-            'title': 'SOP / Motivation Letter',
-            'col': 'has_sop',
-            'value': uni.hasSop,
-          },
-          {'title': 'CV / Resume', 'col': 'has_cv', 'value': uni.hasCv},
+          _ChecklistItem(
+            title: 'Academic Transcripts',
+            column: 'has_transcripts',
+            value: uni.hasTranscripts,
+          ),
+          _ChecklistItem(
+            title: 'Bachelor Certificate',
+            column: 'has_bachelor_cert',
+            value: uni.hasBachelorCert,
+          ),
+          _ChecklistItem(
+            title: 'SOP / Motivation Letter',
+            column: 'has_sop',
+            value: uni.hasSop,
+          ),
+          _ChecklistItem(
+            title: 'CV / Resume',
+            column: 'has_cv',
+            value: uni.hasCv,
+          ),
         ];
 
         return Column(
           children: items.map((item) {
-            final String valStr = item['value']?.toString() ?? '';
+            final String valStr = item.value?.toString() ?? '';
             final bool isUploaded = valStr.startsWith('http');
-            final String colName = item['col'] as String;
+            final String colName = item.column;
 
             double? progress;
             if (state is UniversitySaveStatus) {
@@ -81,7 +97,7 @@ class RequirementsChecklistList extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item['title'] as String,
+                          item.title,
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,

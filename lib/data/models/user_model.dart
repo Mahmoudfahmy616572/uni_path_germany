@@ -7,6 +7,7 @@
 //  ✅ أضفنا hasMoi في toJson — عشان لو احتجنا نحدثه
 //  ✅ أضفنا notificationPreferences في fromJson و toJson
 
+import 'package:flutter/material.dart';
 import '../../domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
@@ -27,10 +28,15 @@ class UserModel extends UserEntity {
     required super.budgetRange,
     required super.goals,
     required super.notificationPreferences, // ✅ جديد
+    required super.quietStart, // ✨ Quiet hours
+    required super.quietEnd,   // ✨ Quiet hours
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final reminderDays = json['reminder_days_before'] as List<dynamic>?;
+    final quietStartStr = json['quiet_start'] as String?;
+    final quietEndStr = json['quiet_end'] as String?;
+    
     return UserModel(
       id: json['id']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
@@ -54,9 +60,16 @@ class UserModel extends UserEntity {
         generalNotifications: json['general_notifications'] as bool? ?? true,
         reminderDaysBefore: reminderDays?.map((e) => e as int).toList() ?? [7, 3, 1],
       ),
+      quietStart: quietStartStr != null
+          ? TimeOfDay(hour: int.parse(quietStartStr.split(':')[0]), minute: int.parse(quietStartStr.split(':')[1]))
+          : null,
+      quietEnd: quietEndStr != null
+          ? TimeOfDay(hour: int.parse(quietEndStr.split(':')[0]), minute: int.parse(quietEndStr.split(':')[1]))
+          : null,
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'intake': intake,
@@ -76,6 +89,12 @@ class UserModel extends UserEntity {
       'application_updates': notificationPreferences.applicationUpdates,
       'general_notifications': notificationPreferences.generalNotifications,
       'reminder_days_before': notificationPreferences.reminderDaysBefore,
+      'quiet_start': quietStart != null
+          ? '${quietStart!.hour.toString().padLeft(2, '0')}:${quietStart!.minute.toString().padLeft(2, '0')}'
+          : null,
+      'quiet_end': quietEnd != null
+          ? '${quietEnd!.hour.toString().padLeft(2, '0')}:${quietEnd!.minute.toString().padLeft(2, '0')}'
+          : null,
     };
   }
 }

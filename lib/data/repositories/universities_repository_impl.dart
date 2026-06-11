@@ -22,6 +22,7 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
     required String targetMajor,
     required String intake,
     required String languagePreference,
+    required String degreeLevel, // 🎯 Added degree level
   }) async {
     try {
       // تمرير البيانات للمصدر لتحديثها في قاعدة البيانات
@@ -35,6 +36,7 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
         'target_major': targetMajor,
         'intake': intake,
         'language_preference': languagePreference,
+        'degree_level': degreeLevel, // 🎯 Added degree level
         'target_country': 'Germany', // ثابت دائماً
       });
     } catch (e) {

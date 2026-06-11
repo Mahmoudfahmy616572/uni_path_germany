@@ -54,8 +54,9 @@ class HomeCubit extends Cubit<HomeState> {
     // شروط التوقف: لو بنحمل حالياً، أو وصلنا للنهاية، أو الحالة مش Loaded
     if (currentState is! HomeLoaded ||
         currentState.isFetchingMore ||
-        currentState.hasReachedMax)
+        currentState.hasReachedMax) {
       return;
+    }
 
     // تفعيل مؤشر التحميل في أسفل القائمة
     emit(currentState.copyWith(isFetchingMore: true));

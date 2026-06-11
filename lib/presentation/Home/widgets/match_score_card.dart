@@ -35,7 +35,7 @@ class MatchScoreCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -138,7 +138,7 @@ class CircularProgressPainter extends CustomPainter {
     Offset center = Offset(size.width / 2, size.height / 2);
     double radius = min(size.width / 2, size.height / 2);
     Paint backgroundPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10.0;
     canvas.drawCircle(center, radius, backgroundPaint);
@@ -164,7 +164,7 @@ class ChartWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint wavePaint = Paint()
-      ..color = Colors.white.withOpacity(0.15)
+      ..color = Colors.white.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     Path path = Path();
@@ -199,12 +199,12 @@ class ChartWavePainter extends CustomPainter {
     canvas.drawPath(path, wavePaint);
 
     // إضافة النقطة اللي في آخر الـ Chart
-    Paint dotPaint = Paint()..color = Colors.white.withOpacity(0.8);
+    Paint dotPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
     canvas.drawCircle(Offset(size.width, size.height * 0.2), 4, dotPaint);
 
     // تلوين خفيف تحت الـ Wave
     Paint fillPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withValues(alpha: 0.05)
       ..style = PaintingStyle.fill;
 
     Path fillPath = Path.from(path);

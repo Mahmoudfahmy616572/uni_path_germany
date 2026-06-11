@@ -57,71 +57,77 @@ class ProfileScreen extends StatelessWidget {
                 }
 
                 if (state is ProfileLoaded) {
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.all(24.r),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(),
-                        SizedBox(height: 24.h),
-                        _buildProfileCard(state),
-                        SizedBox(height: 32.h),
-                        const Text(
-                          'Account & Tools',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        SizedBox(height: 16.h),
+                  return RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<ProfileCubit>().getUserProfile();
+                      },
+                      color: const Color(0xFF4F46E5),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.all(24.r),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeader(),
+                            SizedBox(height: 24.h),
+                            _buildProfileCard(state),
+                            SizedBox(height: 32.h),
+                            const Text(
+                              'Account & Tools',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
 
-                        // 1. زر المستندات
-                        ProfileToolItem(
-                          icon: Icons.description_outlined,
-                          iconColor: Colors.blue,
-                          title: 'My Documents',
-                          subtitle: 'CV, SOP & Certificates',
-                          onTap: () {
-                            final userFiles = UniversityEntity(
-                              id: 'global',
-                              name: 'Vault',
-                              matchPercentage: 0,
-                              logoText: 'V',
-                              country: 'Germany',
-                              programs: [],
-                              hasTranscripts: state.user.gpa,
-                              hasCv: state.user.budgetRange,
-                              hasSop: state.user.languagePreference,
-                              hasBachelorCert: state.user.intake,
-                            );
-                            context.push('/documents', extra: userFiles);
-                          },
-                        ),
+                            // 1. زر المستندات
+                            ProfileToolItem(
+                              icon: Icons.description_outlined,
+                              iconColor: Colors.blue,
+                              title: 'My Documents',
+                              subtitle: 'CV, SOP & Certificates',
+                              onTap: () {
+                                final userFiles = UniversityEntity(
+                                  id: 'global',
+                                  name: 'Vault',
+                                  matchPercentage: 0,
+                                  logoText: 'V',
+                                  country: 'Germany',
+                                  programs: [],
+                                  hasTranscripts: state.user.gpa,
+                                  hasCv: state.user.budgetRange,
+                                  hasSop: state.user.languagePreference,
+                                  hasBachelorCert: state.user.intake,
+                                );
+                                context.push('/documents', extra: userFiles);
+                              },
+                            ),
 
-                        // 2. زر الإعدادات
-                        ProfileToolItem(
-                          icon: Icons.settings_outlined,
-                          iconColor: Colors.grey,
-                          title: 'Account Settings',
-                          subtitle: 'Update your Profile & Preferences',
-                          onTap: () => context.push(
-                            '/settings',
-                            extra: context.read<ProfileCubit>(),
-                          ),
-                        ),
+                            // 2. زر الإعدادات
+                            ProfileToolItem(
+                              icon: Icons.settings_outlined,
+                              iconColor: Colors.grey,
+                              title: 'Account Settings',
+                              subtitle: 'Update your Profile & Preferences',
+                              onTap: () => context.push(
+                                '/settings',
+                                extra: context.read<ProfileCubit>(),
+                              ),
+                            ),
 
-                        // 3. زر تسجيل الخروج
-                        ProfileToolItem(
-                          icon: Icons.logout,
-                          iconColor: Colors.red,
-                          title: 'Logout',
-                          subtitle: 'Sign out of UniPath',
-                          onTap: () => context.read<LogoutCubit>().logout(),
+                            // 3. زر تسجيل الخروج
+                            ProfileToolItem(
+                              icon: Icons.logout,
+                              iconColor: Colors.red,
+                              title: 'Logout',
+                              subtitle: 'Sign out of UniPath',
+                              onTap: () => _showLogoutConfirmation(context),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
+                      ));
                 }
                 return const SizedBox();
               },
@@ -234,6 +240,33 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel',
+                style: TextStyle(color: const Color(0xFF64748B))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<LogoutCubit>().logout();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }

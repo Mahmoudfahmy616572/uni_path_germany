@@ -65,7 +65,7 @@ class _ProgramScoreBadgeState extends State<ProgramScoreBadge>
   @override
   Widget build(BuildContext context) {
     final color = _scoreColor(widget.program.matchScore);
-    final bgColor = color.withOpacity(0.1);
+    final bgColor = color.withValues(alpha: 0.1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +186,7 @@ class _BreakdownContent extends StatelessWidget {
                       vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: _scoreColor(total).withOpacity(0.12),
+                      color: _scoreColor(total).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Text(
@@ -262,23 +262,32 @@ class _BreakdownContent extends StatelessWidget {
   }
 
   String _gpaHint(double studentGpa, double requiredGpa) {
-    if (studentGpa <= 0) return 'GPA not set in your profile';
+    if (studentGpa <= 0) {
+      return 'GPA not set in your profile';
+    }
     final diff = studentGpa - requiredGpa;
-    if (diff >= 0)
+    if (diff >= 0) {
       return 'Your GPA ($studentGpa) meets the requirement ($requiredGpa) ✓';
-    if (diff >= -0.2)
+    }
+    if (diff >= -0.2) {
       return 'Your GPA is $studentGpa — just ${diff.abs().toStringAsFixed(1)} below the required $requiredGpa';
-    if (diff >= -0.5)
+    }
+    if (diff >= -0.5) {
       return 'Your GPA is $studentGpa — required is $requiredGpa (conditional admission possible)';
+    }
     return 'Your GPA ($studentGpa) is below the required $requiredGpa';
   }
 
   String _majorHint(String student, String program, int score) {
-    if (score == 25)
+    if (score == 25) {
       return '"$student" matches this program\'s major exactly ✓';
-    if (score == 18)
+    }
+    if (score == 18) {
       return 'Related field — "$student" is in the same category as "$program"';
-    if (score > 0) return 'Partial match between "$student" and "$program"';
+    }
+    if (score > 0) {
+      return 'Partial match between "$student" and "$program"';
+    }
     return 'Your field "$student" doesn\'t match "$program"';
   }
 
@@ -288,18 +297,28 @@ class _BreakdownContent extends StatelessWidget {
     final double yours = (ielts['student_ielts'] as num?)?.toDouble() ?? 0;
     final int score = ielts['score'] as int;
 
-    if (!req) return 'This program doesn\'t require IELTS';
-    if (score == 15) return 'Your IELTS ($yours) meets the minimum ($min) ✓';
-    if (score == 10) return 'Accepted via MOI certificate ✓';
-    if (score == 8)
+    if (!req) {
+      return 'This program doesn\'t require IELTS';
+    }
+    if (score == 15) {
+      return 'Your IELTS ($yours) meets the minimum ($min) ✓';
+    }
+    if (score == 10) {
+      return 'Accepted via MOI certificate ✓';
+    }
+    if (score == 8) {
       return 'Your IELTS ($yours) is slightly below the required $min';
-    if (yours > 0) return 'Your IELTS ($yours) is below the required $min';
+    }
+    if (yours > 0) {
+      return 'Your IELTS ($yours) is below the required $min';
+    }
     return 'This program requires IELTS ($min+) — add your score in Settings';
   }
 
   String _langHint(String student, String program) {
-    if (student.toLowerCase() == 'both')
+    if (student.toLowerCase() == 'both') {
       return 'You\'re open to both languages ✓';
+    }
     if (student.toLowerCase() == program.toLowerCase()) {
       return 'Program is taught in ${program.toUpperCase()} — matches your preference ✓';
     }
@@ -309,8 +328,12 @@ class _BreakdownContent extends StatelessWidget {
   String _intakeHint(String student, String program) {
     final ns = _normalizeIntake(student);
     final np = _normalizeIntake(program);
-    if (np == 'both' || ns == 'both') return 'Both intakes available ✓';
-    if (ns == np) return 'Intake matches your target semester ✓';
+    if (np == 'both' || ns == 'both') {
+      return 'Both intakes available ✓';
+    }
+    if (ns == np) {
+      return 'Intake matches your target semester ✓';
+    }
     return 'Program intake is $program — you\'re targeting $student';
   }
 

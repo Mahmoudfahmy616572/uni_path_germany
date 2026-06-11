@@ -4,35 +4,43 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/services/services_locator.dart' as di;
 import 'package:germany_travel/firebase_options.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/services/connectivity_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/storage/local_storage_service.dart';
 import 'core/utils/app_router.dart';
+import 'core/widgets/connectivity_banner.dart';
 import 'presentation/Home/cubit/home_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Hive for local storage
+  await Hive.initFlutter();
+  await LocalStorageService.init();
+
   await Supabase.initialize(
-    url: 'https://marrlrggovghhnmhtbgs.supabase.co',
-    anonKey: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe',
+    url: 'https://marrlrggovghhnmhtbgs.supabase.co',     // <-- Replace with your Supabase URL
+    anonKey: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe', // <-- Replace with your Anon Key
     debug: true,
   );
   // Firebase init
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Notifications
+  // Notifications & Connectivity
   await NotificationService.init();
   await di.init();
   NotificationService.setRouter(appRouter);
+  await ConnectivityService().init();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -59,7 +67,7 @@ class MyApp extends StatelessWidget {
                     1.0,
                   ),
                 ),
-                child: widget!,
+                child: ConnectivityBanner(child: widget!),
               );
             },
           );

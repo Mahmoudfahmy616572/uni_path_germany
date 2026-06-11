@@ -40,10 +40,11 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
 
       String searchDegree = "Master";
       String rawDegree = studentData['degree_level'].toString().toLowerCase();
-      if (rawDegree.contains("bachelor"))
+      if (rawDegree.contains("bachelor")) {
         searchDegree = "Bachelor";
-      else if (rawDegree.contains("doctor") || rawDegree.contains("phd"))
+      } else if (rawDegree.contains("doctor") || rawDegree.contains("phd")) {
         searchDegree = "Doctorate";
+      }
 
       final int from = (page - 1) * limit;
       final int to = from + limit - 1;

@@ -40,15 +40,15 @@ class CustomCategoryBar extends StatelessWidget {
                       ? Colors.white
                       : Colors.transparent, // البار المختار يرتفع بخلفية بيضاء
                   borderRadius: BorderRadius.circular(8.r),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF0F172A).withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                 ),
                 child: Center(
                   child: Text(

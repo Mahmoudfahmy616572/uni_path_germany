@@ -1,0 +1,80 @@
+// lib/core/services/connectivity_service.dart
+import 'dart:async';
+import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
+
+enum ConnectionStatus {
+  connected,
+  slow,
+  disconnected,
+}
+
+class ConnectivityService {
+  static final ConnectivityService _instance = ConnectivityService._internal();
+  factory ConnectivityService() => _instance;
+  ConnectivityService._internal();
+
+  final Connectivity _connectivity = Connectivity();
+  final StreamController<ConnectionStatus> _statusController = StreamController.broadcast();
+  Timer? _speedTestTimer;
+
+  Stream<ConnectionStatus> get connectionStatusStream => _statusController.stream;
+  ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
+  ConnectionStatus get currentStatus => _currentStatus;
+
+  Future<void> init() async {
+    // Initial check
+    await _checkConnection();
+
+    // Listen for connectivity changes
+    _connectivity.onConnectivityChanged.listen((result) {
+      _checkConnection();
+    });
+
+    // Periodic speed test (every 30 seconds when connected)
+    _speedTestTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_currentStatus == ConnectionStatus.connected) {
+        _testConnectionSpeed();
+      }
+    });
+  }
+
+  Future<void> _checkConnection() async {
+    final result = await _connectivity.checkConnectivity();
+    if (result == ConnectivityResult.none) {
+      _updateStatus(ConnectionStatus.disconnected);
+    } else {
+      _updateStatus(ConnectionStatus.connected);
+      _testConnectionSpeed();
+    }
+  }
+
+  Future<void> _testConnectionSpeed() async {
+    try {
+      final stopwatch = Stopwatch()..start();
+      // Quick ping to a reliable endpoint (Google DNS)
+      await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 5));
+      final latency = stopwatch.elapsedMilliseconds;
+      if (latency > 3000) {
+        _updateStatus(ConnectionStatus.slow);
+      } else {
+        _updateStatus(ConnectionStatus.connected);
+      }
+    } catch (_) {
+      _updateStatus(ConnectionStatus.slow);
+    }
+  }
+
+  void _updateStatus(ConnectionStatus status) {
+    if (_currentStatus != status) {
+      _currentStatus = status;
+      _statusController.add(status);
+    }
+  }
+
+  void dispose() {
+    _speedTestTimer?.cancel();
+    _statusController.close();
+  }
+}

@@ -134,7 +134,9 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           ),
         );
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error updating notes: $e');
+    }
   }
 
   Future<void> uploadApplicationFile({
@@ -243,7 +245,9 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           ),
         );
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error checking save status: $e');
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────
