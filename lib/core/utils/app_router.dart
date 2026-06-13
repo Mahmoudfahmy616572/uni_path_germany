@@ -15,12 +15,20 @@ import '../../presentation/auth/login/screen/login_screen.dart';
 import '../../presentation/auth/register/cubit/register_cubit.dart';
 import '../../presentation/auth/register/screen/register_screen.dart';
 import '../../presentation/onboarding/cubit/onboarding_cubit.dart';
-import '../../presentation/onboarding/screens/OnboardingScreen.dart';
+import '../../presentation/onboarding/screens/onboarding_screen.dart';
 import '../../presentation/profile/cubit/profile_cubit.dart';
 import '../../presentation/profile/cubit/profile_state.dart';
 import '../../presentation/profile/screen/profile_screen.dart';
 import '../../presentation/profile/widgets/documents_screen.dart';
 import '../../presentation/profile/widgets/setting_screen.dart';
+import '../../presentation/admin/shell/admin_shell.dart';
+import '../../presentation/admin/overview/admin_overview_screen.dart';
+import '../../presentation/admin/users/admin_users_screen.dart';
+import '../../presentation/admin/universities/admin_universities_screen.dart';
+import '../../presentation/admin/programs/admin_programs_screen.dart';
+import '../../presentation/admin/applications/admin_applications_screen.dart';
+import '../../presentation/admin/documents/admin_documents_screen.dart';
+import '../../presentation/admin/settings/admin_settings_screen.dart';
 import '../../presentation/search/screen/university_search_screen.dart';
 import '../services/services_locator.dart';
 
@@ -50,6 +58,7 @@ final GoRouter appRouter = GoRouter(
       print('🔀 REDIRECT -> /home');
       return '/home';
     }
+    // REMOVED: Admin guard moved to AdminShell (was too early here — race with profile load)
     print('🔀 NO REDIRECT');
     return null;
   },
@@ -110,6 +119,41 @@ final GoRouter appRouter = GoRouter(
       path: '/university_details',
       builder: (context, state) =>
           UniversityDetailsScreen(university: state.extra as UniversityEntity),
+    ),
+
+    // ── Admin Dashboard Routes ──
+    ShellRoute(
+      builder: (context, state, child) => AdminShell(child: child),
+      routes: [
+        GoRoute(
+          path: '/admin',
+          builder: (context, state) => const AdminOverviewScreen(),
+        ),
+        GoRoute(
+          path: '/admin/users',
+          builder: (context, state) => const AdminUsersScreen(),
+        ),
+        GoRoute(
+          path: '/admin/universities',
+          builder: (context, state) => const AdminUniversitiesScreen(),
+        ),
+        GoRoute(
+          path: '/admin/programs',
+          builder: (context, state) => const AdminProgramsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/applications',
+          builder: (context, state) => const AdminApplicationsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/documents',
+          builder: (context, state) => const AdminDocumentsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/settings',
+          builder: (context, state) => const AdminSettingsScreen(),
+        ),
+      ],
     ),
 
     StatefulShellRoute.indexedStack(

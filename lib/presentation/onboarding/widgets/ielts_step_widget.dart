@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -34,7 +34,7 @@ class IeltsStepWidget extends StatelessWidget {
           ),
           SizedBox(height: 40.h),
 
-          // خيار: نعم (Yes)
+          // Ø®ÙŠØ§Ø±: Ù†Ø¹Ù… (Yes)
           _buildSelectionCard(
             title: 'Yes, I have an IELTS score',
             subtitle: 'You will enter your band score next',
@@ -45,7 +45,7 @@ class IeltsStepWidget extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          // خيار: لا (No)
+          // Ø®ÙŠØ§Ø±: Ù„Ø§ (No)
           _buildSelectionCard(
             title: 'No, I don\'t have one',
             subtitle: 'Skip language score requirements',
@@ -71,7 +71,7 @@ class IeltsStepWidget extends StatelessWidget {
         padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withOpacity(0.08)
+              ? AppColors.primary.withValues(alpha: 0.08)
               : AppColors.inputBackground,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
@@ -115,7 +115,7 @@ class IeltsStepWidget extends StatelessWidget {
             else
               Icon(
                 Icons.radio_button_off,
-                color: AppColors.textGrey.withOpacity(0.4),
+                color: AppColors.textGrey.withValues(alpha: 0.4),
               ),
           ],
         ),

@@ -135,7 +135,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     );
 
     // 🎯 الحذف باستخدام الثلاثة شروط لضمان الدقة واختفاء العنصر
-    final response = await client
+    await client
         .from('my_applications')
         .delete()
         .eq('user_id', user.id)

@@ -4,6 +4,7 @@ import 'auth_state_enum.dart';
 
 class AuthService {
   final SupabaseClient client;
+  bool cachedIsAdmin = false;
 
   AuthService(this.client);
 

@@ -225,7 +225,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         },
         builder: (context, state) {
-          final bool isLoading = state is ProfileLoading;
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 24.r, vertical: 16.r),
             child: Column(
@@ -394,11 +393,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return StatefulBuilder(
       builder: (context, setInner) {
-        return AnimatedBuilder(
-          animation: _gpaController,
-          builder: (_, __) {
-            final double live = _completeness;
-            return Container(
+        final double live = _completeness;
+        return Container(
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -454,8 +450,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         );
-      },
-    );
   }
 
   Widget _buildSectionLabel(String label) {
@@ -519,7 +513,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: DropdownButtonFormField<String>(
-        value: items.contains(value) ? value : items.first,
+        initialValue: items.contains(value) ? value : items.first,
         isExpanded: true,
         icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
         decoration: InputDecoration(
@@ -684,7 +678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Switch(
                 value: _hasIelts,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
                 onChanged: (v) => setState(() {
                   _hasIelts = v;
                   if (!v) _ieltsScoreController.clear();
@@ -696,8 +690,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // IELTS Score field (shows only when toggled on)
         if (_hasIelts)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          Container(
             child: _buildField(
               'IELTS Score (e.g. 6.5)',
               _ieltsScoreController,
@@ -797,7 +790,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
         ),
         value: value,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
         onChanged: onChanged,
       ),
     );

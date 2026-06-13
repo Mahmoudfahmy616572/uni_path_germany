@@ -1,8 +1,7 @@
-// lib/core/widgets/shimmer_loading.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class ShimmerLoading extends StatefulWidget {
+class ShimmerLoading extends StatelessWidget {
   final Widget child;
   final bool isLoading;
   final double height;
@@ -17,60 +16,15 @@ class ShimmerLoading extends StatefulWidget {
   });
 
   @override
-  State<ShimmerLoading> createState() => _ShimmerLoadingState();
-}
-
-class _ShimmerLoadingState extends State<ShimmerLoading>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!widget.isLoading) return widget.child;
+    if (!isLoading) return child;
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          height: widget.height.h,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius.r),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Colors.grey[300]!,
-                Colors.grey[100]!,
-                Colors.grey[300]!,
-              ],
-              stops: [
-                0.0,
-                _animation.value,
-                1.0,
-              ],
-            ),
-          ),
-        );
-      },
+    return Container(
+      height: height.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius.r),
+        color: Colors.grey[300],
+      ),
     );
   }
 }

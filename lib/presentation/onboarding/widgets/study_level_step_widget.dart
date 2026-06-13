@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/presentation/onboarding/cubit/onboarding_cubit.dart';
 
@@ -70,7 +70,7 @@ class StudyLevelStepWidget extends StatelessWidget {
                   padding: EdgeInsets.all(18.r),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary.withOpacity(0.08)
+                        ? AppColors.primary.withValues(alpha: 0.08)
                         : AppColors.inputBackground,
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
@@ -125,7 +125,7 @@ class StudyLevelStepWidget extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.textGrey.withOpacity(0.4),
+                              color: AppColors.textGrey.withValues(alpha: 0.4),
                               width: 2,
                             ),
                           ),

@@ -32,9 +32,7 @@ class CustomCategoryBar extends StatelessWidget {
           return Expanded(
             child: GestureDetector(
               onTap: () => onTabSelected(index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
+              child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.white

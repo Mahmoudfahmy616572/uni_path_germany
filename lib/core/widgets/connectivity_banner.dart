@@ -61,15 +61,11 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
     return Stack(
       children: [
         widget.child,
-        if (_showBanner && _status != null)
-          Positioned(
-            top: MediaQuery.of(context).padding.top,
-            left: 0,
-            right: 0,
-            child: AnimatedSlide(
-              offset: _showBanner ? Offset.zero : const Offset(0, -1),
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
+          if (_showBanner && _status != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top,
+              left: 0,
+              right: 0,
               child: Material(
                 elevation: 8,
                 child: Container(
@@ -103,10 +99,9 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                         ),
                     ],
                   ),
-                ),
-              ),
             ),
           ),
+        ),
       ],
     );
   }

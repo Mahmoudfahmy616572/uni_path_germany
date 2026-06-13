@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -13,15 +13,15 @@ class BudgetStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // خيارات الميزانية السنوية باليورو/الدولار
+    // Ø®ÙŠØ§Ø±Ø§Øª Ø§Ù„Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø§Ù„Ø³Ù†ÙˆÙŠØ© Ø¨Ø§Ù„ÙŠÙˆØ±Ùˆ/Ø§Ù„Ø¯ÙˆÙ„Ø§Ø±
     final budgetRanges = [
       {
         'label': 'Tuition-Free / Low Fees',
-        'sub': 'Under €3,000 / year (e.g., Public Germany)',
+        'sub': 'Under â‚¬3,000 / year (e.g., Public Germany)',
       },
-      {'label': 'Medium Budget', 'sub': '€3,000 - €10,000 / year'},
-      {'label': 'High Budget', 'sub': '€10,000 - €20,000 / year'},
-      {'label': 'Premium Programs', 'sub': 'Over €20,000 / year'},
+      {'label': 'Medium Budget', 'sub': 'â‚¬3,000 - â‚¬10,000 / year'},
+      {'label': 'High Budget', 'sub': 'â‚¬10,000 - â‚¬20,000 / year'},
+      {'label': 'Premium Programs', 'sub': 'Over â‚¬20,000 / year'},
     ];
 
     return Padding(
@@ -50,7 +50,7 @@ class BudgetStepWidget extends StatelessWidget {
               itemCount: budgetRanges.length,
               itemBuilder: (context, index) {
                 final budget = budgetRanges[index];
-                // المقارنة مع المتغير المتسيف في الـ state
+                // Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø© Ù…Ø¹ Ø§Ù„Ù…ØªØºÙŠØ± Ø§Ù„Ù…ØªØ³ÙŠÙ ÙÙŠ Ø§Ù„Ù€ state
                 final isSelected = state.tuitionBudget == budget['label'];
 
                 return GestureDetector(
@@ -60,7 +60,7 @@ class BudgetStepWidget extends StatelessWidget {
                     padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary.withOpacity(0.08)
+                          ? AppColors.primary.withValues(alpha: 0.08)
                           : AppColors.inputBackground,
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
@@ -116,7 +116,7 @@ class BudgetStepWidget extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.textGrey.withOpacity(0.4),
+                                color: AppColors.textGrey.withValues(alpha: 0.4),
                                 width: 2,
                               ),
                             ),

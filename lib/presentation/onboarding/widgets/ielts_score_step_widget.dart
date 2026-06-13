@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -38,13 +38,13 @@ class IeltsScoreStepWidget extends StatelessWidget {
           ),
           const Spacer(),
 
-          // عرض الـ Score الحالي بشكل دائري كبير وجذاب
+          // Ø¹Ø±Ø¶ Ø§Ù„Ù€ Score Ø§Ù„Ø­Ø§Ù„ÙŠ Ø¨Ø´ÙƒÙ„ Ø¯Ø§Ø¦Ø±ÙŠ ÙƒØ¨ÙŠØ± ÙˆØ¬Ø°Ø§Ø¨
           Center(
             child: Container(
               width: 140,
               height: 140,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primary, width: 3),
               ),
@@ -63,7 +63,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
 
           const Spacer(),
 
-          // الـ Slider لاختيار الـ Score بسهولة
+          // Ø§Ù„Ù€ Slider Ù„Ø§Ø®ØªÙŠØ§Ø± Ø§Ù„Ù€ Score Ø¨Ø³Ù‡ÙˆÙ„Ø©
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppColors.primary,
@@ -71,7 +71,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
               trackHeight: 8.0,
               thumbColor: AppColors.primary,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14.0),
-              overlayColor: AppColors.primary.withOpacity(0.2),
+              overlayColor: AppColors.primary.withValues(alpha: 0.2),
               valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
               valueIndicatorColor: AppColors.primary,
               valueIndicatorTextStyle:  TextStyle(
@@ -82,16 +82,16 @@ class IeltsScoreStepWidget extends StatelessWidget {
             child: Slider(
               value: state.ieltsScore >= 4.0
                   ? state.ieltsScore
-                  : 6.0, // ديفولت 6.0
+                  : 6.0, // Ø¯ÙŠÙÙˆÙ„Øª 6.0
               min: 4.0,
               max: 9.0,
-              divisions: 10, // عشان يتحرك بمقدار 0.5 في كل تكة
+              divisions: 10, // Ø¹Ø´Ø§Ù† ÙŠØªØ­Ø±Ùƒ Ø¨Ù…Ù‚Ø¯Ø§Ø± 0.5 ÙÙŠ ÙƒÙ„ ØªÙƒØ©
               label: state.ieltsScore.toStringAsFixed(1),
               onChanged: (value) => cubit.updateIeltsScore(value),
             ),
           ),
 
-          // أرقام توضيحية تحت الـ Slider
+          // Ø£Ø±Ù‚Ø§Ù… ØªÙˆØ¶ÙŠØ­ÙŠØ© ØªØ­Øª Ø§Ù„Ù€ Slider
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.0),
             child: Row(

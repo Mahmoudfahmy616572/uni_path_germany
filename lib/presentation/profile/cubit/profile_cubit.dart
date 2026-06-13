@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/services/auth/auth_service.dart';
+import '../../../core/services/services_locator.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../../domain/repositories/applications_repository.dart';
 import '../../../domain/repositories/auth_repository.dart';
@@ -24,6 +26,10 @@ class ProfileCubit extends Cubit<ProfileState> {
       final user = await authRepository.getCurrentUser();
       final apps = await applicationsRepository.getMyApplications();
 
+      if (user != null) {
+        sl<AuthService>().cachedIsAdmin = user.role == 'admin';
+      }
+
       if (user != null && !isClosed) {
         double totalMatch = apps.isEmpty
             ? 0
@@ -47,7 +53,6 @@ class ProfileCubit extends Cubit<ProfileState> {
     required Map<String, dynamic> updates,
     String? newEmail,
   }) async {
-    final currentState = state;
     emit(ProfileLoading());
     try {
       final user = await authRepository.getCurrentUser();

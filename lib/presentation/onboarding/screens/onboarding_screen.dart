@@ -26,7 +26,7 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
-  final int _totalSteps = 10; // 🎯 زادت لـ 10
+  final int _totalSteps = 10;
 
   @override
   void dispose() {
@@ -77,16 +77,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       onPressed: () {
                         if (state.currentStep == 7 && state.hasIELTS == false) {
-                          // تعديل الـ Skip
-                          _pageController.animateToPage(
-                            5,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
+                          _pageController.jumpToPage(5);
                         } else {
                           _pageController.previousPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 1),
+                            curve: Curves.linear,
                           );
                         }
                       },
@@ -95,82 +90,84 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             body: SafeArea(
               child: Column(
-                children: [
-                  if (state.currentStep > 0)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0,
-                        vertical: 8.0,
-                      ),
-                      child: LinearProgressIndicator(
-                        value: state.currentStep / (_totalSteps - 1),
-                        backgroundColor: AppColors.inputBackground,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
+                  children: [
+                    if (state.currentStep > 0)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 8.0,
                         ),
-                        minHeight: 6.h,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                    ),
-                  Expanded(
-                    child: PageView(
-                      controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      onPageChanged: (index) => cubit.changeStep(index),
-                      children: [
-                        const WelcomeStepWidget(),
-                        IntakeStepWidget(cubit: cubit, state: state),
-                        StudyLevelStepWidget(cubit: cubit, state: state),
-                        MajorStepWidget(cubit: cubit, state: state),
-                        LanguageStepWidget(
-                          cubit: cubit,
-                          state: state,
-                        ), // 🎯 الشاشة الجديدة
-                        IeltsStepWidget(cubit: cubit, state: state),
-                        IeltsScoreStepWidget(cubit: cubit, state: state),
-                        GpaStepWidget(cubit: cubit, state: state),
-                        BudgetStepWidget(cubit: cubit, state: state),
-                        GoalsStepWidget(cubit: cubit, state: state),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(24.r),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
+                        child: LinearProgressIndicator(
+                          value: state.currentStep / (_totalSteps - 1),
+                          backgroundColor: AppColors.inputBackground,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
                           ),
+                          minHeight: 6.h,
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
-                      onPressed: state.isLoading
-                          ? null
-                          : () {
-                              print('🔘 BUTTON PRESSED: Step ${state.currentStep}, isLoading: ${state.isLoading}');
-                              _handleNextAction(state, cubit);
-                            },
-                        child: state.isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : Text(
-                                _getButtonText(state.currentStep),
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                      ),
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        onPageChanged: (index) {
+                          cubit.changeStep(index);
+                        },
+                        children: [
+                          const WelcomeStepWidget(),
+                          IntakeStepWidget(cubit: cubit, state: state),
+                          StudyLevelStepWidget(cubit: cubit, state: state),
+                          MajorStepWidget(cubit: cubit, state: state),
+                          LanguageStepWidget(
+                            cubit: cubit,
+                            state: state,
+                          ),
+                          IeltsStepWidget(cubit: cubit, state: state),
+                          IeltsScoreStepWidget(cubit: cubit, state: state),
+                          GpaStepWidget(cubit: cubit, state: state),
+                          BudgetStepWidget(cubit: cubit, state: state),
+                          GoalsStepWidget(cubit: cubit, state: state),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: EdgeInsets.all(24.r),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                          ),
+                        onPressed: state.isLoading
+                            ? null
+                            : () {
+                                print('🔘 BUTTON PRESSED: Step ${state.currentStep}, isLoading: ${state.isLoading}');
+                                _handleNextAction(state, cubit);
+                              },
+                          child: state.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : Text(
+                                  _getButtonText(state.currentStep),
+                                  style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
         },
       ),
     );
@@ -194,11 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     // 🎯 Skip IELTS Score if user doesn't have it
     if (state.currentStep == 5 && state.hasIELTS == false) {
-      _pageController.animateToPage(
-        7,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _pageController.jumpToPage(7);
       return;
     }
 
@@ -220,8 +213,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       context.push('/register', extra: collectedData);
     } else {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 1),
+        curve: Curves.linear,
       );
     }
   }

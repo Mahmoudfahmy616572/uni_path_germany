@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/shimmer_loading.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../cubit/university_search_cubit.dart';
 import '../cubit/university_search_state.dart';
@@ -48,8 +49,26 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         body: BlocBuilder<UniversitySearchCubit, UniversitySearchState>(
           builder: (context, state) {
             if (state is UniversitySearchLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+                child: Column(
+                  children: [
+                    ShimmerText(lines: 2, height: 18, spacing: 12),
+                    SizedBox(height: 24.h),
+                    ShimmerCard(height: 50, borderRadius: 12),
+                    SizedBox(height: 16.h),
+                    ShimmerCard(height: 50, borderRadius: 12),
+                    SizedBox(height: 16.h),
+                    ShimmerCard(height: 50, borderRadius: 12),
+                    SizedBox(height: 24.h),
+                    ShimmerText(lines: 3, height: 14, spacing: 8),
+                    SizedBox(height: 16.h),
+                    ...List.generate(3, (i) => Padding(
+                      padding: EdgeInsets.only(bottom: 12.h),
+                      child: ShimmerCard(height: 80, borderRadius: 16),
+                    )),
+                  ],
+                ),
               );
             }
 
@@ -183,6 +202,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                   final uni = results[index];
                   return Card(
                     child: ListTile(
+                      tileColor: Colors.white,
                       onTap: () =>
                           context.push('/university_details', extra: uni),
                       title: Text(

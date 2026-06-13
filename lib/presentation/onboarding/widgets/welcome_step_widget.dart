@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -17,11 +17,11 @@ class WelcomeStepWidget extends StatelessWidget {
             height: 220,
             width: 220,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child:  Center(
-              child: Text('🎓', style: TextStyle(fontSize: 80.sp)),
+              child: Text('ðŸŽ“', style: TextStyle(fontSize: 80.sp)),
             ),
           ),
           SizedBox(height: 40.h),

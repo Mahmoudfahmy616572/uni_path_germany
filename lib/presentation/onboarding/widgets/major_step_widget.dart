@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -13,7 +13,7 @@ class MajorStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // قائمة التخصصات الأساسية
+    // Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ØªØ®ØµØµØ§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ©
     final List<String> majors = [
       'Engineering',
       'Computer Science & IT',
@@ -49,19 +49,19 @@ class MajorStepWidget extends StatelessWidget {
               itemCount: majors.length,
               itemBuilder: (context, index) {
                 final majorName = majors[index];
-                // 🎯 التعديل هنا: بنقارن مع fieldOfInterest اللي موجود في الـ State فعلياً
+                // ðŸŽ¯ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„ Ù‡Ù†Ø§: Ø¨Ù†Ù‚Ø§Ø±Ù† Ù…Ø¹ fieldOfInterest Ø§Ù„Ù„ÙŠ Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ Ø§Ù„Ù€ State ÙØ¹Ù„ÙŠØ§Ù‹
                 final isSelected = state.fieldOfInterest == majorName;
 
                 return GestureDetector(
                   onTap: () => cubit.updateField(
                     majorName,
-                  ), // 🎯 استدعاء الميثود الصحيحة في الـ Cubit
+                  ), // ðŸŽ¯ Ø§Ø³ØªØ¯Ø¹Ø§Ø¡ Ø§Ù„Ù…ÙŠØ«ÙˆØ¯ Ø§Ù„ØµØ­ÙŠØ­Ø© ÙÙŠ Ø§Ù„Ù€ Cubit
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary.withOpacity(0.08)
+                          ? AppColors.primary.withValues(alpha: 0.08)
                           : AppColors.inputBackground,
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
@@ -98,7 +98,7 @@ class MajorStepWidget extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.textGrey.withOpacity(0.4),
+                                color: AppColors.textGrey.withValues(alpha: 0.4),
                                 width: 2,
                               ),
                             ),

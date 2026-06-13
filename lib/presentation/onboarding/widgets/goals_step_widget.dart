@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -13,7 +13,7 @@ class GoalsStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // قائمة الأهداف المقترحة للدراسة في الخارج
+    // Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø£Ù‡Ø¯Ø§Ù Ø§Ù„Ù…Ù‚ØªØ±Ø­Ø© Ù„Ù„Ø¯Ø±Ø§Ø³Ø© ÙÙŠ Ø§Ù„Ø®Ø§Ø±Ø¬
     final goalsList = [
       {'title': 'Find Scholarships', 'icon': Icons.card_giftcard_rounded},
       {'title': 'Post-Study Work Visa', 'icon': Icons.work_outline_rounded},
@@ -48,7 +48,7 @@ class GoalsStepWidget extends StatelessWidget {
               itemCount: goalsList.length,
               itemBuilder: (context, index) {
                 final goal = goalsList[index];
-                // التأكد إذا كان الهدف موجود في الـ List الحالية بالـ state
+                // Ø§Ù„ØªØ£ÙƒØ¯ Ø¥Ø°Ø§ ÙƒØ§Ù† Ø§Ù„Ù‡Ø¯Ù Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ Ø§Ù„Ù€ List Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ø¨Ø§Ù„Ù€ state
                 final isSelected = state.studentGoals.contains(goal['title']);
 
                 return GestureDetector(
@@ -58,7 +58,7 @@ class GoalsStepWidget extends StatelessWidget {
                     padding: EdgeInsets.all(18.r),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary.withOpacity(0.08)
+                          ? AppColors.primary.withValues(alpha: 0.08)
                           : AppColors.inputBackground,
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(

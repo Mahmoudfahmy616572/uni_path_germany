@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/services/services_locator.dart';
 import '../../../core/utils/build_notes_section.dart';
@@ -71,19 +71,37 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
               pinned: true,
               backgroundColor: Colors.white,
               elevation: 0,
-              leading: Padding(
-                padding: EdgeInsets.all(8.r),
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: const Color(0xFF0F172A),
-                      size: 20.r,
+              leading: Row(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(8.r),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: const Color(0xFF0F172A),
+                          size: 20.r,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
-                ),
+                  Padding(
+                    padding: EdgeInsets.all(8.r),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.home_outlined,
+                          color: const Color(0xFF4F46E5),
+                          size: 20.r,
+                        ),
+                        onPressed: () => context.go('/home'),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               flexibleSpace: FlexibleSpaceBar(
                 background: UniversityImageCarousel(
@@ -114,10 +132,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                   SizedBox(height: 28.h),
 
                   // المحتوى الديناميكي بناءً على التبويب المختار
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _buildTabContent(),
-                  ),
+                  _buildTabContent(),
                   SizedBox(height: 40.h),
                 ]),
               ),
@@ -147,28 +162,16 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
               children: [
                 _buildRecommendationToggle(context, isFiltered),
                 SizedBox(height: 16.h),
-                AnimationLimiter(
-                  key: ValueKey<bool>(isFiltered),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: displayPrograms.length,
-                    itemBuilder: (context, index) {
-                      return AnimationConfiguration.staggeredList(
-                        position: index,
-                        duration: const Duration(milliseconds: 350),
-                        child: SlideAnimation(
-                          verticalOffset: 20.0,
-                          child: FadeInAnimation(
-                            child: ProgramCard(
-                              program: displayPrograms[index],
-                              universityId: widget.university.id,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: displayPrograms.length,
+                  itemBuilder: (context, index) {
+                    return ProgramCard(
+                      program: displayPrograms[index],
+                      universityId: widget.university.id,
+                    );
+                  },
                 ),
                 SizedBox(height: 16.h),
                 AboutProgramSection(description: widget.university.description),
@@ -275,10 +278,10 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
   Widget _buildBottomActionBar() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
       child: SafeArea(

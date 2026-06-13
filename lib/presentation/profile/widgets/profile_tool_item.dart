@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProfileToolItem extends StatelessWidget {
@@ -26,17 +26,20 @@ class ProfileToolItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: ListTile(
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+        tileColor: Colors.white,
         leading: Container(
           padding: EdgeInsets.all(8.r),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Icon(icon, color: iconColor),
@@ -55,6 +58,7 @@ class ProfileToolItem extends StatelessWidget {
           color: Colors.grey,
         ),
         onTap: onTap,
+      ),
       ),
     );
   }

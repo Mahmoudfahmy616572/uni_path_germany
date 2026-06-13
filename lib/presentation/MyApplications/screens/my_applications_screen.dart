@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/widgets/shimmer_loading.dart';
 import '../cubit/my_applications_cubits.dart';
 import '../cubit/my_applications_states.dart';
 import '../widgets/MyApplicatons/pipeline_filter_bar.dart';
@@ -56,8 +57,29 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
       body: BlocBuilder<MyApplicationsCubit, MyApplicationsState>(
         builder: (context, state) {
           if (state is MyApplicationsLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
+              child: Column(
+                children: [
+                  ShimmerCard(height: 40, borderRadius: 12),
+                  SizedBox(height: 16.h),
+                  Row(
+                    children: List.generate(3, (i) => Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: i < 2 ? 8.w : 0),
+                        child: ShimmerCard(height: 70, borderRadius: 16),
+                      ),
+                    )),
+                  ),
+                  SizedBox(height: 24.h),
+                  ShimmerCard(height: 50, borderRadius: 12),
+                  SizedBox(height: 16.h),
+                  ...List.generate(4, (i) => Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: ShimmerCard(height: 100, borderRadius: 16),
+                  )),
+                ],
+              ),
             );
           }
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // 1. تعريف المفتاح الخاص بالـ Form لعمل الـ Validation
+  // 1. ØªØ¹Ø±ÙŠÙ Ø§Ù„Ù…ÙØªØ§Ø­ Ø§Ù„Ø®Ø§Øµ Ø¨Ø§Ù„Ù€ Form Ù„Ø¹Ù…Ù„ Ø§Ù„Ù€ Validation
   final _formKey = GlobalKey<FormState>();
 
   // Remember me
@@ -77,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           final authService = sl<AuthService>();
           final profileComplete = await authService.isProfileComplete();
+          if (!context.mounted) return;
           if (profileComplete) {
             context.go('/home');
           } else {
@@ -128,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -152,12 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: EdgeInsets.all(24.r),
                 child: Form(
-                  key: _formKey, // 2. ربط الـ Form بالمفتاح
+                  key: _formKey, // 2. Ø±Ø¨Ø· Ø§Ù„Ù€ Form Ø¨Ø§Ù„Ù…ÙØªØ§Ø­
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Welcome Back! 👋",
+                        "Welcome Back!",
                         style: GoogleFonts.poppins(
                           fontSize: 28.sp,
                           fontWeight: FontWeight.bold,
@@ -174,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 30.h),
 
-                      // 3. إضافة الـ validator لحقل الإيميل/اليوزر نيم
+                      // 3. Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù€ validator Ù„Ø­Ù‚Ù„ Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„/Ø§Ù„ÙŠÙˆØ²Ø± Ù†ÙŠÙ…
                       CustomAuthField(
                         hint: "Email address or Username",
                         prefixIcon: Icons.email_outlined,
@@ -188,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
 
-                      // 4. إضافة الـ validator لحقل الباسورد وتشريع الـ 6 حروف
+                      // 4. Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù€ validator Ù„Ø­Ù‚Ù„ Ø§Ù„Ø¨Ø§Ø³ÙˆØ±Ø¯ ÙˆØªØ´Ø±ÙŠØ¹ Ø§Ù„Ù€ 6 Ø­Ø±ÙˆÙ
                       CustomAuthField(
                         hint: "Password",
                         prefixIcon: Icons.lock_outline,

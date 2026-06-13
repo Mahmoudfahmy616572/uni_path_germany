@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,6 +15,13 @@ import 'core/utils/app_router.dart';
 import 'core/widgets/connectivity_banner.dart';
 import 'presentation/Home/cubit/home_cubit.dart';
 
+class _NoOverscrollBehavior extends ScrollBehavior {
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,8 +30,10 @@ void main() async {
   await LocalStorageService.init();
 
   await Supabase.initialize(
-    url: 'https://marrlrggovghhnmhtbgs.supabase.co',     // <-- Replace with your Supabase URL
-    anonKey: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe', // <-- Replace with your Anon Key
+    url:
+        'https://marrlrggovghhnmhtbgs.supabase.co', // <-- Replace with your Supabase URL
+    publishableKey:
+        'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe', // <-- Replace with your Anon Key
     debug: true,
   );
   // Firebase init
@@ -59,15 +69,24 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'UniPath',
             routerConfig: appRouter,
-            theme: ThemeData(primarySwatch: Colors.indigo),
+            theme: ThemeData(
+              primarySwatch: Colors.indigo,
+              fontFamilyFallback: const [
+                'Noto Color Emoji',
+                'Apple Color Emoji',
+                'Segoe UI Emoji',
+                'Roboto'
+              ],
+            ),
             builder: (context, widget) {
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(
-                    1.0,
+              return ScrollConfiguration(
+                behavior: _NoOverscrollBehavior(),
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(1.0),
                   ),
+                  child: ConnectivityBanner(child: widget!),
                 ),
-                child: ConnectivityBanner(child: widget!),
               );
             },
           );

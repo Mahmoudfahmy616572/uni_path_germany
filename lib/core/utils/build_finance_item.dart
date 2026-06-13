@@ -84,7 +84,7 @@ String calculateRemainingDays(String? deadlineStr) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final targetDate = DateTime(
-      deadlineDate!.year,
+      deadlineDate.year,
       deadlineDate.month,
       deadlineDate.day,
     );

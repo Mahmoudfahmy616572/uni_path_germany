@@ -32,34 +32,21 @@ class ProgramScoreBadge extends StatefulWidget {
   State<ProgramScoreBadge> createState() => _ProgramScoreBadgeState();
 }
 
-class _ProgramScoreBadgeState extends State<ProgramScoreBadge>
-    with SingleTickerProviderStateMixin {
+class _ProgramScoreBadgeState extends State<ProgramScoreBadge> {
   bool _expanded = false;
-  late AnimationController _controller;
-  late Animation<double> _expandAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 280),
-      vsync: this,
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
     super.dispose();
   }
 
   void _toggle() {
     setState(() => _expanded = !_expanded);
-    _expanded ? _controller.forward() : _controller.reverse();
   }
 
   @override
@@ -92,26 +79,20 @@ class _ProgramScoreBadgeState extends State<ProgramScoreBadge>
                   ),
                 ),
                 SizedBox(width: 4.w),
-                AnimatedRotation(
-                  turns: _expanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 280),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 14.sp,
-                    color: color,
-                  ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 14.sp,
+                  color: color,
                 ),
               ],
             ),
           ),
         ),
-        SizeTransition(
-          sizeFactor: _expandAnimation,
-          child: Padding(
+        if (_expanded)
+          Padding(
             padding: EdgeInsets.only(top: 12.h),
             child: _BreakdownContent(program: widget.program),
           ),
-        ),
       ],
     );
   }

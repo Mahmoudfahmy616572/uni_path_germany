@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/themes/app_colors.dart';
@@ -55,7 +55,7 @@ class IntakeStepWidget extends StatelessWidget {
                 padding: EdgeInsets.all(18.r),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withOpacity(0.08)
+                      ? AppColors.primary.withValues(alpha: 0.08)
                       : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(
@@ -99,7 +99,7 @@ class IntakeStepWidget extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

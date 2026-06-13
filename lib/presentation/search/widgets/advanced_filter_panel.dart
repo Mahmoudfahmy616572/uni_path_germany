@@ -238,8 +238,7 @@ class AdvancedFilterPanel extends StatelessWidget {
         ),
         GestureDetector(
           onTap: onToggle,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          child: Container(
             width: 48,
             height: 26,
             decoration: BoxDecoration(

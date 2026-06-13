@@ -12,7 +12,7 @@ class LoginCubit extends Cubit<LoginState> {
     required String emailOrUsername,
     required String password,
   }) async {
-    // 🛡️ حماية: منع الدخول ببيانات فارغة
+    if (isClosed) return;
     if (emailOrUsername.isEmpty || password.isEmpty) {
       emit(LoginError("Please fill in all fields"));
       return;
@@ -24,13 +24,11 @@ class LoginCubit extends Cubit<LoginState> {
         emailOrUsername: emailOrUsername,
         password: password,
       );
-      emit(LoginSuccess());
+      if (!isClosed) emit(LoginSuccess());
     } catch (e) {
+      if (isClosed) return;
       final errorStr = e.toString().toLowerCase();
-      
-      // LOG THE ACTUAL ERROR FOR DEBUGGING
-      print('🔴 LOGIN ERROR: $errorStr');
-      
+
       String errorMessage = "An unexpected error occurred. Please try again.";
 
       if (errorStr.contains("invalid login credentials") ||
@@ -56,7 +54,6 @@ class LoginCubit extends Cubit<LoginState> {
                  errorStr.contains("not found")) {
         errorMessage = "No account found with this email/username.";
       } else {
-        // Include actual error for debugging
         errorMessage = "Login failed: $errorStr";
       }
 

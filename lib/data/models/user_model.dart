@@ -28,8 +28,9 @@ class UserModel extends UserEntity {
     required super.budgetRange,
     required super.goals,
     required super.notificationPreferences, // ✅ جديد
-    required super.quietStart, // ✨ Quiet hours
-    required super.quietEnd,   // ✨ Quiet hours
+    required super.quietStart,
+    required super.quietEnd,
+    required super.role,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -66,10 +67,10 @@ class UserModel extends UserEntity {
       quietEnd: quietEndStr != null
           ? TimeOfDay(hour: int.parse(quietEndStr.split(':')[0]), minute: int.parse(quietEndStr.split(':')[1]))
           : null,
+      role: json['role']?.toString() ?? 'user',
     );
   }
 
-  @override
   Map<String, dynamic> toJson() {
     return {
       'intake': intake,
@@ -95,6 +96,7 @@ class UserModel extends UserEntity {
       'quiet_end': quietEnd != null
           ? '${quietEnd!.hour.toString().padLeft(2, '0')}:${quietEnd!.minute.toString().padLeft(2, '0')}'
           : null,
+      'role': role,
     };
   }
 }

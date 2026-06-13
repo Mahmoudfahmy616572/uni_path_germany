@@ -59,8 +59,9 @@ class UserEntity {
   final String budgetRange;
   final List<String> goals;
   final NotificationPreferences notificationPreferences; 
-  final TimeOfDay? quietStart; // ✨ Quiet hours
-  final TimeOfDay? quietEnd;   // ✨ Quiet hours
+  final TimeOfDay? quietStart;
+  final TimeOfDay? quietEnd;
+  final String role;
 
   UserEntity({
     required this.id,
@@ -79,7 +80,8 @@ class UserEntity {
     this.budgetRange = '',
     this.goals = const [],
     this.notificationPreferences = const NotificationPreferences(), // ✅ جديد
-    this.quietStart, // ✨ Quiet hours
-    this.quietEnd,   // ✨ Quiet hours
+    this.quietStart,
+    this.quietEnd,
+    this.role = 'user',
   });
 }

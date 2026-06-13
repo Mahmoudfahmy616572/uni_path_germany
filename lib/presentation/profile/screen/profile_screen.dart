@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/services/services_locator.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../auth/logout/cubit/logout_cubit.dart';
 import '../../auth/logout/cubit/logout_state.dart';
@@ -18,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🎯 الحل هنا: توفير الـ ProfileCubit والـ LogoutCubit معاً في بداية الشاشة
+    // ðŸŽ¯ Ø§Ù„Ø­Ù„ Ù‡Ù†Ø§: ØªÙˆÙÙŠØ± Ø§Ù„Ù€ ProfileCubit ÙˆØ§Ù„Ù€ LogoutCubit Ù…Ø¹Ø§Ù‹ ÙÙŠ Ø¨Ø¯Ø§ÙŠØ© Ø§Ù„Ø´Ø§Ø´Ø©
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => sl<ProfileCubit>()..getUserProfile()),
@@ -33,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
                 backgroundColor: Colors.green,
               ),
             );
-            // الراوتر سيقوم بالتحويل لصفحة اللوجن تلقائياً
+            // Ø§Ù„Ø±Ø§ÙˆØªØ± Ø³ÙŠÙ‚ÙˆÙ… Ø¨Ø§Ù„ØªØ­ÙˆÙŠÙ„ Ù„ØµÙØ­Ø© Ø§Ù„Ù„ÙˆØ¬Ù† ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹
           } else if (state is LogoutError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -51,8 +52,23 @@ class ProfileScreen extends StatelessWidget {
             child: BlocBuilder<ProfileCubit, ProfileState>(
               builder: (context, state) {
                 if (state is ProfileLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(24.r),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerCard(height: 40, width: 120, borderRadius: 8),
+                        SizedBox(height: 24.h),
+                        ShimmerCard(height: 200, borderRadius: 24),
+                        SizedBox(height: 32.h),
+                        ShimmerCard(height: 20, width: 160, borderRadius: 8),
+                        SizedBox(height: 16.h),
+                        ...List.generate(3, (i) => Padding(
+                          padding: EdgeInsets.only(bottom: 12.h),
+                          child: ShimmerCard(height: 60, borderRadius: 16),
+                        )),
+                      ],
+                    ),
                   );
                 }
 
@@ -82,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 16.h),
 
-                            // 1. زر المستندات
+                            // 1. Ø²Ø± Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§Øª
                             ProfileToolItem(
                               icon: Icons.description_outlined,
                               iconColor: Colors.blue,
@@ -105,7 +121,7 @@ class ProfileScreen extends StatelessWidget {
                               },
                             ),
 
-                            // 2. زر الإعدادات
+                            // 2. Ø²Ø± Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª
                             ProfileToolItem(
                               icon: Icons.settings_outlined,
                               iconColor: Colors.grey,
@@ -117,7 +133,16 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
 
-                            // 3. زر تسجيل الخروج
+                            // Admin Dashboard (admin only)
+                            if (state.user.role == 'admin')
+                              ProfileToolItem(
+                                icon: Icons.shield_outlined,
+                                iconColor: const Color(0xFF6366F1),
+                                title: 'Admin Dashboard',
+                                subtitle: 'Manage users, universities & more',
+                                onTap: () => context.push('/admin'),
+                              ),
+                            // 3. Ø²Ø± ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬
                             ProfileToolItem(
                               icon: Icons.logout,
                               iconColor: Colors.red,
@@ -171,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F46E5).withOpacity(0.2),
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -182,7 +207,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30.r,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
             child: const Icon(Icons.person, color: Colors.white, size: 30),
           ),
           SizedBox(height: 16.h),
@@ -195,10 +220,10 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           Text(
-            '${state.user.targetMajor} • ${state.user.languagePreference} Track',
+            '${state.user.targetMajor} â€¢ ${state.user.languagePreference} Track',
             style: TextStyle(
               fontSize: 14.sp,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
           SizedBox(height: 24.h),
@@ -221,7 +246,7 @@ class ProfileScreen extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16.r),
         ),
         child: Column(

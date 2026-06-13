@@ -229,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Hello, Mahmoud 👋",
+                        "Hello, Mahmoud",
                         style: GoogleFonts.poppins(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.bold,

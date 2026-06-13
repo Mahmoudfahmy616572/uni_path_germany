@@ -45,6 +45,7 @@ class RegisterScreen extends StatelessWidget {
             password: _passwordController.text,
             rememberMe: true,
           );
+          if (!context.mounted) return;
           // Navigate to onboarding to complete profile
           context.go('/onboarding');
         } else if (state is RegisterError) {
@@ -77,7 +78,7 @@ class RegisterScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Create Account 🚀",
+                  "Create Account",
                   style: GoogleFonts.poppins(
                     fontSize: 28.sp,
                     fontWeight: FontWeight.bold,

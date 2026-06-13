@@ -1,3 +1,14 @@
 {
-    "cmake.sourceDirectory": "C:/Users/AG/uni_path_germany/linux"
+    "cmake.sourceDirectory": "C:/Users/AG/uni_path_germany/linux",
+    "gradle.java.home": "C:\\Program Files\\Android\\Android Studio\\jbr",
+    "java.jdt.ls.java.home": "C:\\Program Files\\Android\\Android Studio\\jbr",
+    "java.import.gradle.java.home": "C:\\Program Files\\Android\\Android Studio\\jbr",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Program Files\\Android\\Android Studio\\jbr",
+            "default": true
+        }
+    ],
+    "todo-tree.ripgrep": "C:\\Users\\AG\\AppData\\Local\\rg\\rg.exe"
 }
