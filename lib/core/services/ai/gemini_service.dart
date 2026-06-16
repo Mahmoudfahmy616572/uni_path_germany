@@ -7,15 +7,99 @@ import 'ai_prompts.dart';
 
 class GeminiService {
   final Dio _dio;
+  final String? _serverUrl;
+  final String? _apiKey;
 
-  GeminiService({String? serverUrl})
-      : _dio = Dio(BaseOptions(
-          baseUrl: serverUrl ??
-              const String.fromEnvironment('SERVER_URL',
-                  defaultValue: 'http://localhost:8080'),
+  GeminiService({String? serverUrl, String? apiKey})
+      : _serverUrl = serverUrl ??
+            const String.fromEnvironment('SERVER_URL', defaultValue: ''),
+        _apiKey = apiKey ??
+            const String.fromEnvironment('GEMINI_API_KEY', defaultValue: ''),
+        _dio = Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 120),
         ));
+
+  bool get _useServer => _serverUrl != null && _serverUrl.isNotEmpty;
+
+  String get _baseUrl => _useServer
+      ? _serverUrl!
+      : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
+
+  Future<String> _callGemini(String prompt,
+      {double temperature = 0.4, int maxOutputTokens = 8192}) async {
+    if (_useServer) {
+      final response = await _dio.post('$_serverUrl/api/ai/chat',
+          data: {
+            'prompt': prompt,
+            'temperature': temperature,
+            'maxOutputTokens': maxOutputTokens,
+          });
+      return response.data['text'] as String? ?? '';
+    }
+
+    if (_apiKey == null || _apiKey.isEmpty) {
+      throw Exception(
+          'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
+    }
+
+    final response = await _dio.post(
+      '$_baseUrl:generateContent?key=$_apiKey',
+      data: {
+        'contents': [
+          {'parts': [{'text': prompt}]}
+        ],
+        'generationConfig': {
+          'temperature': temperature,
+          'maxOutputTokens': maxOutputTokens,
+        },
+      },
+    );
+    return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+        '';
+  }
+
+  Future<String> _callGeminiWithPdf(
+      String prompt, Uint8List pdfBytes, String mimeType) async {
+    if (_useServer) {
+      final formData = FormData.fromMap({
+        'prompt': prompt,
+        'file': MultipartFile.fromBytes(pdfBytes,
+            filename: 'document.pdf',
+            contentType: DioMediaType.parse(mimeType)),
+      });
+      final response = await _dio.post('$_serverUrl/api/ai/chat-with-pdf',
+          data: formData);
+      return response.data['text'] as String? ?? '';
+    }
+
+    if (_apiKey == null || _apiKey.isEmpty) {
+      throw Exception(
+          'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
+    }
+
+    final base64Data = base64Encode(pdfBytes);
+    final response = await _dio.post(
+      '$_baseUrl:generateContent?key=$_apiKey',
+      data: {
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt},
+              {
+                'inlineData': {
+                  'mimeType': mimeType,
+                  'data': base64Data,
+                }
+              }
+            ]
+          }
+        ],
+      },
+    );
+    return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+        '';
+  }
 
   Future<List<Map<String, dynamic>>> getImprovementSuggestions({
     required Map<String, dynamic> studentProfile,
@@ -27,8 +111,7 @@ class GeminiService {
       programDetails: programDetails,
       breakdown: breakdown,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    final text = response.data['text'] as String? ?? '';
+    final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
       final preview = text.length > 200
@@ -49,8 +132,7 @@ class GeminiService {
       docType: docType,
       documentContent: documentContent,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    final text = response.data['text'] as String? ?? '';
+    final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
       throw Exception('Gemini: $text');
@@ -68,8 +150,7 @@ class GeminiService {
       programDetails: programDetails,
       uploadStatus: uploadStatus,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    final text = response.data['text'] as String? ?? '';
+    final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
       final preview = text.length > 200
@@ -90,15 +171,7 @@ class GeminiService {
     final prompt =
         'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]';
 
-    final formData = FormData.fromMap({
-      'prompt': prompt,
-      'file': MultipartFile.fromBytes(pdfBytes,
-          filename: 'document.pdf', contentType: DioMediaType.parse(mimeType)),
-    });
-
-    final response =
-        await _dio.post('/api/ai/chat-with-pdf', data: formData);
-    final text = response.data['text'] as String? ?? '';
+    final text = await _callGeminiWithPdf(prompt, pdfBytes, mimeType);
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
       throw Exception(
@@ -123,8 +196,7 @@ class GeminiService {
       studentName: studentName,
       studentBackground: studentBackground,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
+    return await _callGemini(prompt);
   }
 
   Future<String> generateCv({
@@ -143,8 +215,7 @@ class GeminiService {
       studentBackground: studentBackground,
       targetDegree: targetDegree,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
+    return await _callGemini(prompt);
   }
 
   Future<String> generateSop({
@@ -165,8 +236,7 @@ class GeminiService {
       studentBackground: studentBackground,
       programHighlights: programHighlights,
     );
-    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
-    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
+    return await _callGemini(prompt);
   }
 
   List<Map<String, dynamic>> _parseJsonResponse(String text) {
