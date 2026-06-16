@@ -2,20 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 import '../cubit/university_search_cubit.dart';
 
 class AdvancedFilterPanel extends StatelessWidget {
   final bool requiresIelts;
-  final bool acceptsMoi; // 🔥
+  final bool acceptsMoi;
   final double maxTuition;
   final String selectedLanguage;
+  final String selectedLocation;
+  final List<String> availableLocations;
 
   const AdvancedFilterPanel({
     super.key,
     required this.requiresIelts,
-    required this.acceptsMoi, // 🔥
+    required this.acceptsMoi,
     required this.maxTuition,
     required this.selectedLanguage,
+    this.selectedLocation = 'All',
+    this.availableLocations = const [],
   });
 
   @override
@@ -23,9 +30,9 @@ class AdvancedFilterPanel extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,14 +46,14 @@ class AdvancedFilterPanel extends StatelessWidget {
                   Icon(
                     Icons.tune_rounded,
                     size: 18,
-                    color: const Color(0xFF1E293B),
-                  ),
-                  SizedBox(width: 6.w),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                ),
+                SizedBox(width: 6.w),
                   Text(
-                    'Filters',
+                    AppLocalizations.of(context).translate('filters'),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                      color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                       fontSize: 15.sp,
                     ),
                   ),
@@ -58,7 +65,7 @@ class AdvancedFilterPanel extends StatelessWidget {
                   context.read<UniversitySearchCubit>().clearAllFilters();
                 },
                 child: Text(
-                  'Clear All',
+                  AppLocalizations.of(context).translate('clearAll'),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF6366F1), // اللون البنفسجي الرايق للتفاعل
@@ -68,14 +75,14 @@ class AdvancedFilterPanel extends StatelessWidget {
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFFF1F5F9)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
           ),
 
           // 1. زرار الـ IELTS التفاعلي
-          _buildToggleRow(
-            title: 'IELTS Required',
+          _buildToggleRow(context,
+            title: AppLocalizations.of(context).translate('ieltsRequired'),
             subtitle: 'Show programs requiring English test',
             value: requiresIelts,
             onToggle: () {
@@ -84,14 +91,14 @@ class AdvancedFilterPanel extends StatelessWidget {
               );
             },
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFFF1F5F9)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
           ),
 
           // 🔥 2. زرار الـ MOI التفاعلي الجديد (بالملي زي الآيلتس)
-          _buildToggleRow(
-            title: 'MOI Accepted',
+          _buildToggleRow(context,
+            title: AppLocalizations.of(context).translate('moiAccepted'),
             subtitle: 'Medium of Instruction certificate support',
             value: acceptsMoi,
             onToggle: () {
@@ -100,9 +107,9 @@ class AdvancedFilterPanel extends StatelessWidget {
               );
             },
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFFF1F5F9)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
           ),
 
           // 3. الـ Slider الحركي للـ Max Tuition Fee
@@ -110,10 +117,10 @@ class AdvancedFilterPanel extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Max Tuition / Year',
+                AppLocalizations.of(context).translate('maxTuitionPerYear'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                   fontSize: 14.sp,
                 ),
               ),
@@ -147,17 +154,17 @@ class AdvancedFilterPanel extends StatelessWidget {
               },
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFFF1F5F9)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
           ),
 
           // 4. اختيار لغة الدراسة (English / German)
           Text(
-            'Instruction Language',
+            AppLocalizations.of(context).translate('instructionLanguage'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
               fontSize: 14.sp,
             ),
           ),
@@ -178,12 +185,12 @@ class AdvancedFilterPanel extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF6366F1)
-                          : const Color(0xFFF8FAFC),
+                          : context.isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF6366F1)
-                            : const Color(0xFFE2E8F0),
+                            : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
                       ),
                     ),
                     child: Center(
@@ -194,7 +201,7 @@ class AdvancedFilterPanel extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.white
-                              : const Color(0xFF64748B),
+                              : context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -203,13 +210,63 @@ class AdvancedFilterPanel extends StatelessWidget {
               );
             }).toList(),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+          ),
+
+          // 5. فلتر الموقع/المدينة
+          Text(
+            AppLocalizations.of(context).translate('locationCity'),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              fontSize: 14.sp,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: context.isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: availableLocations.contains(selectedLocation)
+                    ? selectedLocation
+                    : 'All',
+                isExpanded: true,
+                isDense: true,
+                items: [
+                  DropdownMenuItem(
+                    value: 'All',
+                    child: Text(AppLocalizations.of(context).translate('allLocations')),
+                  ),
+                  ...availableLocations.map((loc) => DropdownMenuItem(
+                        value: loc,
+                        child: Text(loc),
+                      )),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    context
+                        .read<UniversitySearchCubit>()
+                        .updateFilters(location: val);
+                  }
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   // ويدجت مساعدة مخصصة وموحدة للأزرار التفاعلية (IELTS & MOI) لتوفير الكود ومنع التكرار
-  Widget _buildToggleRow({
+  Widget _buildToggleRow(BuildContext context, {
     required String title,
     required String subtitle,
     required bool value,
@@ -225,14 +282,14 @@ class AdvancedFilterPanel extends StatelessWidget {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 fontSize: 14.sp,
               ),
             ),
             SizedBox(height: 2.h),
             Text(
               subtitle,
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.sp),
+              style: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF94A3B8), fontSize: 11.sp),
             ),
           ],
         ),

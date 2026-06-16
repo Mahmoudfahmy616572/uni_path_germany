@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:germany_travel/core/themes/app_colors.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 
 class LoadingButton extends StatelessWidget {
   final String text;
@@ -24,23 +25,25 @@ class LoadingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width - 48.w;
+    final fullWidth = MediaQuery.of(context).size.width - 48.w;
 
-    return Container(
-      width: width,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      width: isLoading ? height : fullWidth,
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius ?? 12.r),
         gradient: LinearGradient(
           colors: backgroundColor != null
               ? [backgroundColor!, backgroundColor!]
-              : [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+              : [context.isDark ? AppColors.primaryPurple : AppColors.primary, (context.isDark ? AppColors.primaryPurple : AppColors.primary).withValues(alpha: 0.8)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: (backgroundColor ?? AppColors.primary).withValues(alpha: 0.3),
+            color: (backgroundColor ?? (context.isDark ? AppColors.primaryPurple : AppColors.primary)).withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

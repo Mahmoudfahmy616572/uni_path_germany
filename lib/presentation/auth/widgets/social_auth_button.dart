@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 
 class SocialAuthButton extends StatelessWidget {
   final String text;
@@ -24,8 +25,8 @@ class SocialAuthButton extends StatelessWidget {
       height: 50,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          side: BorderSide(color: Colors.grey.shade300),
+          backgroundColor: context.isDark ? AppColors.darkCardBg : Colors.white,
+          side: BorderSide(color: context.isDark ? AppColors.darkBorder : Colors.grey.shade300),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -34,8 +35,8 @@ class SocialAuthButton extends StatelessWidget {
         icon: FaIcon(icon, color: iconColor),
         label: Text(
           text,
-          style: const TextStyle(
-            color: AppColors.textDark,
+          style: TextStyle(
+            color: context.isDark ? AppColors.textMain : AppColors.textDark,
             fontWeight: FontWeight.w500,
           ),
         ),

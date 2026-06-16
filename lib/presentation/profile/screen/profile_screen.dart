@@ -3,7 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/services_locator.dart';
+import '../../../core/utils/custom_snack_bar.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../auth/logout/cubit/logout_cubit.dart';
@@ -29,8 +34,8 @@ class ProfileScreen extends StatelessWidget {
         listener: (context, state) {
           if (state is LogoutSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Logged out successfully!'),
+              SnackBar(
+                content: Text(AppLocalizations.of(context).translate('loggedOutSuccess')),
                 backgroundColor: Colors.green,
               ),
             );
@@ -46,7 +51,6 @@ class ProfileScreen extends StatelessWidget {
         },
         child: Scaffold(
           key: _scaffoldKey,
-          backgroundColor: const Color(0xFFF8FAFC),
           endDrawer: const SideNavigationBar(),
           body: SafeArea(
             child: BlocBuilder<ProfileCubit, ProfileState>(
@@ -84,75 +88,134 @@ class ProfileScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildHeader(),
+                            CurtainDrop(
+                              index: 0,
+                              child: _buildHeader(context),
+                            ),
                             SizedBox(height: 24.h),
-                            _buildProfileCard(state),
+                            CurtainDrop(
+                              index: 1,
+                              child: _buildProfileCard(state),
+                            ),
                             SizedBox(height: 32.h),
-                            const Text(
-                              'Account & Tools',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
+                            CurtainDrop(
+                              index: 2,
+                              child: Text(
+                                'Account & Tools',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
+                                ),
                               ),
                             ),
                             SizedBox(height: 16.h),
 
-                            // 1. Ø²Ø± Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§Øª
-                            ProfileToolItem(
-                              icon: Icons.description_outlined,
-                              iconColor: Colors.blue,
-                              title: 'My Documents',
-                              subtitle: 'CV, SOP & Certificates',
-                              onTap: () {
-                                final userFiles = UniversityEntity(
-                                  id: 'global',
-                                  name: 'Vault',
-                                  matchPercentage: 0,
-                                  logoText: 'V',
-                                  country: 'Germany',
-                                  programs: [],
-                                  hasTranscripts: state.user.gpa,
-                                  hasCv: state.user.budgetRange,
-                                  hasSop: state.user.languagePreference,
-                                  hasBachelorCert: state.user.intake,
-                                );
-                                context.push('/documents', extra: userFiles);
-                              },
-                            ),
-
-                            // 2. Ø²Ø± Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª
-                            ProfileToolItem(
-                              icon: Icons.settings_outlined,
-                              iconColor: Colors.grey,
-                              title: 'Account Settings',
-                              subtitle: 'Update your Profile & Preferences',
-                              onTap: () => context.push(
-                                '/settings',
-                                extra: context.read<ProfileCubit>(),
+                            CurtainDrop(
+                              index: 3,
+                              child: ProfileToolItem(
+                                icon: Icons.description_outlined,
+                                iconColor: Colors.blue,
+                                title: 'My Documents',
+                                subtitle: 'CV, SOP & Certificates',
+                                onTap: () {
+                                  final userFiles = UniversityEntity(
+                                    id: 'global',
+                                    name: 'Vault',
+                                    matchPercentage: 0,
+                                    logoText: 'V',
+                                    country: 'Germany',
+                                    programs: [],
+                                    hasTranscripts: state.user.gpa,
+                                    hasCv: state.user.budgetRange,
+                                    hasSop: state.user.languagePreference,
+                                    hasBachelorCert: state.user.intake,
+                                  );
+                                  context.push('/documents', extra: userFiles);
+                                },
                               ),
                             ),
 
-                            // Admin Dashboard (admin only)
+                            CurtainDrop(
+                              index: 4,
+                              child: ProfileToolItem(
+                                icon: Icons.settings_outlined,
+                                iconColor: Colors.grey,
+                                title: AppLocalizations.of(context).translate('accountSettings'),
+                                subtitle: 'Update your Profile & Preferences',
+                                onTap: () async {
+                                  final saved = await context.push<bool>(
+                                    '/settings',
+                                    extra: context.read<ProfileCubit>(),
+                                  );
+                                  if (saved == true && context.mounted) {
+                                    CustomSnackBar.show(
+                                      context,
+                                      message: AppLocalizations.of(context).translate('settingsSaved'),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+
                             if (state.user.role == 'admin')
-                              ProfileToolItem(
-                                icon: Icons.shield_outlined,
-                                iconColor: const Color(0xFF6366F1),
-                                title: 'Admin Dashboard',
-                                subtitle: 'Manage users, universities & more',
-                                onTap: () => context.push('/admin'),
+                              CurtainDrop(
+                                index: 5,
+                                child: ProfileToolItem(
+                                  icon: Icons.shield_outlined,
+                                  iconColor: const Color(0xFF6366F1),
+                                  title: 'Admin Dashboard',
+                                  subtitle: 'Manage users, universities & more',
+                                  onTap: () => context.push('/admin'),
+                                ),
                               ),
-                            // 3. Ø²Ø± ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬
-                            ProfileToolItem(
-                              icon: Icons.logout,
-                              iconColor: Colors.red,
-                              title: 'Logout',
-                              subtitle: 'Sign out of UniPath',
-                              onTap: () => _showLogoutConfirmation(context),
+                            CurtainDrop(
+                              index: 6,
+                              child: ProfileToolItem(
+                                icon: Icons.logout,
+                                iconColor: Colors.red,
+                                title: AppLocalizations.of(context).translate('logout'),
+                                subtitle: 'Sign out of UniPath',
+                                onTap: () => _showLogoutConfirmation(context),
+                              ),
                             ),
                           ],
                         ),
                       ));
+                }
+                if (state is ProfileError) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.r),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64.sp, color: Colors.grey[400]),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'Could not load profile',
+                            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.grey[600]),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Please make sure you are logged in.',
+                            style: TextStyle(fontSize: 14.sp, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 24.h),
+                          ElevatedButton.icon(
+                            onPressed: () => context.read<ProfileCubit>().getUserProfile(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F46E5),
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
                 return const SizedBox();
               },
@@ -163,20 +226,20 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Profile',
+          AppLocalizations.of(context).translate('profile'),
           style: TextStyle(
             fontSize: 28.sp,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+            color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Color(0xFF64748B)),
+          icon: Icon(Icons.settings_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
           onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
         ),
       ],
@@ -220,7 +283,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           Text(
-            '${state.user.targetMajor} â€¢ ${state.user.languagePreference} Track',
+            '${state.user.targetMajor} | ${state.user.languagePreference} Track',
             style: TextStyle(
               fontSize: 14.sp,
               color: Colors.white.withValues(alpha: 0.8),
@@ -273,15 +336,15 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
+        title: Text(AppLocalizations.of(context).translate('logout')),
         content: const Text('Are you sure you want to log out?'),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: TextStyle(color: const Color(0xFF64748B))),
+            child: Text(AppLocalizations.of(context).translate('cancel'),
+                style: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
           ),
           TextButton(
             onPressed: () {
@@ -289,7 +352,7 @@ class ProfileScreen extends StatelessWidget {
               context.read<LogoutCubit>().logout();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            child: Text(AppLocalizations.of(context).translate('logout')),
           ),
         ],
       ),

@@ -43,7 +43,6 @@ class SideNavigationBar extends StatelessWidget {
                 accountEmail: Text(email),
               ),
               ListTile(
-                tileColor: Colors.white,
                 leading: const Icon(Icons.manage_accounts_outlined),
                 title: const Text('Account Settings'),
                 onTap: () {
@@ -52,7 +51,6 @@ class SideNavigationBar extends StatelessWidget {
                 },
               ),
               ListTile(
-                tileColor: Colors.white,
                 leading: const Icon(Icons.translate_outlined),
                 title: const Text('Language & Intake'),
                 onTap: () {
@@ -61,7 +59,6 @@ class SideNavigationBar extends StatelessWidget {
                 },
               ),
               ListTile(
-                tileColor: Colors.white,
                 leading: const Icon(Icons.notifications_outlined),
                 title: const Text('Notifications'),
                 onTap: () {
@@ -71,7 +68,6 @@ class SideNavigationBar extends StatelessWidget {
               ),
               if (state is ProfileLoaded && state.user.role == 'admin')
                 ListTile(
-                  tileColor: Colors.white,
                   leading: const Icon(Icons.shield_outlined, color: Color(0xFF6366F1)),
                   title: const Text('Admin Dashboard', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.w600)),
                   onTap: () {
@@ -83,7 +79,6 @@ class SideNavigationBar extends StatelessWidget {
               const Spacer(),
               SafeArea(
                 child: ListTile(
-                  tileColor: Colors.white,
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text(
                     'Logout',

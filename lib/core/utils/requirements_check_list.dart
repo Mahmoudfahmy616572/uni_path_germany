@@ -4,10 +4,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../domain/entities/university_entity.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_cubit.dart';
 import '../../presentation/UniversityDetails/cubit/university_details_state.dart';
+import 'custom_snack_bar.dart';
 
 class _ChecklistItem {
   final String title;
@@ -27,7 +30,28 @@ class RequirementsChecklistList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UniversityDetailsCubit, UniversityDetailsState>(
+    return BlocConsumer<UniversityDetailsCubit, UniversityDetailsState>(
+      listenWhen: (previous, current) =>
+          current is UniversitySaveStatus &&
+          current.errorMessage != null &&
+          previous is UniversitySaveStatus &&
+          previous.errorMessage != current.errorMessage,
+      listener: (context, state) {
+        if (state is UniversitySaveStatus && state.errorMessage != null) {
+          final msg = state.errorMessage!;
+          String userMessage;
+          if (msg.contains('Timeout') || msg.contains('timed out')) {
+            userMessage = 'Upload timed out. Please check your connection and try again.';
+          } else if (msg.contains('StorageException') || msg.contains('storage')) {
+            userMessage = 'Upload failed. The server may be unavailable. Please try again later.';
+          } else if (msg.contains('429') || msg.contains('rate limit')) {
+            userMessage = 'Too many requests. Please wait a moment and try again.';
+          } else {
+            userMessage = 'Upload failed. Please try again.';
+          }
+          CustomSnackBar.show(context, message: userMessage, isError: true);
+        }
+      },
       builder: (context, state) {
         // 🎯 المزامنة العالمية: نأخذ نسخة الجامعة من الـ State لأن الكيوبيت قام بمزامنتها مع البروفايل
         final uni =
@@ -56,6 +80,11 @@ class RequirementsChecklistList extends StatelessWidget {
             column: 'has_cv',
             value: uni.hasCv,
           ),
+          _ChecklistItem(
+            title: 'Language Certificate (IELTS/TOEFL) — Optional',
+            column: 'has_language_cert',
+            value: uni.hasLanguageCert,
+          ),
         ];
 
         return Column(
@@ -69,7 +98,8 @@ class RequirementsChecklistList extends StatelessWidget {
               progress = state.fileUploadProgress[colName];
             }
 
-            return Container(
+            final bool isOptional = item.column == 'has_language_cert';
+        return Container(
               margin: EdgeInsets.only(bottom: 12.h),
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
@@ -78,7 +108,9 @@ class RequirementsChecklistList extends StatelessWidget {
                 border: Border.all(
                   color: isUploaded
                       ? const Color(0xFFBBF7D0)
-                      : const Color(0xFFE2E8F0),
+                      : isOptional
+                          ? const Color(0xFFE2E8F0)
+                          : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Row(
@@ -203,18 +235,119 @@ class RequirementsChecklistList extends StatelessWidget {
     String uniId,
     String col,
   ) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final picker = ImagePicker();
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Upload Document',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20.h),
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf, color: Color(0xFFEF4444)),
+                title: const Text('PDF File'),
+                subtitle: const Text('Choose a PDF from your device (max 10 MB)'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final result = await FilePicker.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf'],
+                  );
+                  if (result != null && result.files.single.path != null && context.mounted) {
+                    final file = result.files.single;
+                    if (file.size > 10 * 1024 * 1024) {
+                      if (context.mounted) {
+                        CustomSnackBar.show(context, message: 'File too large. Maximum size is 10 MB.', isError: true);
+                      }
+                      return;
+                    }
+                    context.read<UniversityDetailsCubit>().uploadApplicationFile(
+                      universityId: uniId,
+                      columnName: col,
+                      file: File(file.path!),
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF8B5CF6)),
+                title: const Text('Gallery'),
+                subtitle: const Text('Pick an image from your gallery'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final xFile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1920,
+                    maxHeight: 1920,
+                    imageQuality: 70,
+                  );
+                  if (xFile != null && context.mounted) {
+                    final dir = await getTemporaryDirectory();
+                    final tempFile = File('${dir.path}/${col}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+                    final bytes = await xFile.readAsBytes();
+                    if (bytes.length > 5 * 1024 * 1024) {
+                      if (context.mounted) {
+                        CustomSnackBar.show(context, message: 'Image too large. Maximum size is 5 MB.', isError: true);
+                      }
+                      return;
+                    }
+                    await tempFile.writeAsBytes(bytes);
+                    context.read<UniversityDetailsCubit>().uploadApplicationFile(
+                      universityId: uniId,
+                      columnName: col,
+                      file: tempFile,
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF10B981)),
+                title: const Text('Camera'),
+                subtitle: const Text('Take a photo of your document'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final xFile = await picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1920,
+                    maxHeight: 1920,
+                    imageQuality: 70,
+                  );
+                  if (xFile != null && context.mounted) {
+                    final dir = await getTemporaryDirectory();
+                    final tempFile = File('${dir.path}/${col}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+                    final bytes = await xFile.readAsBytes();
+                    if (bytes.length > 5 * 1024 * 1024) {
+                      if (context.mounted) {
+                        CustomSnackBar.show(context, message: 'Image too large. Maximum size is 5 MB.', isError: true);
+                      }
+                      return;
+                    }
+                    await tempFile.writeAsBytes(bytes);
+                    context.read<UniversityDetailsCubit>().uploadApplicationFile(
+                      universityId: uniId,
+                      columnName: col,
+                      file: tempFile,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
-    if (result != null && result.files.single.path != null) {
-      if (context.mounted) {
-        context.read<UniversityDetailsCubit>().uploadApplicationFile(
-          universityId: uniId,
-          columnName: col,
-          file: File(result.files.single.path!),
-        );
-      }
-    }
   }
 }

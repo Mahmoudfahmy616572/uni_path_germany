@@ -14,6 +14,8 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
   @override
   Future<void> completeStudentProfile({
     required double gpa,
+    double? academicAverage,
+    double? highSchoolScore,
     required double maxGpa,
     required double minGpa,
     required bool hasMoi,
@@ -22,12 +24,13 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
     required String targetMajor,
     required String intake,
     required String languagePreference,
-    required String degreeLevel, // 🎯 Added degree level
+    required String degreeLevel,
   }) async {
     try {
-      // تمرير البيانات للمصدر لتحديثها في قاعدة البيانات
       await remoteDataSource.updateStudentProfile({
         'gpa': gpa,
+        'academic_average': academicAverage,
+        'high_school_score': highSchoolScore,
         'max_gpa': maxGpa,
         'min_gpa': minGpa,
         'has_moi': hasMoi,

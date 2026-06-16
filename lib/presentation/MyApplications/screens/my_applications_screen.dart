@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../cubit/my_applications_cubits.dart';
 import '../cubit/my_applications_states.dart';
@@ -40,17 +44,15 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
-          'My Pipeline',
-          style: TextStyle(
-            color: const Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
+          title: Text(
+            AppLocalizations.of(context).translate('applications'),
+            style: TextStyle(
+              color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18.sp,
+            ),
           ),
-        ),
-        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
       ),
@@ -61,23 +63,37 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
               child: Column(
                 children: [
-                  ShimmerCard(height: 40, borderRadius: 12),
+                  const CurtainDrop(
+                    index: 0,
+                    child: ShimmerCard(height: 40, borderRadius: 12),
+                  ),
                   SizedBox(height: 16.h),
-                  Row(
-                    children: List.generate(3, (i) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: i < 2 ? 8.w : 0),
-                        child: ShimmerCard(height: 70, borderRadius: 16),
-                      ),
-                    )),
+                  CurtainDrop(
+                    index: 1,
+                    child: Row(
+                      children: List.generate(3, (i) => Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: i < 2 ? 8.w : 0),
+                          child: const ShimmerCard(height: 70, borderRadius: 16),
+                        ),
+                      )),
+                    ),
                   ),
                   SizedBox(height: 24.h),
-                  ShimmerCard(height: 50, borderRadius: 12),
+                  const CurtainDrop(
+                    index: 2,
+                    child: ShimmerCard(height: 50, borderRadius: 12),
+                  ),
                   SizedBox(height: 16.h),
-                  ...List.generate(4, (i) => Padding(
-                    padding: EdgeInsets.only(bottom: 12.h),
-                    child: ShimmerCard(height: 100, borderRadius: 16),
-                  )),
+                  CurtainDrop(
+                    index: 3,
+                    child: Column(
+                      children: List.generate(4, (i) => Padding(
+                        padding: EdgeInsets.only(bottom: 12.h),
+                        child: const ShimmerCard(height: 100, borderRadius: 16),
+                      )),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -85,21 +101,24 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
 
           if (state is MyApplicationsError) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  SizedBox(height: 16.h),
-                  Text(
-                    "Error: ${state.message}",
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        context.read<MyApplicationsCubit>().loadApplications(),
-                    child: const Text("Retry"),
-                  ),
-                ],
+              child: CurtainDrop(
+                index: 0,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    SizedBox(height: 16.h),
+                    Text(
+                      "Error: ${state.message}",
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          context.read<MyApplicationsCubit>().loadApplications(),
+                      child: const Text("Retry"),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -108,82 +127,94 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
             return Column(
               children: [
                 // شريط البحث
-                Container(
-                  color: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) => context
-                        .read<MyApplicationsCubit>()
-                        .searchApplications(value),
-                    decoration: InputDecoration(
-                      hintText: 'Search programs or universities...',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: Color(0xFF94A3B8),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide.none,
+                CurtainDrop(
+                  index: 0,
+                  child: Container(
+                    color: context.isDark ? AppColors.darkCardBg : Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => context
+                          .read<MyApplicationsCubit>()
+                          .searchApplications(value),
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context).translate('searchPrograms'),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
+                        ),
+                        filled: true,
+                        fillColor: context.isDark ? AppColors.darkCardBg : const Color(0xFFF1F5F9),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
                 ),
 
                 // شريط الفلاتر
-                PipelineFilterBar(
-                  activeFilter: state.activeFilter,
-                  statusCounts: state.statusCounts,
-                  onFilterSelected: (filter) {
-                    context.read<MyApplicationsCubit>().filterApplications(
-                      filter,
-                    );
-                  },
+                CurtainDrop(
+                  index: 1,
+                  child: PipelineFilterBar(
+                    activeFilter: state.activeFilter,
+                    statusCounts: state.statusCounts,
+                    onFilterSelected: (filter) {
+                      context.read<MyApplicationsCubit>().filterApplications(
+                        filter,
+                      );
+                    },
+                  ),
                 ),
 
                 // كارت الإحصائيات (Metrics)
-                PipelineMetricsHub(
-                  upcomingDeadlines: state.allApplications.length,
-                  matchAverage: 80, // يمكن ربطها بحسبة ديناميكية
+                CurtainDrop(
+                  index: 2,
+                  child: PipelineMetricsHub(
+                    upcomingDeadlines: state.allApplications.length,
+                    matchAverage: 80, // يمكن ربطها بحسبة ديناميكية
+                  ),
                 ),
 
                 // قائمة الطلبات
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () =>
-                        context.read<MyApplicationsCubit>().loadApplications(),
-                    child: state.filteredApplications.isEmpty
-                        ? ListView(
-                            children: [
-                              SizedBox(height: 100.h),
-                              Center(
-                                child: Text(
-                                  'No applications found',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14.sp,
+                  child: CurtainDrop(
+                    index: 3,
+                    child: RefreshIndicator(
+                      onRefresh: () =>
+                          context.read<MyApplicationsCubit>().loadApplications(),
+                      child: state.filteredApplications.isEmpty
+                          ? ListView(
+                              children: [
+                                SizedBox(height: 100.h),
+                                Center(
+                                  child: Text(
+                                    AppLocalizations.of(context).translate('noApplicationsFound'),
+                                    style: TextStyle(
+                                      color: context.isDark ? AppColors.textMuted : Colors.grey,
+                                      fontSize: 14.sp,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(16.r),
-                            itemCount: state.filteredApplications.length,
-                            itemBuilder: (context, index) {
-                              final app = state.filteredApplications[index];
-                              return PipelineUniversityCard(
-                                app: app,
-                                onTap: () =>
-                                    showApplicationDetailSheet(context, app),
-                              );
-                            },
-                          ),
+                              ],
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.all(16.r),
+                              itemCount: state.filteredApplications.length,
+                              itemBuilder: (context, index) {
+                                final app = state.filteredApplications[index];
+                                return PipelineUniversityCard(
+                                  app: app,
+                                  onTap: () =>
+                                      showApplicationDetailSheet(context, app),
+                                );
+                              },
+                            ),
+                    ),
                   ),
                 ),
               ],

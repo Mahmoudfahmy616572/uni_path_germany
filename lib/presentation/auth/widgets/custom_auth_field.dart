@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:germany_travel/core/themes/app_colors.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 
 class CustomAuthField extends StatefulWidget {
   final String hint;
@@ -54,9 +55,9 @@ class _CustomAuthFieldState extends State<CustomAuthField> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : Colors.grey.shade200),
       ),
       child: TextFormField(
         controller: widget.controller,
@@ -64,14 +65,15 @@ class _CustomAuthFieldState extends State<CustomAuthField> {
         obscureText: widget.isPassword ? _obscureText : false,
         validator: widget.validator,
         decoration: InputDecoration(
+          filled: false,
           hintText: widget.hint,
-          hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 14.sp),
-          prefixIcon: Icon(widget.prefixIcon, color: AppColors.textGrey, size: 20),
+          hintStyle: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey, fontSize: 14.sp),
+          prefixIcon: Icon(widget.prefixIcon, color: context.isDark ? AppColors.textMuted : AppColors.textGrey, size: 20),
           suffixIcon: widget.isPassword
               ? IconButton(
                   icon: Icon(
                     _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: AppColors.textGrey,
+                    color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
                     size: 20,
                   ),
                   onPressed: () {

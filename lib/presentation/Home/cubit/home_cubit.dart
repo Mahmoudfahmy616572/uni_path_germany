@@ -7,39 +7,32 @@ import 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   final UniversitiesRepository universitiesRepository;
 
-  // متغيرات لتتبع حالة الصفحات
-  int _currentPage = 1;
-  final int _pageSize = 10; // عدد العناصر في كل مرة
-
   HomeCubit(this.universitiesRepository) : super(HomeInitial());
 
-  // 1️⃣ جلب التوصيات (البداية أو التحديث الشامل)
+  List<UniversityEntity> _allRecommendations = [];
+  final int _pageSize = 10;
+  int _displayCount = 0;
+
+  /// جلب جميع التوصيات من API، ثم عرض أول 10
   Future<void> calculateAndFetchRecommendations({
     bool forceRefresh = false,
   }) async {
-    // إذا طلبنا تحديث شامل، نصفر العدادات
-    if (forceRefresh) {
-      _currentPage = 1;
-    } else if (state is HomeLoaded) {
-      return; // البيانات موجودة بالفعل ولا نحتاج لتحديث
-    }
+    if (!forceRefresh && state is HomeLoaded) return;
 
     emit(HomeLoading());
 
     try {
-      final List<UniversityEntity> recommended = await universitiesRepository
-          .fetchMatchedUniversities(page: _currentPage, limit: _pageSize);
+      _allRecommendations = await universitiesRepository
+          .fetchMatchedUniversities(page: 1, limit: 999);
 
-      // حساب أعلى نسبة مطابقة لعرضها في الكارت العلوي
-      int userTotalScore = _calculateTopMatch(recommended);
+      _displayCount = _pageSize.clamp(0, _allRecommendations.length);
+      int userTotalScore = _calculateTopMatch(_allRecommendations);
 
       emit(
         HomeLoaded(
           matchScore: userTotalScore,
-          recommendations: recommended,
-          hasReachedMax:
-              recommended.length <
-              _pageSize, // لو العدد أقل من الصفحة يبقى خلصنا
+          recommendations: _allRecommendations.take(_displayCount).toList(),
+          hasReachedMax: _displayCount >= _allRecommendations.length,
         ),
       );
     } catch (e) {
@@ -47,54 +40,31 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  // 2️⃣ 🎯 وظيفة الـ Pagination (تحميل المزيد عند السكرول)
+  /// عرض الـ 10 التالية من القائمة الكاملة المخزنة في الذاكرة
   Future<void> loadMoreUniversities() async {
-    final currentState = state;
+    if (state is! HomeLoaded) return;
+    final current = state as HomeLoaded;
+    if (current.isFetchingMore || current.hasReachedMax) return;
 
-    // شروط التوقف: لو بنحمل حالياً، أو وصلنا للنهاية، أو الحالة مش Loaded
-    if (currentState is! HomeLoaded ||
-        currentState.isFetchingMore ||
-        currentState.hasReachedMax) {
-      return;
-    }
+    emit(current.copyWith(isFetchingMore: true));
 
-    // تفعيل مؤشر التحميل في أسفل القائمة
-    emit(currentState.copyWith(isFetchingMore: true));
+    _displayCount =
+        (_displayCount + _pageSize).clamp(0, _allRecommendations.length);
 
-    try {
-      _currentPage++;
-      final List<UniversityEntity> moreUnis = await universitiesRepository
-          .fetchMatchedUniversities(page: _currentPage, limit: _pageSize);
-
-      // دمج القائمة القديمة مع الجديدة
-      final List<UniversityEntity> updatedList = List.from(
-        currentState.recommendations,
-      )..addAll(moreUnis);
-
-      // تحديث الماتش سكور لو ظهرت جامعة بنسبة أعلى في الصفحة الجديدة
-      int updatedTopScore = _calculateTopMatch(updatedList);
-
-      emit(
-        currentState.copyWith(
-          recommendations: updatedList,
-          matchScore: updatedTopScore,
-          isFetchingMore: false,
-          hasReachedMax: moreUnis.length < _pageSize,
-        ),
-      );
-    } catch (e) {
-      // في حالة الخطأ، نوقف التحميل فقط ونحتفظ بالبيانات القديمة
-      emit(currentState.copyWith(isFetchingMore: false));
-    }
+    emit(
+      current.copyWith(
+        recommendations: _allRecommendations.take(_displayCount).toList(),
+        isFetchingMore: false,
+        hasReachedMax: _displayCount >= _allRecommendations.length,
+      ),
+    );
   }
 
-  // دالة مساعدة لحساب أعلى سكور
   int _calculateTopMatch(List<UniversityEntity> list) {
     if (list.isEmpty) return 0;
     return list.map((u) => u.matchPercentage).reduce((a, b) => a > b ? a : b);
   }
 
-  // تحديث حالة جامعة معينة محلياً (لو تم الحفظ/الحذف من الخارج)
   void updateUniversityStatusLocally(String universityId, String newStatus) {
     if (state is HomeLoaded) {
       final currentState = state as HomeLoaded;

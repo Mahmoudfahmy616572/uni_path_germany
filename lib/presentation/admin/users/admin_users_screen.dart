@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
 class AdminUsersScreen extends StatefulWidget {
@@ -274,38 +275,43 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Users'),
+        title: CurtainDrop(index: 0, child: const Text('Users')),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv),
+          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search by name or email...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () { _searchCtrl.clear(); _filter(''); },
+          CurtainDrop(
+            index: 2,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or email...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () { _searchCtrl.clear(); _filter(''); },
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
+                style: const TextStyle(fontSize: 14),
+                onChanged: _filter,
               ),
-              style: const TextStyle(fontSize: 14),
-              onChanged: _filter,
             ),
           ),
           Expanded(
-            child: _loading
+            child: CurtainDrop(
+              index: 3,
+              child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _filtered.isEmpty
                     ? Center(
@@ -391,6 +397,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           );
                         },
                       ),
+            ),
           ),
         ],
       ),

@@ -74,11 +74,11 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .order('created_at', ascending: false);
 
     final rawApps = List<Map<String, dynamic>>.from(response as List);
-    final userData = await client
+    final userData = (await client
         .from('profiles')
         .select()
         .eq('id', user.id)
-        .single();
+        .maybeSingle()) ?? <String, dynamic>{};
 
     final hydratedApps = <Map<String, dynamic>>[];
 
@@ -104,14 +104,13 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
       item['calculated_score'] = MatchScoreCalculator.calculate(
         studentProfile: userData,
         programRequiredGpa:
-            (selectedProg['required_gpa'] as num?)?.toDouble() ?? 4.0,
+            (selectedProg['required_gpa'] as num?)?.toDouble() ?? 0.0,
         programRequiresIelts: selectedProg['requires_ielts'] ?? false,
         programMinIelts:
             (selectedProg['min_ielts_score'] as num?)?.toDouble() ?? 0.0,
         programAcceptsMoi: selectedProg['accepts_moi'] ?? false,
         programMajor: selectedProg['major']?.toString() ?? '',
         programName: selectedProg['program_name']?.toString() ?? '',
-        programIntake: selectedProg['intake_type']?.toString() ?? 'Winter',
         programLanguage:
             selectedProg['instruction_language']?.toString() ?? 'English',
         programDegree: selectedProg['degree_type']?.toString() ?? '',
@@ -166,10 +165,21 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     required String columnName,
     required File file,
   }) async {
-    final path = '$userId/global/$columnName.pdf';
-    await client.storage
-        .from('documents')
-        .upload(path, file, fileOptions: const FileOptions(upsert: true));
+    final ext = file.path.split('.').last.toLowerCase();
+    final path = '$userId/global/$columnName.$ext';
+    const maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        await client.storage
+            .from('documents')
+            .upload(path, file, fileOptions: const FileOptions(upsert: true))
+            .timeout(const Duration(seconds: 60));
+        break;
+      } catch (e) {
+        if (attempt == maxRetries - 1) rethrow;
+        await Future.delayed(Duration(seconds: 2 * (attempt + 1)));
+      }
+    }
     final url = client.storage.from('documents').getPublicUrl(path);
     await client.from('profiles').update({columnName: url}).eq('id', userId);
     return url;

@@ -24,6 +24,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
   final bool acceptsMoi;
   final double maxTuition;
   final String selectedLanguage;
+  final String selectedLocation;
 
   const UniversitySearchLoaded({
     required this.allResults,
@@ -35,6 +36,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
     required this.acceptsMoi,
     required this.maxTuition,
     required this.selectedLanguage,
+    this.selectedLocation = 'All',
   });
 
   @override
@@ -48,6 +50,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
     acceptsMoi,
     maxTuition,
     selectedLanguage,
+    selectedLocation,
   ];
 }
 

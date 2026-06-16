@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../domain/entities/university_entity.dart';
+import '../localization/app_localizations.dart';
 
 class BuildNotesSection extends StatefulWidget {
   final UniversityEntity university;
@@ -89,8 +90,8 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                           });
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Notes saved successfully! 🎉'),
+                            SnackBar(
+                              content: Text(AppLocalizations.of(context).translate('notesSaved')),
                             ),
                           );
                         } catch (e) {
@@ -99,7 +100,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Error saving notes: ${e.toString()}',
+                                '${AppLocalizations.of(context).translate('errorSavingNotes')}: ${e.toString()}',
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -110,7 +111,7 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
                       }
                     },
                     child: Text(
-                      _isEditing ? 'Save' : 'Edit',
+                      AppLocalizations.of(context).translate(_isEditing ? 'save' : 'edit'),
                       style: const TextStyle(
                         color: Color(0xFF4F46E5),
                         fontWeight: FontWeight.bold,

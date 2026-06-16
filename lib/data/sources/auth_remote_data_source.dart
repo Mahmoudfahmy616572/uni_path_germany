@@ -21,6 +21,8 @@ abstract class AuthRemoteDataSource {
 
   // 🎯 وظيفة جديدة لتحديث البريد الإلكتروني في Supabase Auth
   Future<void> updateEmail(String newEmail);
+
+  Future<void> deleteAccount();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -92,7 +94,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getCurrentUserProfile(String userId) async {
-    return await client.from('profiles').select().eq('id', userId).single();
+    final result = await client.from('profiles').select().eq('id', userId).maybeSingle();
+    return result ?? <String, dynamic>{};
   }
 
   @override
@@ -106,5 +109,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> updateEmail(String newEmail) async {
     await client.auth.updateUser(UserAttributes(email: newEmail));
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('No authenticated user');
+    await client.from('profiles').delete().eq('id', user.id);
+    await client.auth.signOut();
   }
 }

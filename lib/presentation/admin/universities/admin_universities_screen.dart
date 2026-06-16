@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/utils/csv_export.dart';
 
@@ -196,114 +197,123 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Universities'),
+        title: CurtainDrop(index: 0, child: const Text('Universities')),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv),
+          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search by name, country...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: () { _searchCtrl.clear(); _filter(''); },
+          CurtainDrop(
+            index: 2,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Search by name, country...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () { _searchCtrl.clear(); _filter(''); },
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
+                style: const TextStyle(fontSize: 14),
+                onChanged: _filter,
               ),
-              style: const TextStyle(fontSize: 14),
-              onChanged: _filter,
             ),
           ),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.school_outlined, size: 48, color: Colors.grey[300]),
-                            const SizedBox(height: 8),
-                            Text(_searchCtrl.text.isEmpty ? 'No universities yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
-                          ],
-                        ),
-                      )
-                    : LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth >= 900) {
-                            return _buildDataTable();
-                          }
-                          return RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                              itemCount: _filtered.length + (_hasMore && _searchCtrl.text.isEmpty ? 1 : 0),
-                              itemBuilder: (context, i) {
-                                if (i == _filtered.length) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    child: Center(
-                                      child: _loadingMore
-                                          ? const CircularProgressIndicator()
-                                          : TextButton.icon(
-                                              icon: const Icon(Icons.expand_more),
-                                              label: const Text('Load More'),
-                                              onPressed: _loadMore,
-                                            ),
+            child: CurtainDrop(
+              index: 3,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filtered.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.school_outlined, size: 48, color: Colors.grey[300]),
+                              const SizedBox(height: 8),
+                              Text(_searchCtrl.text.isEmpty ? 'No universities yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
+                            ],
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth >= 900) {
+                              return _buildDataTable();
+                            }
+                            return RefreshIndicator(
+                              onRefresh: _load,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                                itemCount: _filtered.length + (_hasMore && _searchCtrl.text.isEmpty ? 1 : 0),
+                                itemBuilder: (context, i) {
+                                  if (i == _filtered.length) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Center(
+                                        child: _loadingMore
+                                            ? const CircularProgressIndicator()
+                                            : TextButton.icon(
+                                                icon: const Icon(Icons.expand_more),
+                                                label: const Text('Load More'),
+                                                onPressed: _loadMore,
+                                              ),
+                                      ),
+                                    );
+                                  }
+                                  final u = _filtered[i];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                                        child: Text(u['name']?.toString().substring(0, 2).toUpperCase() ?? 'UN', style: const TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
+                                      ),
+                                      title: Text(u['name']?.toString() ?? ''),
+                                      subtitle: Text('${u['country']?.toString() ?? ''}  •  Rank: ${u['rankings']?.toString() ?? '—'}'),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit_outlined, size: 20),
+                                            onPressed: () => _editDialog(u),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                            onPressed: () => _delete(u['id']?.toString() ?? ''),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
-                                }
-                                final u = _filtered[i];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                      child: Text(u['name']?.toString().substring(0, 2).toUpperCase() ?? 'UN', style: const TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
-                                    ),
-                                    title: Text(u['name']?.toString() ?? ''),
-                                    subtitle: Text('${u['country']?.toString() ?? ''}  •  Rank: ${u['rankings']?.toString() ?? '—'}'),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined, size: 20),
-                                          onPressed: () => _editDialog(u),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                          onPressed: () => _delete(u['id']?.toString() ?? ''),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
+                                },
+                              ),
+                            );
+                          },
+                        ),
+            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: CurtainDrop(
+        index: 4,
+        child: FloatingActionButton.extended(
         onPressed: () => _editDialog(null),
         icon: const Icon(Icons.add),
         label: const Text('Add University'),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
+      ),
       ),
     );
   }
@@ -315,6 +325,14 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     final descCtrl = TextEditingController(text: existing?['description']?.toString() ?? '');
     final locationCtrl = TextEditingController(text: existing?['location']?.toString() ?? '');
     final websiteCtrl = TextEditingController(text: existing?['website_url']?.toString() ?? '');
+    final cityCtrl = TextEditingController(text: existing?['city']?.toString() ?? '');
+    final stateCtrl = TextEditingController(text: existing?['state']?.toString() ?? '');
+    final streetCtrl = TextEditingController(text: existing?['street']?.toString() ?? '');
+    final postalCtrl = TextEditingController(text: existing?['postal_code']?.toString() ?? '');
+    final latCtrl = TextEditingController(text: existing?['lat']?.toString() ?? '');
+    final lonCtrl = TextEditingController(text: existing?['lon']?.toString() ?? '');
+    final typeCtrl = TextEditingController(text: existing?['university_type']?.toString() ?? '');
+    final baBanCtrl = TextEditingController(text: existing?['ba_ban_id']?.toString() ?? '');
     String? logoUrl = existing?['logo_url']?.toString();
     String? imageUrl = existing?['image_url']?.toString();
     bool uploadingLogo = false;
@@ -323,11 +341,18 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     Future<void> pickImage(bool isLogo) async {
       final result = await FilePicker.pickFiles(type: FileType.image);
       if (result == null || result.files.single.path == null) return;
+      final pickedFile = result.files.single;
+      if (pickedFile.size > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image too large. Maximum size is 5 MB.'), backgroundColor: Colors.red));
+        }
+        return;
+      }
       setState(() {
         if (isLogo) uploadingLogo = true; else uploadingImage = true;
       });
-      final file = File(result.files.single.path!);
-      final ext = result.files.single.extension ?? 'jpg';
+      final file = File(pickedFile.path!);
+      final ext = pickedFile.extension ?? 'jpg';
       final path = '${isLogo ? 'logos' : 'images'}/${const Uuid().v4()}.$ext';
       final resultUrl = await StorageService.uploadImage(path, file);
       final isValidUrl = resultUrl != null && resultUrl.startsWith('http');
@@ -388,6 +413,26 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                 Text('Image: $imageUrl', style: TextStyle(fontSize: 11, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
               const SizedBox(height: 12),
+              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              TextField(controller: stateCtrl, decoration: const InputDecoration(labelText: 'State', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              TextField(controller: streetCtrl, decoration: const InputDecoration(labelText: 'Street', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              TextField(controller: postalCtrl, decoration: const InputDecoration(labelText: 'Postal Code', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: latCtrl, decoration: const InputDecoration(labelText: 'Latitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextField(controller: lonCtrl, decoration: const InputDecoration(labelText: 'Longitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14))),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'University Type', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              TextField(controller: baBanCtrl, decoration: const InputDecoration(labelText: 'BA/BAN ID', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
               TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: const TextStyle(fontSize: 14)),
             ],
           ),
@@ -427,6 +472,8 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     }
 
     try {
+      final lat = double.tryParse(latCtrl.text.trim());
+      final lon = double.tryParse(lonCtrl.text.trim());
       final data = <String, dynamic>{
         'name': name,
         'country': country,
@@ -436,6 +483,14 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
         'logo_url': logoUrl,
         'image_url': imageUrl,
         'location': locationText.isNotEmpty ? locationText : null,
+        'city': cityCtrl.text.trim(),
+        'state': stateCtrl.text.trim(),
+        'street': streetCtrl.text.trim(),
+        'postal_code': postalCtrl.text.trim(),
+        'lat': lat,
+        'lon': lon,
+        'university_type': typeCtrl.text.trim(),
+        'ba_ban_id': baBanCtrl.text.trim(),
       };
       if (existing != null) {
         await Supabase.instance.client.from('universities').update(data).eq('id', existing['id']);

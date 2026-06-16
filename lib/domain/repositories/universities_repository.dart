@@ -4,6 +4,8 @@ abstract class UniversitiesRepository {
   // إكمال بيانات البروفايل عند التسجيل أو التحديث
   Future<void> completeStudentProfile({
     required double gpa,
+    double? academicAverage,
+    double? highSchoolScore,
     required double maxGpa,
     required double minGpa,
     required bool hasMoi,
@@ -12,7 +14,7 @@ abstract class UniversitiesRepository {
     required String targetMajor,
     required String intake,
     required String languagePreference,
-    required String degreeLevel, // 🎯 Added degree level
+    required String degreeLevel,
   });
 
   // 🎯 جلب الجامعات مع دعم الصفحات (Pagination)

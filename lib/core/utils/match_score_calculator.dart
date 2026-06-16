@@ -2,16 +2,23 @@
 // FILE: lib/core/utils/match_score_calculator.dart
 // ====================
 //
-// الـ Matching Score بيتحسب من 100 نقطة موزعة كالآتي:
+// الـ Matching Score بيتحسب من 90 نقطة موزعة كالآتي:
 //
-//  [35 pts] GPA
+//  [35 pts] GPA — Bavarian formula (German GPA)
 //  [25 pts] Target Major
 //  [15 pts] IELTS / Language Certificate
 //  [15 pts] Language of Instruction
-//  [10 pts] Intake Semester
 //
-// القيمة الدنيا للـ score بعد الحسبة هي 0 — مش 10 زي زمان.
-// لو الـ degree_level مش متطابق، الفانكشن بترجع 0 على طول (hard filter).
+// الإجمالي = 90 نقطة (تم إزالة Intake Semester من الحساب).
+// لو الـ degree_level مش متطابق → 0 (hard filter).
+//
+// GPA: بندخل الدرجة الخام (GPA 4 / GPA 5 / percentage 100%)
+// ونحولها لـ German GPA باستخدام معادلة بافاريا الرسمية:
+//
+//   German GPA = 1 + 3 × (max - achieved) / (max - minPass)
+//
+// German GPA: 1.0 (أفضل) → 4.0 (أضعف نجاح)
+// score = (4.0 - germanGpa) / 3.0 × 35
 
 class MatchScoreCalculator {
   // ─────────────────────────────────────────────────────────
@@ -25,12 +32,10 @@ class MatchScoreCalculator {
     required bool programAcceptsMoi,
     required String programMajor,
     required String programName,
-    required String programIntake,
     required String programLanguage,
     required String programDegree,
   }) {
     // ── 0. Degree Hard Filter ──────────────────────────────
-    // لو الـ degree مش متطابق أصلاً → مش مناسب خالص
     final String studentDegreeRaw =
         (studentProfile['degree_level'] as String? ?? '').toLowerCase();
 
@@ -46,14 +51,14 @@ class MatchScoreCalculator {
     }
 
     // ── استخراج بيانات الطالب ─────────────────────────────
-    final double studentGpa =
-        (studentProfile['gpa'] as num?)?.toDouble() ?? 0.0;
-    final double studentMaxGpa =
-        (studentProfile['max_gpa'] as num?)?.toDouble() ?? 4.0;
+    final double germanGpa = _resolveStudentGermanGpa(studentProfile);
 
     final bool studentHasIelts = studentProfile['has_ielts'] as bool? ?? false;
     final double studentIeltsScore =
         (studentProfile['ielts_score'] as num?)?.toDouble() ?? 0.0;
+    final bool studentHasToefl = studentProfile['has_toefl'] as bool? ?? false;
+    final double studentToeflScore =
+        (studentProfile['toefl_score'] as num?)?.toDouble() ?? 0.0;
     final bool studentHasMoi = studentProfile['has_moi'] as bool? ?? false;
 
     final String studentTargetMajor =
@@ -62,16 +67,12 @@ class MatchScoreCalculator {
         (studentProfile['language_preference'] as String? ?? 'English')
             .toLowerCase()
             .trim();
-    final String studentIntake = (studentProfile['intake'] as String? ?? '')
-        .toLowerCase()
-        .trim();
 
     int score = 0;
 
     // ── 1. GPA (35 نقطة) ──────────────────────────────────
     score += _calculateGpaScore(
-      studentGpa: studentGpa,
-      studentMaxGpa: studentMaxGpa,
+      germanGpa: germanGpa,
       programRequiredGpa: programRequiredGpa,
     );
 
@@ -89,6 +90,8 @@ class MatchScoreCalculator {
       programAcceptsMoi: programAcceptsMoi,
       studentHasIelts: studentHasIelts,
       studentIeltsScore: studentIeltsScore,
+      studentHasToefl: studentHasToefl,
+      studentToeflScore: studentToeflScore,
       studentHasMoi: studentHasMoi,
     );
 
@@ -98,64 +101,70 @@ class MatchScoreCalculator {
       programLanguage: programLanguage.toLowerCase(),
     );
 
-    // ── 5. Intake Semester (10 نقطة) ──────────────────────
-    score += _calculateIntakeScore(
-      studentIntake: studentIntake,
-      programIntake: programIntake.toLowerCase(),
-    );
-
-    return score.clamp(0, 100);
+    return score.clamp(0, 90);
   }
 
   // ─────────────────────────────────────────────────────────
-  // 1. GPA Score — 35 نقطة
+  // 1. GPA Score — 35 نقطة (Bavarian / German GPA)
   // ─────────────────────────────────────────────────────────
-  // الفكرة: بنحوّل GPA الطالب وبتاع البرنامج لنسبة مئوية
-  // من الـ scale بتاعه عشان المقارنة تبقى fair.
+  // ناخد German GPA (1.0 أحسن → 4.0 أضعف نجاح) ونحسب الـ score:
   //
-  //  ≥ required GPA             → 35 نقطة (مؤهل كامل)
-  //  بين required-0.2 وrequired → 25 نقطة (قريب جداً، ممكن بـ waiver)
-  //  بين required-0.5 وrequired-0.2 → 15 نقطة (ممكن بـ conditional)
-  //  أقل من required - 0.5      → 0 نقطة (غير مؤهل)
+  //   score = (4.0 - germanGpa) / 3.0 × 35
+  //
+  // 1.0 → 35,  1.5 → 29,  2.0 → 23,  2.5 → 18,
+  // 3.0 → 12,  3.5 → 6,   4.0 → 0
+  //
+  // لو البرنامج عنده requiredGpa (على German scale برضه):
+  //   - student ≤ required (أحسن) → المعادلة المستمرة
+  //   - student > required (أسوأ) → diff tiers أشد:
+  //       +0.1 → 30,  +0.2 → 25,  +0.3 → 20,
+  //       +0.4 → 15,  +0.5 → 10,  +0.75 → 5,  أكثر → 0
   // ─────────────────────────────────────────────────────────
   static int _calculateGpaScore({
-    required double studentGpa,
-    required double studentMaxGpa,
+    required double germanGpa,
     required double programRequiredGpa,
   }) {
-    if (studentGpa <= 0 || programRequiredGpa <= 0) return 0;
+    if (germanGpa <= 0 || germanGpa > 4.0) return 0;
 
-    // normalize إلى scale 4.0 لو الطالب على scale مختلفة
-    final double normalizedStudentGpa = studentMaxGpa > 0
-        ? (studentGpa / studentMaxGpa) * 4.0
-        : studentGpa;
+    if (programRequiredGpa > 0) {
+      // German scale: lower = better. student ≤ required → meets.
+      final double diff = programRequiredGpa - germanGpa;
+      if (diff >= 0) {
+        final double pctBetter = (4.0 - germanGpa) / 3.0;
+        return (pctBetter * 35).round().clamp(0, 35);
+      }
+      final double belowBy = -diff; // positive
+      if (belowBy <= 0.1) return 30;
+      if (belowBy <= 0.2) return 25;
+      if (belowBy <= 0.3) return 20;
+      if (belowBy <= 0.4) return 15;
+      if (belowBy <= 0.5) return 10;
+      if (belowBy <= 0.75) return 5;
+      return 0;
+    }
 
-    final double diff = normalizedStudentGpa - programRequiredGpa;
-
-    if (diff >= 0) return 35; // مؤهل كامل
-    if (diff >= -0.2) return 25; // قريب جداً
-    if (diff >= -0.5) return 15; // قريب نسبياً
-    return 0; // بعيد
+    final double pctBetter = (4.0 - germanGpa) / 3.0;
+    return (pctBetter * 35).round().clamp(0, 35);
   }
 
   // ─────────────────────────────────────────────────────────
   // 2. Major Score — 25 نقطة
   // ─────────────────────────────────────────────────────────
-  // بنستخدم keyword mapping عشان نغطي حالات زي:
-  //   - الطالب اختار "Computer Science & IT" والبرنامج اسمه "Computer Science"
-  //   - الطالب اختار "Engineering" والبرنامج "Mechanical Engineering"
+  // علميًا (وفقًا لـ DAAD / uni-assist):
+  //   - فحص "related subject" (fachverwandt) → binary: related أو لا
+  //   - ما فيهش scoring متدرج — دا اختراعنا لتوصية الطالب
   //
-  //  exact match                     → 25 نقطة
-  //  keyword match (نفس الـ category) → 18 نقطة
-  //  broad category match            → 10 نقطة
-  //  مفيش match                      → 0 نقطة
+  //  exact match (نفس التخصص)       → 25 (related subject)
+  //  same category (نفس المجال)      → 10 (قد يكون related)
+  //  weak match (broad via name)     → 5  (hint فقط)
+  //  no match / غير محدد             → 0
   // ─────────────────────────────────────────────────────────
   static int _calculateMajorScore({
     required String studentTargetMajor,
     required String programMajor,
     required String programName,
   }) {
-    if (studentTargetMajor.isEmpty) return 12; // مش حدد، نبقى محايدين
+    if (studentTargetMajor.isEmpty) return 0;
 
     // Exact match
     if (programMajor == studentTargetMajor ||
@@ -171,7 +180,7 @@ class MatchScoreCalculator {
     if (studentCategory != null &&
         programCategory != null &&
         studentCategory == programCategory) {
-      return 18;
+      return 10;
     }
 
     // Check program name as fallback
@@ -179,7 +188,7 @@ class MatchScoreCalculator {
         studentTargetMajor
             .split(' ')
             .any((word) => word.length > 3 && programMajor.contains(word))) {
-      return 10;
+      return 5;
     }
 
     return 0;
@@ -273,24 +282,35 @@ class MatchScoreCalculator {
     required bool programAcceptsMoi,
     required bool studentHasIelts,
     required double studentIeltsScore,
+    required bool studentHasToefl,
+    required double studentToeflScore,
     required bool studentHasMoi,
   }) {
-    if (!programRequiresIelts) {
-      // البرنامج مش بيطلب شهادة لغة → الكل بياخد الـ 15
-      return 15;
+    final bool studentMeetsIelts =
+        studentHasIelts && studentIeltsScore >= programMinIelts;
+    final bool studentCloseToIelts =
+        studentHasIelts && studentIeltsScore >= programMinIelts - 0.5;
+
+    // Rough TOEFL→IELTS equivalence: TOEFL 80 ≈ IELTS 6.0, TOEFL 60 ≈ IELTS 5.5
+    final double toeflEquivalent = studentHasToefl ? studentToeflScore / 10.0 - 2.0 : 0.0;
+    final bool studentMeetsToefl =
+        studentHasToefl && toeflEquivalent >= programMinIelts;
+    final bool studentCloseToToefl =
+        studentHasToefl && toeflEquivalent >= programMinIelts - 0.5;
+
+    if (programRequiresIelts) {
+      if (studentMeetsIelts || studentMeetsToefl) return 15;
+      if (studentCloseToIelts || studentCloseToToefl) return 8;
+      if (studentHasIelts) return 3;
+      if (programAcceptsMoi && studentHasMoi) return 10;
+      return 0;
     }
 
-    // البرنامج بيطلب IELTS
-    if (studentHasIelts) {
-      if (studentIeltsScore >= programMinIelts) return 15; // مؤهل كامل
-      if (studentIeltsScore >= programMinIelts - 0.5) return 8; // قريب
-      return 3; // عنده IELTS بس تحت المطلوب بكتير
+    // البرنامج مش بيطلب شهادة لغة
+    if (studentHasIelts || studentHasToefl) {
+      return 10; // الطالب عنده شهادة بس مش مطلوبة → أولوية أقل
     }
-
-    // الطالب معهوش IELTS — هل البرنامج بيقبل MOI؟
-    if (programAcceptsMoi && studentHasMoi) return 10;
-
-    return 0; // مش مؤهل للـ language requirement
+    return 15; // ولا شهادة ولا requirement — مناسب للطالب
   }
 
   // ─────────────────────────────────────────────────────────
@@ -312,37 +332,8 @@ class MatchScoreCalculator {
   }
 
   // ─────────────────────────────────────────────────────────
-  // 5. Intake Semester Score — 10 نقطة
-  // ─────────────────────────────────────────────────────────
-  // Program intake_type: 'summer', 'winter', 'both'
-  // Student intake: 'summer semester', 'winter semester', 'both semesters'
-  //
-  // الـ normalization مهم جداً هنا عشان الـ DB values مختلفة.
-  // ─────────────────────────────────────────────────────────
-  static int _calculateIntakeScore({
-    required String studentIntake,
-    required String programIntake,
-  }) {
-    // normalize strings
-    final String normStudent = _normalizeIntake(studentIntake);
-    final String normProgram = _normalizeIntake(programIntake);
-
-    if (normProgram == 'both' || normStudent == 'both') return 10;
-    if (normProgram == normStudent) return 10;
-    return 0;
-  }
-
-  // ─────────────────────────────────────────────────────────
   // Helpers
   // ─────────────────────────────────────────────────────────
-
-  // يحوّل "summer semester" → "summer"، "both semesters" → "both"، إلخ
-  static String _normalizeIntake(String intake) {
-    if (intake.contains('both')) return 'both';
-    if (intake.contains('summer')) return 'summer';
-    if (intake.contains('winter')) return 'winter';
-    return intake.trim();
-  }
 
   // يحوّل "bachelor's degree" → "bachelor"، "master's degree" → "master"، إلخ
   static String _normalizeDegree(String degree) {
@@ -350,6 +341,74 @@ class MatchScoreCalculator {
     if (degree.contains('master')) return 'master';
     if (degree.contains('doctor') || degree.contains('phd')) return 'doctorate';
     return '';
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Bavarian Formula Conversion
+  // ─────────────────────────────────────────────────────────
+  // تحوّل أي درجة (GPA 4 / GPA 5 / Percentage) لـ German GPA
+  // باستخدام معادلة بافاريا الرسمية (المستخدمة في uni-assist و DAAD):
+  //
+  //   German GPA = 1 + 3 × (max - achieved) / (max - minPass)
+  //
+  // النتيجة: 1.0 (أفضل) → 4.0 (أضعف نجاح)
+  // ─────────────────────────────────────────────────────────
+  static double _convertToBavarianGpa(double value, double max, double minPass) {
+    if (value <= 0) return 4.0;
+    final result = 1 + 3 * (max - value) / (max - minPass);
+    return result.clamp(1.0, 4.0);
+  }
+
+  // يقرر أي قيمة نستخدمها من الـ profile (GPA 4, GPA 5, Percentage)
+  // ويحولها لـ German GPA
+  static double _resolveStudentGermanGpa(Map<String, dynamic> profile) {
+    final double gpa = (profile['gpa'] as num?)?.toDouble() ?? 0.0;
+    final double maxGpa = (profile['max_gpa'] as num?)?.toDouble() ?? 4.0;
+    final double academicAverage = (profile['academic_average'] as num?)?.toDouble() ?? 0.0;
+    final double highSchoolScore = (profile['high_school_score'] as num?)?.toDouble() ?? 0.0;
+    final String? degreeRaw = profile['degree_level'] as String?;
+    final bool isBachelor = degreeRaw != null && degreeRaw.toLowerCase().contains('bachelor');
+
+    // تحديد القيمة والـ scale
+    double value;
+    double max;
+    double minPass;
+
+    if (isBachelor) {
+      if (academicAverage > 0) {
+        value = academicAverage;
+        max = academicAverage > 10 ? 100 : 4.0;
+        minPass = academicAverage > 10 ? 50 : 1.0;
+      } else if (highSchoolScore > 0) {
+        value = highSchoolScore;
+        max = 100;
+        minPass = 50;
+      } else if (gpa > 0) {
+        value = gpa;
+        max = maxGpa;
+        minPass = 1.0;
+      } else {
+        return 4.0;
+      }
+    } else {
+      if (gpa > 0) {
+        value = gpa;
+        max = maxGpa;
+        minPass = 1.0;
+      } else if (academicAverage > 0) {
+        value = academicAverage;
+        max = academicAverage > 10 ? 100 : 4.0;
+        minPass = academicAverage > 10 ? 50 : 1.0;
+      } else if (highSchoolScore > 0) {
+        value = highSchoolScore;
+        max = 100;
+        minPass = 50;
+      } else {
+        return 4.0;
+      }
+    }
+
+    return _convertToBavarianGpa(value, max, minPass);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -380,17 +439,29 @@ class MatchScoreCalculator {
     required bool programAcceptsMoi,
     required String programMajor,
     required String programName,
-    required String programIntake,
     required String programLanguage,
     required String programDegree,
+    // programIntake is informational only — not part of the score
+    String programIntake = '',
   }) {
-    final double studentGpa =
-        (studentProfile['gpa'] as num?)?.toDouble() ?? 0.0;
-    final double studentMaxGpa =
-        (studentProfile['max_gpa'] as num?)?.toDouble() ?? 4.0;
+    // ── Degree Hard Filter (متطابق مع calculate) ───────────
+    final String studentDegreeRaw =
+        (studentProfile['degree_level'] as String? ?? '').toLowerCase();
+    final String normalizedStudentDegree = _normalizeDegree(studentDegreeRaw);
+    final String normalizedProgramDegree = _normalizeDegree(
+      programDegree.toLowerCase(),
+    );
+    final bool degreeMismatch = normalizedStudentDegree.isNotEmpty &&
+        normalizedProgramDegree.isNotEmpty &&
+        normalizedStudentDegree != normalizedProgramDegree;
+
+    final double germanGpa = _resolveStudentGermanGpa(studentProfile);
     final bool studentHasIelts = studentProfile['has_ielts'] as bool? ?? false;
     final double studentIeltsScore =
         (studentProfile['ielts_score'] as num?)?.toDouble() ?? 0.0;
+    final bool studentHasToefl = studentProfile['has_toefl'] as bool? ?? false;
+    final double studentToeflScore =
+        (studentProfile['toefl_score'] as num?)?.toDouble() ?? 0.0;
     final bool studentHasMoi = studentProfile['has_moi'] as bool? ?? false;
     final String studentTargetMajor =
         (studentProfile['target_major'] as String? ?? '').toLowerCase().trim();
@@ -398,13 +469,8 @@ class MatchScoreCalculator {
         (studentProfile['language_preference'] as String? ?? 'English')
             .toLowerCase()
             .trim();
-    final String studentIntake = (studentProfile['intake'] as String? ?? '')
-        .toLowerCase()
-        .trim();
-
     final int gpaScore = _calculateGpaScore(
-      studentGpa: studentGpa,
-      studentMaxGpa: studentMaxGpa,
+      germanGpa: germanGpa,
       programRequiredGpa: programRequiredGpa,
     );
     final int majorScore = _calculateMajorScore(
@@ -418,22 +484,20 @@ class MatchScoreCalculator {
       programAcceptsMoi: programAcceptsMoi,
       studentHasIelts: studentHasIelts,
       studentIeltsScore: studentIeltsScore,
+      studentHasToefl: studentHasToefl,
+      studentToeflScore: studentToeflScore,
       studentHasMoi: studentHasMoi,
     );
     final int langScore = _calculateLanguageScore(
       studentLangPref: studentLangPref,
       programLanguage: programLanguage.toLowerCase(),
     );
-    final int intakeScore = _calculateIntakeScore(
-      studentIntake: studentIntake,
-      programIntake: programIntake.toLowerCase(),
-    );
 
-    final int total =
-        (gpaScore + majorScore + ieltsScore + langScore + intakeScore).clamp(
-          0,
-          100,
-        );
+    final int rawTotal =
+        gpaScore + majorScore + ieltsScore + langScore;
+    final int total = degreeMismatch
+        ? 0
+        : rawTotal.clamp(0, 90);
 
     return {
       'total': total,
@@ -442,7 +506,8 @@ class MatchScoreCalculator {
         'gpa': {
           'score': gpaScore,
           'max': 35,
-          'student_gpa': studentGpa,
+          'student_gpa': germanGpa,
+          'german_gpa': germanGpa,
           'required_gpa': programRequiredGpa,
         },
         'major': {
@@ -465,8 +530,8 @@ class MatchScoreCalculator {
           'program_lang': programLanguage,
         },
         'intake': {
-          'score': intakeScore,
-          'max': 10,
+          'score': 0,
+          'max': 0,
           'student_intake': studentProfile['intake'],
           'program_intake': programIntake,
         },

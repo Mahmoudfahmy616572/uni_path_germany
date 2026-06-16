@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+
 class CustomCategoryBar extends StatelessWidget {
   final List<String> tabs;
   final int selectedIndex;
@@ -20,11 +23,9 @@ class CustomCategoryBar extends StatelessWidget {
       height: 48,
       padding: EdgeInsets.all(4.r),
       decoration: BoxDecoration(
-        color: const Color(
-          0xFFF1F5F9,
-        ), // خلفية الشريط الكامل النظيفة المماثلة للتصميم
+        color: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0), width: 1),
       ),
       child: Row(
         children: List.generate(tabs.length, (index) {
@@ -35,13 +36,13 @@ class CustomCategoryBar extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white
-                      : Colors.transparent, // البار المختار يرتفع بخلفية بيضاء
+                      ? context.isDark ? AppColors.darkCardBg : Colors.white
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8.r),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                                color: context.isDark ? AppColors.darkBorder.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -58,7 +59,7 @@ class CustomCategoryBar extends StatelessWidget {
                           : FontWeight.w500,
                       color: isSelected
                           ? const Color(0xFF4F46E5)
-                          : const Color(0xFF64748B),
+                          : context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                     ),
                   ),
                 ),

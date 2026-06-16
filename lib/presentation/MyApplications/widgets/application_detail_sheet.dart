@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/services/services_locator.dart';
+import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/build_notes_section.dart';
 import '../../../../core/utils/quick_info_metrics.dart';
 import '../../../../core/utils/requirements_check_list.dart';
@@ -41,9 +44,9 @@ class ApplicationDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkBackground : Colors.white,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -58,11 +61,11 @@ class ApplicationDetailSheet extends StatelessWidget {
               children: [
                 const Center(child: _DragHandle()),
                 SizedBox(height: 16.h),
-                _buildHeader(),
+                _buildHeader(context),
                 SizedBox(height: 20.h),
                 QuickInfoMetrics(university: app),
                 SizedBox(height: 24.h),
-                _buildRequirementsSection(),
+                _buildRequirementsSection(context),
                 SizedBox(height: 24.h),
                 _buildNotesSection(context),
               ],
@@ -79,7 +82,7 @@ class ApplicationDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     final String programName = app.programs.isNotEmpty
         ? app.programs.first.programName
         : "Application";
@@ -88,7 +91,11 @@ class ApplicationDetailSheet extends StatelessWidget {
       children: [
         Text(
           app.name,
-          style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+            color: context.isDark ? AppColors.textMain : null,
+          ),
         ),
         Text(
           programName,
@@ -102,13 +109,17 @@ class ApplicationDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildRequirementsSection() {
+  Widget _buildRequirementsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Requirements Checklist',
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+          AppLocalizations.of(context).translate('requirementsChecklist'),
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+            color: context.isDark ? AppColors.textMain : null,
+          ),
         ),
         SizedBox(height: 12.h),
         RequirementsChecklistList(university: app),
@@ -141,7 +152,7 @@ class ApplicationDetailSheet extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.all(20.r),
-      color: Colors.white,
+      color: context.isDark ? AppColors.darkSurface : Colors.white,
       child: Row(
         children: [
           IconButton(
@@ -163,9 +174,9 @@ class ApplicationDetailSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
-              child: const Text(
-                'Close',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context).translate('close'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -186,7 +197,7 @@ class _DragHandle extends StatelessWidget {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
+        color: context.isDark ? AppColors.darkBorder : Colors.grey[300],
         borderRadius: BorderRadius.circular(2),
       ),
     );

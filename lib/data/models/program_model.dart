@@ -37,7 +37,7 @@ class ProgramModel extends ProgramEntity {
       acceptsMoi: json['accepts_moi'] == true || json['accepts_moi'] == 'true',
       instructionLanguage:
           json['instruction_language']?.toString() ?? 'English',
-      degreeType: json['degree_type']?.toString() ?? 'Master',
+      degreeType: json['degree_type']?.toString() ?? '',
       deadline: json['deadline']?.toString(),
       applicationFee:
           (int.tryParse(json['application_fee']?.toString() ?? '0') ?? 0),

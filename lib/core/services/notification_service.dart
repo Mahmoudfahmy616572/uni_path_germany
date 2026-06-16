@@ -3,12 +3,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart'; // for TimeOfDay
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:workmanager/workmanager.dart';
+
+import '../utils/deadline_parser.dart';
 
 final _logger = Logger();
 
@@ -173,8 +174,10 @@ class NotificationService {
         for (final prog in programs) {
           final deadlineStr = prog['deadline'];
           if (deadlineStr == null) continue;
+          if (deadlineStr is! String) continue;
 
-          final deadline = DateTime.parse(deadlineStr);
+          final deadline = DeadlineParser.parse(deadlineStr);
+          if (deadline == null) continue;
           final programName = prog['program_name'] as String;
 
           for (final daysBefore in reminderDays) {
@@ -271,16 +274,17 @@ class NotificationService {
       for (final app in apps) {
         final programs = (app['universities']['university_programs'] as List);
         for (final prog in programs) {
-          final deadline = prog['deadline'];
-          if (deadline == null) continue;
+          final deadlineStr = prog['deadline'];
+          if (deadlineStr == null) continue;
 
-          final diff =
-              DateTime.parse(deadline).difference(DateTime.now()).inDays;
+          final deadline = DeadlineParser.parse(deadlineStr);
+          if (deadline == null) continue;
+          final diff = deadline.difference(DateTime.now()).inDays;
           // Only notify if diff matches one of the user's reminder days
           if (diff >= 0 && reminderDays.contains(diff)) {
             await notifyUpcomingDeadline(
               prog['program_name'],
-              deadline,
+              deadlineStr,
               diff,
             );
           }
@@ -405,11 +409,7 @@ class NotificationService {
   }
 
   static String _formatDate(String dateStr) {
-    try {
-      return DateFormat('d MMM yyyy').format(DateTime.parse(dateStr));
-    } catch (_) {
-      return dateStr;
-    }
+    return DeadlineParser.format(dateStr);
   }
 
   // ──────────────────────────────────────────────
@@ -422,9 +422,9 @@ class NotificationService {
   static void _handleNotificationTap(Map<String, dynamic> data) {
     final payload = data['payload'] as String? ?? '';
     if (payload.startsWith('deadline:')) {
-      _router?.go('/my-applications');
+      _router?.go('/applications');
     } else if (payload.startsWith('application_status:')) {
-      _router?.go('/my-applications');
+      _router?.go('/applications');
     }
   }
 }

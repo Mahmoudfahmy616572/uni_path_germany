@@ -16,6 +16,7 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/match_score_calculator.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../../domain/repositories/applications_repository.dart';
@@ -210,11 +211,44 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      final Map<String, dynamic> profile = await Supabase.instance.client
+      final Map<String, dynamic> profile = (await Supabase.instance.client
           .from('profiles')
           .select()
           .eq('id', user.id)
-          .single();
+          .maybeSingle()) ?? <String, dynamic>{};
+
+      // 🎯 تحديث matchScore لكل برنامج بناءً على أحدث بيانات الطالب
+      _fullProgramsList = _fullProgramsList.map((p) {
+        final int recalculated = MatchScoreCalculator.calculate(
+          studentProfile: profile,
+          programRequiredGpa: p.requiredGpa,
+          programRequiresIelts: p.requiresIelts,
+          programMinIelts: p.minIeltsScore,
+          programAcceptsMoi: p.acceptsMoi,
+          programMajor: p.major,
+          programName: p.programName,
+          programLanguage: p.instructionLanguage,
+          programDegree: p.degreeType,
+        );
+        return ProgramEntity(
+          id: p.id,
+          programName: p.programName,
+          major: p.major,
+          requiredGpa: p.requiredGpa,
+          requiresIelts: p.requiresIelts,
+          minIeltsScore: p.minIeltsScore,
+          acceptsMoi: p.acceptsMoi,
+          instructionLanguage: p.instructionLanguage,
+          degreeType: p.degreeType,
+          deadline: p.deadline,
+          applicationFee: p.applicationFee,
+          tuitionFeePerYear: p.tuitionFeePerYear,
+          curriculum: p.curriculum,
+          isRecommended: recalculated >= 60,
+          intakeType: p.intakeType,
+          matchScore: recalculated,
+        );
+      }).toList();
 
       final status = _getCurrentStatus();
       final savedProgramIds = <String>{};
@@ -233,15 +267,25 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
         hasBachelorCert: profile['has_bachelor_cert'],
         hasSop: profile['has_sop'],
         hasCv: profile['has_cv'],
+        hasLanguageCert: profile['has_language_cert'],
       );
+
+      // 🎯 حساب أعلى match بين البرامج عشان نحدث percentage الجامعة
+      final int maxProgramScore = _fullProgramsList.isEmpty
+          ? 0
+          : _fullProgramsList.map((p) => p.matchScore).reduce(
+                (a, b) => a > b ? a : b,
+              );
 
       if (!isClosed) {
         emit(
           status.copyWith(
+            matchPercentage: maxProgramScore,
             currentUniversity: updatedUni,
+            displayedPrograms: _fullProgramsList,
             savedProgramIds: savedProgramIds,
             isSaved: savedProgramIds.isNotEmpty,
-            studentProfile: profile, // ✅ التغيير الوحيد
+            studentProfile: profile,
           ),
         );
       }
@@ -269,6 +313,7 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
       hasBachelorCert: col == 'has_bachelor_cert' ? val : uni.hasBachelorCert,
       hasSop: col == 'has_sop' ? val : uni.hasSop,
       hasCv: col == 'has_cv' ? val : uni.hasCv,
+      hasLanguageCert: col == 'has_language_cert' ? val : uni.hasLanguageCert,
     );
   }
 }

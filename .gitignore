@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables (secrets)
+.env
+.env.example
+
+# Temp/debug files
+all_project_code.txt
+temp_test.txt
+19
+
+# FlutterFire (auto-generated)
+lib/firebase_options.dart

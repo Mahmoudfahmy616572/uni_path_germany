@@ -6,6 +6,7 @@ import 'package:germany_travel/domain/entities/program_entity.dart';
 
 import '../../../core/utils/match_score_calculator.dart';
 import '../../../core/utils/requirements_check_list.dart';
+import '../../../core/widgets/animated_match_score.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
 
@@ -18,26 +19,35 @@ class AdmissionAnalysisTables extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UniversityDetailsCubit, UniversityDetailsState>(
       builder: (context, state) {
-        final bool hasPrograms = university.programs.isNotEmpty;
-        final ProgramEntity? firstProgram = hasPrograms ? university.programs.first : null;
+      // 🎯 استخدم البرامج المحدَّثة من الـ state (بعد إعادة حساب matchScore)
+      final List<ProgramEntity> programs = state is UniversitySaveStatus
+          ? state.displayedPrograms
+          : university.programs;
 
-        // Get student profile from state (populated by checkInitialSaveStatus)
-        final Map<String, dynamic>? studentProfile =
-            (state is UniversitySaveStatus) ? state.studentProfile : null;
+      // Find best-matching program (highest matchScore) for representative metrics
+      final ProgramEntity? bestProgram = programs.isEmpty
+          ? null
+          : programs.reduce(
+              (a, b) => a.matchScore >= b.matchScore ? a : b,
+            );
+
+      // Get student profile from state (populated by checkInitialSaveStatus)
+      final Map<String, dynamic>? studentProfile =
+          (state is UniversitySaveStatus) ? state.studentProfile : null;
 
         // Calculate real breakdown using MatchScoreCalculator
-        final breakdown = (studentProfile != null && firstProgram != null)
+        final breakdown = (studentProfile != null && bestProgram != null)
             ? MatchScoreCalculator.getBreakdown(
                 studentProfile: studentProfile,
-                programRequiredGpa: firstProgram.requiredGpa,
-                programRequiresIelts: firstProgram.requiresIelts,
-                programMinIelts: firstProgram.minIeltsScore,
-                programAcceptsMoi: firstProgram.acceptsMoi,
-                programMajor: firstProgram.major,
-                programName: firstProgram.programName,
-                programIntake: firstProgram.intakeType,
-                programLanguage: firstProgram.instructionLanguage,
-                programDegree: firstProgram.degreeType,
+                programRequiredGpa: bestProgram.requiredGpa,
+                programRequiresIelts: bestProgram.requiresIelts,
+                programMinIelts: bestProgram.minIeltsScore,
+                programAcceptsMoi: bestProgram.acceptsMoi,
+                programMajor: bestProgram.major,
+                programName: bestProgram.programName,
+                programIntake: bestProgram.intakeType,
+                programLanguage: bestProgram.instructionLanguage,
+                programDegree: bestProgram.degreeType,
               )
             : null;
 
@@ -57,7 +67,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
         // Note: intake score is separate (10 pts), we'll show it as 5th metric if needed
 
         final double overallScore = breakdown != null
-            ? (breakdown['total'] as int) / 100.0
+            ? (breakdown['total'] as int) / 90.0
             : 0.0;
 
         return Column(
@@ -156,8 +166,8 @@ class AdmissionAnalysisTables extends StatelessWidget {
           ),
         ),
         SizedBox(width: 12.w),
-        Text(
-          '$percentage%',
+        AnimatedScoreText(
+          score: percentage,
           style: TextStyle(
             fontSize: 12.sp,
             fontWeight: FontWeight.bold,

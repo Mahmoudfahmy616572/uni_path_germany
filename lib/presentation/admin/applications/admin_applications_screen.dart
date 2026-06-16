@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
 class AdminApplicationsScreen extends StatefulWidget {
@@ -274,14 +275,16 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Applications'),
+        title: CurtainDrop(index: 0, child: const Text('Applications')),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv),
+          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
-      body: _loading
+      body: CurtainDrop(
+        index: 2,
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _applications.isEmpty
               ? Center(
@@ -380,6 +383,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                     );
                   },
                 ),
+      ),
     );
   }
 }

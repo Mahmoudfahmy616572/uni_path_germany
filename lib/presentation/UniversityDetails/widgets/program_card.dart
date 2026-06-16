@@ -11,6 +11,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'breack_down_widget.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
@@ -38,12 +40,12 @@ class ProgramCard extends StatelessWidget {
           margin: EdgeInsets.only(bottom: 12.h),
           padding: EdgeInsets.all(16.r),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.isDark ? AppColors.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(
               color: program.isRecommended
                   ? const Color(0xFF22C55E)
-                  : const Color(0xFFE2E8F0),
+                  : (context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
               width: program.isRecommended ? 1.5.w : 1.w,
             ),
           ),
@@ -97,9 +99,9 @@ class ProgramCard extends StatelessWidget {
               // Degree + Intake badges
               Row(
                 children: [
-                  _buildBadge(Icons.school_outlined, program.degreeType),
+                  _buildBadge(context, Icons.school_outlined, program.degreeType),
                   SizedBox(width: 8.w),
-                  _buildBadge(
+                  _buildBadge(context,
                     Icons.calendar_today_outlined,
                     program.intakeType,
                   ),
@@ -119,22 +121,27 @@ class ProgramCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge(IconData icon, String text) {
+  Widget _buildBadge(BuildContext context, IconData icon, String text) {
+    final displayText = text.length > 12 ? '${text.substring(0, 12)}...' : text;
     return Container(
+      constraints: BoxConstraints(maxWidth: 140.w),
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(6.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12.sp, color: const Color(0xFF64748B)),
+          Icon(icon, size: 12.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
           SizedBox(width: 4.w),
-          Text(
-            text,
-            style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
+          Flexible(
+            child: Text(
+              displayText,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+            ),
           ),
         ],
       ),

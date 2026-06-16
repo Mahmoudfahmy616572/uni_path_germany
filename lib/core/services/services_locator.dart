@@ -1,6 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../providers/language_provider.dart';
+import '../providers/theme_provider.dart';
+
 import '../../data/repositories/applications_repository_impl.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/universities_repository_impl.dart';
@@ -18,6 +21,8 @@ import '../../presentation/auth/logout/cubit/logout_cubit.dart';
 import '../../presentation/auth/register/cubit/register_cubit.dart';
 // 🎯 استيراد الكيوبيت الجديد
 import '../../presentation/profile/cubit/profile_cubit.dart';
+import 'ai/ai_usage_service.dart';
+import 'ai/gemini_service.dart';
 import 'auth/auth_service.dart';
 
 final sl = GetIt.instance;
@@ -55,4 +60,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LogoutCubit(sl()));
   sl.registerLazySingleton(() => UniversityDetailsCubit(sl()));
   sl.registerLazySingleton(() => MyApplicationsCubit(sl()));
+
+  // 5. App Providers
+  sl.registerLazySingleton(() => ThemeProvider());
+  sl.registerLazySingleton(() => LanguageProvider());
+
+  // 6. AI Services
+  sl.registerLazySingleton(() => GeminiService());
+  sl.registerLazySingleton(() => AiUsageService(sl()));
 }

@@ -17,6 +17,8 @@ class RegisterCubit extends Cubit<RegisterState> {
     required String username,
     String? phone,
     double? gpa,
+    double? academicAverage,
+    double? highSchoolScore,
     double? maxGpa,
     double? minGpa,
     bool? hasMoi,
@@ -24,8 +26,8 @@ class RegisterCubit extends Cubit<RegisterState> {
     double? ieltsScore,
     String? targetMajor,
     required String intake,
-    required String languagePreference, // 🎯 الحقل الجديد
-    String? degreeLevel, // 🎯 Added degree level
+    required String languagePreference,
+    String? degreeLevel,
   }) async {
     // حماية أساسية
     if (email.isEmpty || password.length < 6) {
@@ -53,6 +55,8 @@ class RegisterCubit extends Cubit<RegisterState> {
       try {
         await universitiesRepository.completeStudentProfile(
           gpa: gpa ?? 0.0,
+          academicAverage: academicAverage,
+          highSchoolScore: highSchoolScore,
           maxGpa: maxGpa ?? 4.0,
           minGpa: minGpa ?? 1.0,
           hasMoi: hasMoi ?? false,

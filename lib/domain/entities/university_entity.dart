@@ -17,6 +17,7 @@ class UniversityEntity {
   final dynamic hasBachelorCert;
   final dynamic hasSop;
   final dynamic hasCv;
+  final dynamic hasLanguageCert;
 
   final String? description;
   final int? rankings;
@@ -39,6 +40,7 @@ class UniversityEntity {
     this.hasBachelorCert = false,
     this.hasSop = false,
     this.hasCv = false,
+    this.hasLanguageCert = false,
     this.description,
     this.rankings,
     this.logoUrl,
@@ -61,6 +63,7 @@ class UniversityEntity {
     dynamic hasBachelorCert,
     dynamic hasSop,
     dynamic hasCv,
+    dynamic hasLanguageCert,
     String? description,
     int? rankings,
     String? logoUrl,
@@ -82,6 +85,7 @@ class UniversityEntity {
       hasBachelorCert: hasBachelorCert ?? this.hasBachelorCert,
       hasSop: hasSop ?? this.hasSop,
       hasCv: hasCv ?? this.hasCv,
+      hasLanguageCert: hasLanguageCert ?? this.hasLanguageCert,
       description: description ?? this.description,
       rankings: rankings ?? this.rankings,
       logoUrl: logoUrl ?? this.logoUrl,

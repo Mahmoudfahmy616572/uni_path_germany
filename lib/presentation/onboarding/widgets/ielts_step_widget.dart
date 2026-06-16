@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_states.dart';
 
@@ -18,47 +21,87 @@ class IeltsStepWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'English Language\nProficiency',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
-              height: 1.3,
+          CurtainDrop(
+            index: 0,
+            child: Text(
+              AppLocalizations.of(context).translate('ieltsHeading'),
+              style: TextStyle(
+                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Have you taken the IELTS exam?',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
+          CurtainDrop(
+            index: 1,
+            child: Text(
+              AppLocalizations.of(context).translate('ieltsSubtitle'),
+              style: TextStyle(color: context.textMutedColor, fontSize: 15.sp),
+            ),
           ),
-          SizedBox(height: 40.h),
-
-          // Ø®ÙŠØ§Ø±: Ù†Ø¹Ù… (Yes)
-          _buildSelectionCard(
-            title: 'Yes, I have an IELTS score',
-            subtitle: 'You will enter your band score next',
-            icon: Icons.check_circle_outline,
-            isSelected: state.hasIELTS == true,
-            onTap: () => cubit.updateIeltsStatus(true),
-          ),
-
           SizedBox(height: 16.h),
-
-          // Ø®ÙŠØ§Ø±: Ù„Ø§ (No)
-          _buildSelectionCard(
-            title: 'No, I don\'t have one',
-            subtitle: 'Skip language score requirements',
-            icon: Icons.cancel_outlined,
-            isSelected: state.hasIELTS == false,
-            onTap: () => cubit.updateIeltsStatus(false),
+          Expanded(
+              child: ListView(
+                children: [
+                  CurtainDrop(
+                    index: 2,
+                    child: _buildSelectionCard(
+                      context,
+                      title: 'IELTS',
+                      subtitle: 'International English Language Testing System',
+                      icon: Icons.check_circle_outline,
+                      isSelected: state.testType == 'ielts',
+                      onTap: () => cubit.updateTestType('ielts'),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  CurtainDrop(
+                    index: 3,
+                    child: _buildSelectionCard(
+                      context,
+                      title: 'TOEFL',
+                      subtitle: 'Test of English as a Foreign Language',
+                      icon: Icons.language_outlined,
+                      isSelected: state.testType == 'toefl',
+                      onTap: () => cubit.updateTestType('toefl'),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  CurtainDrop(
+                    index: 4,
+                    child: _buildSelectionCard(
+                      context,
+                      title: 'MOI',
+                      subtitle: 'Medium of Instruction certificate',
+                      icon: Icons.school_outlined,
+                      isSelected: state.testType == 'moi',
+                      onTap: () => cubit.updateTestType('moi'),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  CurtainDrop(
+                    index: 5,
+                    child: _buildSelectionCard(
+                      context,
+                      title: 'None of the above',
+                      subtitle: 'I don\'t have any English certificate',
+                      icon: Icons.cancel_outlined,
+                      isSelected: state.testType == 'none',
+                      onTap: () => cubit.updateTestType('none'),
+                    ),
+                  ),
+                ],
+              ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSelectionCard({
+  Widget _buildSelectionCard(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -72,7 +115,7 @@ class IeltsStepWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.08)
-              : AppColors.inputBackground,
+              : context.inputBgColor,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -83,7 +126,7 @@ class IeltsStepWidget extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textGrey,
+              color: isSelected ? AppColors.primary : context.textMutedColor,
               size: 32,
             ),
             SizedBox(width: 16.w),
@@ -94,7 +137,7 @@ class IeltsStepWidget extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: AppColors.textDark,
+                      color: context.isDark ? AppColors.textMain : AppColors.textDark,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -103,7 +146,7 @@ class IeltsStepWidget extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: AppColors.textGrey,
+                      color: context.textMutedColor,
                       fontSize: 13.sp,
                     ),
                   ),
@@ -115,7 +158,7 @@ class IeltsStepWidget extends StatelessWidget {
             else
               Icon(
                 Icons.radio_button_off,
-                color: AppColors.textGrey.withValues(alpha: 0.4),
+                color: context.textMutedColor.withValues(alpha: 0.4),
               ),
           ],
         ),

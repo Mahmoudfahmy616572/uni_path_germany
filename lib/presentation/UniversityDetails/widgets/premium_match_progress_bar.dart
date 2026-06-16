@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/widgets/animated_match_score.dart';
+
 class PremiumMatchProgressBar extends StatelessWidget {
   final int totalScore; // النسبة الكلية القادمة من الـ Repository
 
@@ -43,15 +45,35 @@ class PremiumMatchProgressBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Center(
                         child: FittedBox(
-                          fit: BoxFit
-                              .scaleDown, // تصغير الخط تلقائياً لو المساحة ضيقة
-                          child: Text(
-                            'Academic Match ($academicEarned%)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Academic Match (',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              AnimatedScoreText(
+                                score: academicEarned,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                ')',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

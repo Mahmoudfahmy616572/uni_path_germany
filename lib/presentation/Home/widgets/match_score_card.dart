@@ -1,12 +1,13 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/widgets/animated_match_score.dart';
+
 class MatchScoreCard extends StatelessWidget {
   final int score;
+  final VoidCallback? onAiTap;
 
-  const MatchScoreCard({super.key, required this.score});
+  const MatchScoreCard({super.key, required this.score, this.onAiTap});
 
   String get _statusText {
     if (score >= 80) return "Excellent Chance";
@@ -28,7 +29,7 @@ class MatchScoreCard extends StatelessWidget {
       width: double.infinity,
       constraints: BoxConstraints(
         minHeight: 180.h,
-      ), // 🎯 استخدام constraints بدلاً من height ثابت
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0xFF6366F1),
@@ -60,8 +61,7 @@ class MatchScoreCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize:
-                        MainAxisSize.min, // 🎯 جعل العمود يأخذ أقل مساحة ممكنة
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         "Your Match Score",
@@ -72,8 +72,8 @@ class MatchScoreCard extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 2.h),
-                      Text(
-                        "$score%",
+                      AnimatedScoreText(
+                        score: score,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 42.sp,
@@ -91,7 +91,6 @@ class MatchScoreCard extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 8.h),
-                      // 🎯 استخدام Flexible أو تقليل النص لمنع الـ Overflow
                       Text(
                         "You have ${score >= 50 ? 'good' : 'fair'} chances for most programs.",
                         style: TextStyle(
@@ -100,25 +99,39 @@ class MatchScoreCard extends StatelessWidget {
                           height: 1.4,
                         ),
                       ),
+                      if (onAiTap != null) ...[
+                        SizedBox(height: 10.h),
+                        SizedBox(
+                          height: 32.h,
+                          child: ElevatedButton.icon(
+                            onPressed: onAiTap,
+                            icon: Icon(Icons.auto_awesome, size: 14.sp),
+                            label: Text(
+                              'AI Tips',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white.withValues(alpha: 0.2),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(horizontal: 12.w),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 SizedBox(
                   width: 80.w,
                   height: 80.h,
-                  child: CustomPaint(
-                    painter: CircularProgressPainter(progress: score / 100),
-                    child: Center(
-                      child: Transform.rotate(
-                        angle: pi / 4,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: AnimatedCircularScore(score: score),
                 ),
               ],
             ),
@@ -127,37 +140,6 @@ class MatchScoreCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// باقي الـ Painters (Wave و Circular) يبقون كما هم دون تغيير
-class CircularProgressPainter extends CustomPainter {
-  final double progress;
-  CircularProgressPainter({required this.progress});
-  @override
-  void paint(Canvas canvas, Size size) {
-    Offset center = Offset(size.width / 2, size.height / 2);
-    double radius = min(size.width / 2, size.height / 2);
-    Paint backgroundPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10.0;
-    canvas.drawCircle(center, radius, backgroundPaint);
-    Paint progressPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 10.0;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -pi / 2,
-      2 * pi * progress,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 class ChartWavePainter extends CustomPainter {
@@ -170,7 +152,6 @@ class ChartWavePainter extends CustomPainter {
     Path path = Path();
     path.moveTo(0, size.height * 0.8);
 
-    // رسم تعرجات عشوائية بسيطة تشبه الـ Chart في الصورة
     path.quadraticBezierTo(
       size.width * 0.1,
       size.height * 0.5,
@@ -198,11 +179,9 @@ class ChartWavePainter extends CustomPainter {
     );
     canvas.drawPath(path, wavePaint);
 
-    // إضافة النقطة اللي في آخر الـ Chart
     Paint dotPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
     canvas.drawCircle(Offset(size.width, size.height * 0.2), 4, dotPaint);
 
-    // تلوين خفيف تحت الـ Wave
     Paint fillPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.05)
       ..style = PaintingStyle.fill;

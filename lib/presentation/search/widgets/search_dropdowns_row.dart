@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 import '../cubit/university_search_cubit.dart';
 
 class SearchDropdownsRow extends StatelessWidget {
@@ -22,7 +24,7 @@ class SearchDropdownsRow extends StatelessWidget {
       children: [
         // 🎯 دروب داون الفصل الدراسي (Winter/Summer/Both)
         Expanded(
-          child: _buildDropdownContainer(
+          child: _buildDropdownContainer(context,
             child: DropdownButton<String>(
               value:
                   [
@@ -49,6 +51,7 @@ class SearchDropdownsRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
+                          color: context.isDark ? AppColors.textMain : null,
                         ),
                       ),
                     );
@@ -62,7 +65,7 @@ class SearchDropdownsRow extends StatelessWidget {
         SizedBox(width: 8.w),
         // دروب داون الدرجة العلمية
         Expanded(
-          child: _buildDropdownContainer(
+          child: _buildDropdownContainer(context,
             child: DropdownButton<String>(
               value: currentDegree,
               isExpanded: true,
@@ -70,13 +73,14 @@ class SearchDropdownsRow extends StatelessWidget {
               items: ['All', 'Bachelor', 'Master', 'PhD'].map((String val) {
                 return DropdownMenuItem<String>(
                   value: val,
-                  child: Text(
-                    val == 'All' ? '🎓 Degree' : val,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      val == 'All' ? '🎓 Degree' : val,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: context.isDark ? AppColors.textMain : null,
+                      ),
                     ),
-                  ),
                 );
               }).toList(),
               onChanged: (value) => context
@@ -88,7 +92,7 @@ class SearchDropdownsRow extends StatelessWidget {
         SizedBox(width: 8.w),
         // دروب داون التخصص
         Expanded(
-          child: _buildDropdownContainer(
+          child: _buildDropdownContainer(context,
             child: DropdownButton<String>(
               value: currentMajor,
               isExpanded: true,
@@ -97,14 +101,15 @@ class SearchDropdownsRow extends StatelessWidget {
                 (String val) {
                   return DropdownMenuItem<String>(
                     value: val,
-                    child: Text(
-                      val == 'All' ? '🔬 Major' : val,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        val == 'All' ? '🔬 Major' : val,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          overflow: TextOverflow.ellipsis,
+                          color: context.isDark ? AppColors.textMain : null,
+                        ),
                       ),
-                    ),
                   );
                 },
               ).toList(),
@@ -118,13 +123,13 @@ class SearchDropdownsRow extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownContainer({required Widget child}) {
+  Widget _buildDropdownContainer(BuildContext context, {required Widget child}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       height: 40,
       child: Center(child: child),

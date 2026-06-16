@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/localization/app_localizations.dart';
+
 import '../../../../core/services/auth/auth_service.dart';
 import '../../../../core/services/auth/go_router_refresh_stream.dart';
 import '../../domain/entities/university_entity.dart';
@@ -32,7 +34,10 @@ import '../../presentation/admin/settings/admin_settings_screen.dart';
 import '../../presentation/search/screen/university_search_screen.dart';
 import '../services/services_locator.dart';
 
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
 final GoRouter appRouter = GoRouter(
+  navigatorKey: _rootNavigatorKey,
   initialLocation: '/onboarding',
   refreshListenable: GoRouterRefreshStream(sl<AuthService>().authStateChanges),
   redirect: (context, state) {
@@ -90,33 +95,30 @@ final GoRouter appRouter = GoRouter(
     // 🎯 إصلاح مسار شاشة الإعدادات
     GoRoute(
       path: '/settings',
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final profileCubit = state.extra as ProfileCubit;
-        final currentState = profileCubit.state;
-
-        // التحقق من نوع الحالة قبل الوصول للـ user
-        if (currentState is ProfileLoaded) {
-          return BlocProvider.value(
-            value: profileCubit,
-            child: SettingsScreen(user: currentState.user),
-          );
-        }
-
-        // حالة احتياطية لو البيانات مش موجودة (نادراً ما تحدث)
-        return const Scaffold(
-          body: Center(child: Text("Error: Profile data not available")),
-        );
+        return _SettingsRouteHandler(cubit: profileCubit);
       },
     ),
 
     GoRoute(
       path: '/documents',
-      builder: (context, state) =>
-          DocumentsScreen(userFiles: state.extra as UniversityEntity),
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final entity = state.extra;
+        if (entity is! UniversityEntity) {
+          return const Scaffold(
+            body: Center(child: Text('No document data available')),
+          );
+        }
+        return DocumentsScreen(userFiles: entity);
+      },
     ),
 
     GoRoute(
       path: '/university_details',
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) =>
           UniversityDetailsScreen(university: state.extra as UniversityEntity),
     ),
@@ -161,26 +163,30 @@ final GoRouter appRouter = GoRouter(
         body: navigationShell,
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: navigationShell.currentIndex,
-          selectedItemColor: const Color(0xFF4F46E5),
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+          backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
           type: BottomNavigationBarType.fixed,
           onTap: (index) {
             if (index == 2) sl<MyApplicationsCubit>().loadApplications();
             navigationShell.goBranch(index);
           },
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_filled),
-              label: "Home",
+              label: AppLocalizations.of(context).translate('home'),
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: AppLocalizations.of(context).translate('search'),
+            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.description_outlined),
-              label: "Applications",
+              label: AppLocalizations.of(context).translate('applications'),
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
-              label: "Profile",
+              label: AppLocalizations.of(context).translate('profile'),
             ),
           ],
         ),
@@ -225,3 +231,49 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+// ─────────────────────────────────────────────────────────
+// Settings route wrapper — loads profile if not already loaded
+// ─────────────────────────────────────────────────────────
+class _SettingsRouteHandler extends StatefulWidget {
+  final ProfileCubit cubit;
+  const _SettingsRouteHandler({required this.cubit});
+
+  @override
+  State<_SettingsRouteHandler> createState() => _SettingsRouteHandlerState();
+}
+
+class _SettingsRouteHandlerState extends State<_SettingsRouteHandler> {
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.cubit.state;
+    if (s is! ProfileLoaded && s is! ProfileLoading) {
+      widget.cubit.getUserProfile();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: widget.cubit,
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          if (state is ProfileLoaded) {
+            return SettingsScreen(user: state.user);
+          }
+          if (state is ProfileError) {
+            return Scaffold(
+              appBar: AppBar(title: Text(AppLocalizations.of(context).translate('settings'))),
+              body: Center(child: Text('Error: ${state.message}')),
+            );
+          }
+          return Scaffold(
+            appBar: AppBar(title: Text(AppLocalizations.of(context).translate('settings'))),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      ),
+    );
+  }
+}

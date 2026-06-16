@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_states.dart';
 
@@ -13,14 +16,41 @@ class MajorStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ØªØ®ØµØµØ§Øª Ø§Ù„Ø£Ø³Ø§Ø³ÙŠØ©
     final List<String> majors = [
-      'Engineering',
+      'Computer Science',
       'Computer Science & IT',
-      'Business & Economics',
-      'Medicine & Healthcare',
+      'Information Systems',
+      'Artificial Intelligence',
+      'Cybersecurity',
+      'Bioinformatics',
+      'Software Engineering',
+      'Data Science',
+      'Information Technology',
+      'Engineering',
+      'Mechanical Engineering',
+      'Civil Engineering',
+      'Aerospace Engineering',
+      'Automotive Engineering',
+      'Chemical Engineering',
+      'Energy Engineering',
+      'Robotics',
+      'Business Administration',
+      'Business & Management',
+      'Economics',
+      'Finance',
+      'Management',
+      'Marketing',
+      'Medicine',
+      'Healthcare',
+      'Pharmaceutical Sciences',
       'Natural Sciences',
-      'Social Sciences & Humanities',
+      'Mathematics',
+      'Environmental Science',
+      'Physics',
+      'Chemistry',
+      'Social Sciences',
+      'Political Science',
+      'Law',
     ];
 
     return Padding(
@@ -28,19 +58,25 @@ class MajorStepWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Select your major\nfield of study',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
-              height: 1.3,
+          CurtainDrop(
+            index: 0,
+            child: Text(
+              AppLocalizations.of(context).translate('majorHeading'),
+              style: TextStyle(
+                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Choose the discipline that matches your academic background',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
+          CurtainDrop(
+            index: 1,
+            child: Text(
+              AppLocalizations.of(context).translate('majorSubtitle'),
+              style: TextStyle(color: context.textMutedColor, fontSize: 15.sp),
+            ),
           ),
           SizedBox(height: 32.h),
 
@@ -49,61 +85,62 @@ class MajorStepWidget extends StatelessWidget {
               itemCount: majors.length,
               itemBuilder: (context, index) {
                 final majorName = majors[index];
-                // ðŸŽ¯ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„ Ù‡Ù†Ø§: Ø¨Ù†Ù‚Ø§Ø±Ù† Ù…Ø¹ fieldOfInterest Ø§Ù„Ù„ÙŠ Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ Ø§Ù„Ù€ State ÙØ¹Ù„ÙŠØ§Ù‹
                 final isSelected = state.fieldOfInterest == majorName;
+                final curtainIndex = index + 2;
 
-                return GestureDetector(
-                  onTap: () => cubit.updateField(
-                    majorName,
-                  ), // ðŸŽ¯ Ø§Ø³ØªØ¯Ø¹Ø§Ø¡ Ø§Ù„Ù…ÙŠØ«ÙˆØ¯ Ø§Ù„ØµØ­ÙŠØ­Ø© ÙÙŠ Ø§Ù„Ù€ Cubit
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: EdgeInsets.all(18.r),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.08)
-                          : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
+                return CurtainDrop(
+                  index: curtainIndex,
+                  child: GestureDetector(
+                    onTap: () => cubit.updateField(majorName),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      padding: EdgeInsets.all(18.r),
+                      decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            majorName,
-                            style: TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 16.sp,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : context.inputBgColor,
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          width: 2,
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle,
-                            color: AppColors.primary,
-                            size: 22,
-                          )
-                        else
-                          Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.textGrey.withValues(alpha: 0.4),
-                                width: 2,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              majorName,
+                              style: TextStyle(
+                                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                                fontSize: 16.sp,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           ),
-                      ],
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 22,
+                            )
+                          else
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: context.textMutedColor.withValues(alpha: 0.4),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 );

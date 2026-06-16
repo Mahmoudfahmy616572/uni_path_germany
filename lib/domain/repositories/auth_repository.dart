@@ -23,4 +23,7 @@ abstract class AuthRepository {
     required String userId,
     required Map<String, dynamic> updates,
   });
+
+  // 🎯 حذف الحساب بالكامل
+  Future<void> deleteAccount();
 }

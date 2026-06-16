@@ -1,6 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+
 class ProfileToolItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -22,7 +25,7 @@ class ProfileToolItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -35,7 +38,6 @@ class ProfileToolItem extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: ListTile(
-        tileColor: Colors.white,
         leading: Container(
           padding: EdgeInsets.all(8.r),
           decoration: BoxDecoration(
@@ -46,16 +48,16 @@ class ProfileToolItem extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A)),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+          style: TextStyle(color: context.isDark ? AppColors.textMuted : Colors.grey, fontSize: 12.sp),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14,
-          color: Colors.grey,
+          color: context.isDark ? AppColors.textMuted : Colors.grey,
         ),
         onTap: onTap,
       ),

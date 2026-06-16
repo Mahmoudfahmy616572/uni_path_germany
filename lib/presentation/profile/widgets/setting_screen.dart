@@ -27,9 +27,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/services/services_locator.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/providers/language_provider.dart';
+import '../../../core/providers/theme_provider.dart';
+import '../../../core/services/services_locator.dart' as di;
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 import '../../../core/utils/custom_snack_bar.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../Home/cubit/home_cubit.dart';
 import '../../MyApplications/cubit/my_applications_cubits.dart';
@@ -49,17 +54,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _gpaController;
+  late TextEditingController _academicAvgController;
+  late TextEditingController _highSchoolController;
   late TextEditingController _ieltsScoreController;
+  late TextEditingController _toeflScoreController;
 
   // ── Dropdown selections ───────────────────────────────────
   late String _selectedIntake;
   late String _selectedLanguage;
-  late String _selectedDegree; // ✅ Bug #1 fixed
-  late String _selectedMajor; // ✅ Bug #2 added
-  late String _selectedGpaScale; // ✨ New
+  late String _selectedDegree;
+
+  late String _selectedMajor;
+  late String _selectedGpaScale;
+  late String _selectedNationality;
+  late String _selectedBudget;
+  final List<String> _selectedCities = [];
 
   // ── Toggles ───────────────────────────────────────────────
   late bool _hasIelts;
+  late bool _hasToefl;
+  late bool _hasMoi;
+  late bool _hasStudiedUniversity;
 
   // ── Notification Preferences ──────────────────────────────
   late bool _notificationsEnabled;
@@ -76,18 +91,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Dropdown options (نفس الـ Onboarding) ─────────────────
   static const List<String> _majors = [
-    'Engineering',
+    'Computer Science',
     'Computer Science & IT',
-    'Business & Economics',
-    'Medicine & Healthcare',
+    'Information Systems',
+    'Artificial Intelligence',
+    'Cybersecurity',
+    'Bioinformatics',
+    'Software Engineering',
+    'Data Science',
+    'Information Technology',
+    'Engineering',
+    'Mechanical Engineering',
+    'Civil Engineering',
+    'Aerospace Engineering',
+    'Automotive Engineering',
+    'Chemical Engineering',
+    'Energy Engineering',
+    'Robotics',
+    'Business Administration',
+    'Business & Management',
+    'Economics',
+    'Finance',
+    'Management',
+    'Marketing',
+    'Medicine',
+    'Healthcare',
+    'Pharmaceutical Sciences',
     'Natural Sciences',
-    'Social Sciences & Humanities',
+    'Mathematics',
+    'Environmental Science',
+    'Physics',
+    'Chemistry',
+    'Social Sciences',
+    'Political Science',
+    'Law',
   ];
 
   static const List<String> _degrees = [
     "Bachelor's Degree",
     "Master's Degree",
-    'Doctorate',
+    'PhD / Doctorate',
+    'Graduate School',
+    'Summer Course',
+    'Short Course',
+    'Foundation / Preparatory',
+    'Study Abroad / Exchange',
   ];
 
   static const List<String> _intakes = [
@@ -100,6 +148,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static const List<String> _gpaScales = ['4.0', '5.0', '10.0', '20.0'];
 
+  static const List<String> _nationalities = [
+    'Egypt',
+    'Saudi Arabia',
+    'Iraq',
+    'Yemen',
+    'Syria',
+    'Jordan',
+    'Lebanon',
+    'Palestine',
+    'Libya',
+    'Tunisia',
+    'Algeria',
+    'Morocco',
+    'Sudan',
+    'Somalia',
+    'Mauritania',
+    'Bahrain',
+    'Kuwait',
+    'Oman',
+    'Qatar',
+    'UAE',
+    'Other',
+  ];
+
+  static const List<String> _germanCities = [
+    'Berlin',
+    'Munich',
+    'Hamburg',
+    'Frankfurt',
+    'Cologne',
+    'Stuttgart',
+    'Düsseldorf',
+    'Leipzig',
+    'Dresden',
+    'Bonn',
+    'Mannheim',
+    'Nuremberg',
+    'Hannover',
+    'Bremen',
+    'Freiburg',
+    'Heidelberg',
+    'Tübingen',
+    'Aachen',
+    'Darmstadt',
+    'Karlsruhe',
+  ];
+
+  static const List<String> _budgetRanges = [
+    'Under €10,000',
+    '€10,000 - €15,000',
+    '€15,000 - €20,000',
+    '€20,000 - €30,000',
+    'Above €30,000',
+    'Not Sure',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -109,11 +213,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _gpaController = TextEditingController(
       text: widget.user.gpa > 0 ? widget.user.gpa.toString() : '',
     );
+    _academicAvgController = TextEditingController(
+      text: widget.user.academicAverage != null && widget.user.academicAverage! > 0
+          ? widget.user.academicAverage.toString()
+          : '',
+    );
+    _highSchoolController = TextEditingController(
+      text: widget.user.highSchoolScore != null && widget.user.highSchoolScore! > 0
+          ? widget.user.highSchoolScore.toString()
+          : '',
+    );
+    _hasStudiedUniversity = widget.user.academicAverage != null;
     _ieltsScoreController = TextEditingController(
       text: widget.user.ieltsScore > 0 ? widget.user.ieltsScore.toString() : '',
     );
+    _toeflScoreController = TextEditingController(
+      text: widget.user.toeflScore > 0 ? widget.user.toeflScore.toString() : '',
+    );
 
-    // ✅ Bug #1 fix — بنقرأ من degreeLevel مش budgetRange
     _selectedDegree = _degrees.contains(widget.user.degreeLevel)
         ? widget.user.degreeLevel
         : _degrees.first;
@@ -139,6 +256,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _gpaScales.contains(scaleFromMax) ? scaleFromMax : '4.0';
 
     _hasIelts = widget.user.hasIelts;
+    _hasToefl = widget.user.hasToefl;
+    _hasMoi = widget.user.hasMoi;
+
+    _selectedNationality = _nationalities.contains(widget.user.nationality)
+        ? widget.user.nationality
+        : _nationalities.first;
+    _selectedCities.addAll(
+      widget.user.preferredCities.where((c) => _germanCities.contains(c)),
+    );
+    _selectedBudget = _budgetRanges.contains(widget.user.budgetRange)
+        ? widget.user.budgetRange
+        : _budgetRanges.first;
 
     // ✨ Notification Preferences — نقرأ من user.notificationPreferences
     final prefs = widget.user.notificationPreferences;
@@ -158,7 +287,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _gpaController.dispose();
+    _academicAvgController.dispose();
+    _highSchoolController.dispose();
     _ieltsScoreController.dispose();
+    _toeflScoreController.dispose();
     super.dispose();
   }
 
@@ -174,7 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_hasIelts && _ieltsScoreController.text.trim().isNotEmpty) {
       filled++;
     } else if (!_hasIelts) {
-      filled++; // مش مطلوب منه IELTS
+      filled++;
     }
     if (_selectedIntake.isNotEmpty) filled++;
     return filled / total;
@@ -183,24 +315,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: Color(0xFF1E293B),
+            color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
             size: 20,
           ),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Account Settings',
+        title: Text(
+          AppLocalizations.of(context).translate('accountSettings'),
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 18.sp,
           ),
         ),
       ),
@@ -212,13 +342,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   forceRefresh: true,
                 );
             // تحديث الـ MyApplicationsCubit
-            sl<MyApplicationsCubit>().loadApplications();
+            di.sl<MyApplicationsCubit>().loadApplications();
 
-            CustomSnackBar.show(
-              context,
-              message: 'Settings updated successfully! ✅',
-            );
-            context.pop();
+            context.pop(true);
           }
           if (state is ProfileError) {
             CustomSnackBar.show(context, message: state.message, isError: true);
@@ -235,7 +361,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SizedBox(height: 24.h),
 
                 // ── Section: Personal Info ────────────────────
-                _buildSectionLabel('Personal Info'),
+                CurtainDrop(
+                  index: 0,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('personalInfo')),
+                ),
                 SizedBox(height: 10.h),
                 _buildField('Name', _nameController, Icons.person_outline),
                 _buildField(
@@ -247,42 +376,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // ── Section: Academic Profile ─────────────────
                 SizedBox(height: 20.h),
-                _buildSectionLabel('Academic Profile'),
+                CurtainDrop(
+                  index: 1,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('academicProfile')),
+                ),
                 SizedBox(height: 10.h),
 
                 // ✅ Bug #2 — target_major dropdown
                 _buildDropdown(
-                  label: 'Field of Study',
+                  label: AppLocalizations.of(context).translate('fieldOfStudy'),
                   icon: Icons.school_outlined,
                   value: _selectedMajor,
                   items: _majors,
                   onChanged: (v) => setState(() => _selectedMajor = v!),
                 ),
-                // ✅ Bug #1 — degree dropdown reads from degreeLevel
                 _buildDropdown(
-                  label: 'Degree Level',
+                  label: AppLocalizations.of(context).translate('degreeLevel'),
                   icon: Icons.workspace_premium_outlined,
                   value: _selectedDegree,
                   items: _degrees,
-                  onChanged: (v) => setState(() => _selectedDegree = v!),
+                  onChanged: null,
                 ),
-                // GPA row with scale selector
-                _buildGpaRow(),
+                // GPA or Academic Average
+                _buildGpaOrAcademicRow(),
 
                 // ── Section: Language & Intake ────────────────
                 SizedBox(height: 20.h),
-                _buildSectionLabel('Preferences'),
+                CurtainDrop(
+                  index: 2,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('preferences')),
+                ),
                 SizedBox(height: 10.h),
 
                 _buildDropdown(
-                  label: 'Study Language',
+                  label: AppLocalizations.of(context).translate('studyLanguage'),
                   icon: Icons.language_outlined,
                   value: _selectedLanguage,
                   items: _languages,
                   onChanged: (v) => setState(() => _selectedLanguage = v!),
                 ),
                 _buildDropdown(
-                  label: 'Target Intake',
+                  label: AppLocalizations.of(context).translate('targetIntake'),
                   icon: Icons.calendar_today_outlined,
                   value: _selectedIntake,
                   items: _intakes,
@@ -291,15 +425,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // ── Section: Language Certificate ─────────────
                 SizedBox(height: 20.h),
-                _buildSectionLabel('Language Certificate'),
+                CurtainDrop(
+                  index: 3,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('languageCertificate')),
+                ),
                 SizedBox(height: 10.h),
                 _buildIeltsSection(),
 
                 // ── Section: Notifications ────────────────────
                 SizedBox(height: 20.h),
-                _buildSectionLabel('Notifications'),
+                CurtainDrop(
+                  index: 4,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('notifications')),
+                ),
                 SizedBox(height: 10.h),
                 _buildNotificationSection(),
+
+                // ── Section: App Settings ──────────────────────
+                SizedBox(height: 20.h),
+                CurtainDrop(
+                  index: 5,
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('appSettings')),
+                ),
+                SizedBox(height: 10.h),
+
+                _buildDropdown(
+                  label: AppLocalizations.of(context).translate('nationality'),
+                  icon: Icons.flag_outlined,
+                  value: _selectedNationality,
+                  items: _nationalities,
+                  onChanged: (v) => setState(() => _selectedNationality = v!),
+                ),
+
+                _buildCitiesSelector(),
+
+                _buildDropdown(
+                  label: AppLocalizations.of(context).translate('budgetRange'),
+                  icon: Icons.attach_money_outlined,
+                  value: _selectedBudget,
+                  items: _budgetRanges,
+                  onChanged: (v) => setState(() => _selectedBudget = v!),
+                ),
+
+                _buildThemeToggle(),
+
+                _buildLanguageToggle(),
+
+                // ── Section: Danger Zone ────────────────────────
+                SizedBox(height: 20.h),
+                CurtainDrop(
+                  index: 6,
+                  child: _buildSectionLabel('Danger Zone'),
+                ),
+                SizedBox(height: 10.h),
+                _buildDeleteAccountButton(),
 
                 // Bottom padding for floating button
                 SizedBox(height: 100.h),
@@ -319,14 +498,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: FloatingActionButton.extended(
                 onPressed: isLoading ? null : _onSave,
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.isDark ? AppColors.darkCardBg : Colors.white,
                 elevation: 8,
                 icon: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: context.isDark ? AppColors.darkCardBg : Colors.white,
                           strokeWidth: 2,
                         ),
                       )
@@ -354,16 +533,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final double gpa = double.tryParse(_gpaController.text) ?? 0.0;
     final double maxGpa = double.tryParse(_selectedGpaScale) ?? 4.0;
     final double ielts = double.tryParse(_ieltsScoreController.text) ?? 0.0;
+    final double toefl = double.tryParse(_toeflScoreController.text) ?? 0.0;
 
     context.read<ProfileCubit>().updateProfileData(
       updates: {
         'username': _nameController.text.trim(),
-        'degree_level': _selectedDegree,
         'target_major': _selectedMajor,
         'gpa': gpa,
+        'academic_average': _hasStudiedUniversity
+            ? (double.tryParse(_academicAvgController.text) ?? 0.0)
+            : null,
+        'high_school_score': _hasStudiedUniversity
+            ? null
+            : (double.tryParse(_highSchoolController.text) ?? 0.0),
         'max_gpa': maxGpa,
         'has_ielts': _hasIelts,
         'ielts_score': _hasIelts ? ielts : 0.0,
+        'has_toefl': _hasToefl,
+        'toefl_score': _hasToefl ? toefl : 0.0,
+        'has_moi': _hasMoi,
         'intake': _selectedIntake,
         'language_preference': _selectedLanguage,
         // ✨ Notification Preferences
@@ -379,8 +567,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'quiet_end': _quietEnd != null
             ? '${_quietEnd!.hour.toString().padLeft(2, '0')}:${_quietEnd!.minute.toString().padLeft(2, '0')}'
             : null,
+        'nationality': _selectedNationality,
+        'preferred_cities': _selectedCities,
+        'budget_range': _selectedBudget,
       },
     );
+  }
+
+  // ── Delete Account ─────────────────────────────────────────
+  Future<void> _onDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context).translate('deleteAccount')),
+        content: Text(
+          AppLocalizations.of(context).translate('deleteAccountWarning'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context).translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(AppLocalizations.of(context).translate('yesDelete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await context.read<ProfileCubit>().authRepository.deleteAccount();
+      if (context.mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Account deleted successfully.',
+        );
+        context.go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to delete account: $e',
+          isError: true,
+        );
+      }
+    }
   }
 
   // ── Widgets ───────────────────────────────────────────────
@@ -397,9 +631,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Container(
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.isDark ? AppColors.darkCardBg : Colors.white,
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,11 +642,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Profile Strength',
+                        AppLocalizations.of(context).translate('profileCompleteness'),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14.sp,
-                          color: const Color(0xFF1E293B),
+                          color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                         ),
                       ),
                       Text(
@@ -430,7 +664,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(8.r),
                     child: LinearProgressIndicator(
                       value: live,
-                      backgroundColor: const Color(0xFFE2E8F0),
+                      backgroundColor: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         live >= 1.0 ? Colors.green : AppColors.primary,
                       ),
@@ -442,7 +676,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: const Color(0xFF64748B),
+                      color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -458,7 +692,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       style: TextStyle(
         fontSize: 13.sp,
         fontWeight: FontWeight.w600,
-        color: const Color(0xFF64748B),
+        color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
         letterSpacing: 0.5,
       ),
     );
@@ -474,19 +708,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 10.h),
       decoration: BoxDecoration(
-        color: enabled ? Colors.white : const Color(0xFFF1F5F9),
+        color: enabled ? context.isDark ? AppColors.darkCardBg : Colors.white : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: TextField(
         controller: controller,
         enabled: enabled,
         keyboardType: isNum ? TextInputType.number : TextInputType.text,
-        style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1E293B)),
+        style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B)),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF64748B)),
-          prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+          labelStyle: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+          prefixIcon: Icon(icon, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 16.r,
@@ -502,24 +736,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required String value,
     required List<String> items,
-    required ValueChanged<String?> onChanged,
+    ValueChanged<String?>? onChanged,
   }) {
+    final bool isDisabled = onChanged == null;
     return Container(
       margin: EdgeInsets.only(bottom: 10.h),
       padding: EdgeInsets.symmetric(horizontal: 12.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDisabled ? context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC) : context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: items.contains(value) ? value : items.first,
         isExpanded: true,
-        icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+        icon: isDisabled
+            ? Icon(Icons.lock_outline, color: AppColors.textMuted, size: 18)
+            : Icon(Icons.keyboard_arrow_down, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF64748B)),
-          prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+          labelStyle: TextStyle(
+            color: isDisabled ? AppColors.textMuted : const Color(0xFF64748B),
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: isDisabled ? AppColors.textMuted : const Color(0xFF64748B),
+            size: 20,
+          ),
           border: InputBorder.none,
         ),
         items: items
@@ -530,7 +773,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   e,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: const Color(0xFF1E293B),
+                    color: isDisabled
+                        ? AppColors.textMuted
+                        : context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                   ),
                 ),
               ),
@@ -541,94 +786,170 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ✨ GPA row مع GPA Scale selector بجنبه
+  bool _isGraduateLevel() {
+    return _selectedDegree == "Master's Degree" || _selectedDegree == 'PhD / Doctorate' || _selectedDegree == 'Graduate School';
+  }
+
+  // ✨ Conditional: GPA for Master/PhD, Academic Average for Bachelor
+  Widget _buildGpaOrAcademicRow() {
+    if (_isGraduateLevel()) {
+      return _buildGpaRow();
+    }
+    return _buildAcademicAverageRow();
+  }
+
+  // ✨ GPA row مع GPA Scale selector بجنبه (لـ Master's / PhD)
   Widget _buildGpaRow() {
     return Container(
       margin: EdgeInsets.only(bottom: 10.h),
       child: Row(
         children: [
-          // GPA input (3/4 of width)
           Expanded(
             flex: 3,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.isDark ? AppColors.darkCardBg : Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
               ),
               child: TextField(
                 controller: _gpaController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: const Color(0xFF1E293B),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 ),
                 decoration: InputDecoration(
                   labelText: 'GPA',
-                  labelStyle: const TextStyle(color: Color(0xFF64748B)),
-                  prefixIcon: const Icon(
+                  labelStyle: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+                  prefixIcon: Icon(
                     Icons.grade_outlined,
-                    color: Color(0xFF64748B),
+                    color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                     size: 20,
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16.r,
-                    vertical: 14.r,
-                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.r, vertical: 14.r),
                 ),
               ),
             ),
           ),
           SizedBox(width: 8.w),
-          // GPA Scale selector (1/4 of width)
           Expanded(
             flex: 2,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.isDark ? AppColors.darkCardBg : Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedGpaScale,
                   isExpanded: true,
-                  icon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: Color(0xFF64748B),
-                    size: 18,
-                  ),
-                  hint: Text(
-                    'Scale',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  items: _gpaScales
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(
-                            'of $e',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              color: const Color(0xFF1E293B),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  icon: Icon(Icons.keyboard_arrow_down, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 18),
+                  hint: Text('Scale', style: TextStyle(fontSize: 12.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                  items: _gpaScales.map((e) => DropdownMenuItem(value: e, child: Text('of $e', style: TextStyle(fontSize: 13.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))))).toList(),
                   onChanged: (v) => setState(() => _selectedGpaScale = v!),
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ✨ Academic Average row for Bachelor & other non-graduate levels
+  Widget _buildAcademicAverageRow() {
+    return Column(
+      children: [
+        // "Have you studied?" toggle
+        Container(
+          margin: EdgeInsets.only(bottom: 10.h),
+          child: Row(
+            children: [
+              Text(
+                'Have you studied at a university before?',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => setState(() => _hasStudiedUniversity = !_hasStudiedUniversity),
+                child: Container(
+                  width: 50,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14.r),
+                    color: _hasStudiedUniversity ? AppColors.primary : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                  ),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 200),
+                    alignment: _hasStudiedUniversity ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.all(3.r),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Academic Average or High School Score field
+        if (_hasStudiedUniversity)
+          _buildNumericField(
+            controller: _academicAvgController,
+            label: 'Academic Average (your current university average)',
+          )
+        else
+          _buildNumericField(
+            controller: _highSchoolController,
+            label: 'High School Score (e.g. Tawjihi / Thanawiya)',
+          ),
+      ],
+    );
+  }
+
+  Widget _buildNumericField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        style: TextStyle(
+          fontSize: 14.sp,
+          color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+          prefixIcon: Icon(
+            Icons.analytics_outlined,
+            color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.r, vertical: 14.r),
+        ),
       ),
     );
   }
@@ -641,38 +962,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           margin: EdgeInsets.only(bottom: 10.h),
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.isDark ? AppColors.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.translate_outlined,
-                color: Color(0xFF64748B),
-                size: 20,
-              ),
+              Icon(Icons.translate_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'I have an IELTS certificate',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                    Text(
-                      _hasIelts
-                          ? 'Enter your score below'
-                          : 'Some programs require it',
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
+                    Text('I have an IELTS certificate',
+                        style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
+                    Text(_hasIelts ? 'Enter your score below' : 'Some programs require it',
+                        style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
                   ],
                 ),
               ),
@@ -687,17 +992,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-
-        // IELTS Score field (shows only when toggled on)
         if (_hasIelts)
-          Container(
-            child: _buildField(
-              'IELTS Score (e.g. 6.5)',
-              _ieltsScoreController,
-              Icons.star_outline,
-              isNum: true,
-            ),
+          _buildField('IELTS Score (e.g. 6.5)', _ieltsScoreController, Icons.star_outline, isNum: true),
+
+        // TOEFL toggle
+        Container(
+          margin: EdgeInsets.only(bottom: 10.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: context.isDark ? AppColors.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
           ),
+          child: Row(
+            children: [
+              Icon(Icons.language_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('I have a TOEFL certificate',
+                        style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
+                    Text(_hasToefl ? 'Enter your score below' : 'Accepted by many German universities',
+                        style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _hasToefl,
+                activeThumbColor: AppColors.primary,
+                onChanged: (v) => setState(() {
+                  _hasToefl = v;
+                  if (!v) _toeflScoreController.clear();
+                }),
+              ),
+            ],
+          ),
+        ),
+        if (_hasToefl)
+          _buildField('TOEFL Score (e.g. 90)', _toeflScoreController, Icons.star_outline, isNum: true),
+
+        // MOI toggle
+        Container(
+          margin: EdgeInsets.only(bottom: 10.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: context.isDark ? AppColors.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.school_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Medium of Instruction (MOI)',
+                        style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
+                    Text(_hasMoi
+                        ? 'Confirmed — degree taught in English'
+                        : 'Confirm if your degree was taught in English',
+                        style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _hasMoi,
+                activeThumbColor: AppColors.primary,
+                onChanged: (v) => setState(() => _hasMoi = v),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -726,7 +1095,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Sub-toggles (disabled when master is off)
         if (_notificationsEnabled) ...[
           _buildNotificationToggle(
-            label: 'Deadline Reminders',
+            label: AppLocalizations.of(context).translate('deadlineReminders'),
             subtitle: 'Get reminded before application deadlines',
             icon: Icons.schedule_outlined,
             value: _deadlineReminders,
@@ -742,7 +1111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SizedBox(height: 8.h),
           _buildNotificationToggle(
-            label: 'General Notifications',
+            label: AppLocalizations.of(context).translate('generalNotifications'),
             subtitle: 'Tips, new programs, and announcements',
             icon: Icons.campaign_outlined,
             value: _generalNotifications,
@@ -768,26 +1137,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Card(
+      color: context.isDark ? AppColors.darkCardBg : Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        side: BorderSide(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
+      clipBehavior: Clip.antiAlias,
       child: SwitchListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-        secondary: Icon(icon, color: const Color(0xFF64748B), size: 22),
+        secondary: Icon(icon, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 22),
         title: Text(
           label,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF1E293B),
+            color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B)),
+          style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
         ),
         value: value,
         activeThumbColor: AppColors.primary,
@@ -796,13 +1167,192 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildCitiesSelector() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.location_city_outlined,
+                  color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+              SizedBox(width: 8.w),
+              Text(
+                'Preferred Cities',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Wrap(
+            spacing: 6.w,
+            runSpacing: 4.h,
+            children: _germanCities.map((city) {
+              final selected = _selectedCities.contains(city);
+              return FilterChip(
+                label: Text(
+                  city,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: selected ? context.isDark ? AppColors.darkCardBg : Colors.white : context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                  ),
+                ),
+                selected: selected,
+                selectedColor: AppColors.primary,
+                backgroundColor: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                checkmarkColor: context.isDark ? AppColors.darkCardBg : Colors.white,
+                side: BorderSide(
+                  color: selected
+                      ? AppColors.primary
+                      : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                ),
+                onSelected: (v) {
+                  setState(() {
+                    if (v) {
+                      _selectedCities.add(city);
+                    } else {
+                      _selectedCities.remove(city);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          if (_selectedCities.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                '${_selectedCities.length} selected',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeToggle() {
+    final themeProvider = di.sl<ThemeProvider>();
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Row(
+          children: [
+            Icon(Icons.dark_mode_outlined,
+                color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+            SizedBox(width: 8.w),
+            Text(
+              AppLocalizations.of(context).translate('darkMode'),
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
+        value: themeProvider.isDark,
+        activeColor: AppColors.primary,
+        onChanged: (v) {
+          themeProvider.setThemeMode(
+            v ? ThemeMode.dark : ThemeMode.light,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLanguageToggle() {
+    final langProvider = di.sl<LanguageProvider>();
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.language_outlined,
+              color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+          SizedBox(width: 8.w),
+          Text(
+            AppLocalizations.of(context).translate('language'),
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+            ),
+          ),
+          const Spacer(),
+          DropdownButton<String>(
+            value: langProvider.isArabic ? 'ar' : 'en',
+            underline: const SizedBox(),
+            icon: const Icon(Icons.arrow_drop_down),
+            items: const [
+              DropdownMenuItem(value: 'en', child: Text('English')),
+              DropdownMenuItem(value: 'ar', child: Text('العربية')),
+            ],
+            onChanged: (v) {
+              if (v != null) {
+                langProvider.setLocale(
+                  v == 'ar' ? const Locale('ar') : const Locale('en'),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _onDeleteAccount,
+        icon: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+        label: Text(
+          AppLocalizations.of(context).translate('deleteAccount'),
+          style: TextStyle(color: Colors.red),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Colors.red),
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildReminderDaysSelector() {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -810,14 +1360,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             children: [
               Icon(Icons.timer_outlined,
-                  color: const Color(0xFF64748B), size: 22),
+                  color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 22),
               SizedBox(width: 12.w),
               Text(
                 'Remind me before deadline',
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1E293B),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 ),
               ),
             ],
@@ -833,17 +1383,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   '$day day${day > 1 ? 's' : ''}',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                    color: isSelected ? context.isDark ? AppColors.darkCardBg : Colors.white : context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 selected: isSelected,
                 selectedColor: AppColors.primary,
-                backgroundColor: const Color(0xFFF1F5F9),
-                checkmarkColor: Colors.white,
+                backgroundColor: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                checkmarkColor: context.isDark ? AppColors.darkCardBg : Colors.white,
                 side: BorderSide(
                   color:
-                      isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                      isSelected ? AppColors.primary : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
                 ),
                 onSelected: (selected) {
                   setState(() {
@@ -867,23 +1417,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.bedtime_outlined, color: const Color(0xFF64748B), size: 22),
+              Icon(Icons.bedtime_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 22),
               SizedBox(width: 12.w),
               Text(
                 'Quiet Hours',
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1E293B),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 ),
               ),
             ],
@@ -929,9 +1479,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -940,7 +1490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               label,
               style: TextStyle(
                 fontSize: 12.sp,
-                color: const Color(0xFF64748B),
+                color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -950,7 +1500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : 'Select',
               style: TextStyle(
                 fontSize: 13.sp,
-                color: const Color(0xFF1E293B),
+                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 fontWeight: FontWeight.w600,
               ),
             ),

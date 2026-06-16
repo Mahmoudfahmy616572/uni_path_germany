@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
 class AdminProgramsScreen extends StatefulWidget {
@@ -152,74 +153,80 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Programs'),
+        title: CurtainDrop(index: 0, child: const Text('Programs')),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv),
+          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _programs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.playlist_remove_outlined, size: 48, color: Colors.grey[300]),
-                      const SizedBox(height: 8),
-                      Text('No programs yet', style: TextStyle(color: Colors.grey[500])),
-                    ],
+      body: CurtainDrop(
+        index: 2,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _programs.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.playlist_remove_outlined, size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 8),
+                        Text('No programs yet', style: TextStyle(color: Colors.grey[500])),
+                      ],
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth >= 900) {
+                        return _buildDataTable();
+                      }
+                      return RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _programs.length,
+                          itemBuilder: (context, i) {
+                            final p = _programs[i];
+                            final univName = p['universities']?['name']?.toString() ?? '—';
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                  child: Text((p['degree_type']?.toString().substring(0, 1).toUpperCase() ?? 'P'), style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                                ),
+                                title: Text(p['program_name']?.toString() ?? ''),
+                                subtitle: Text('$univName  •  ${p['degree_type']?.toString() ?? ''}  •  ${p['duration']?.toString() ?? ''}  •  ${p['intake_type']?.toString() ?? ''}  •  ${p['major']?.toString() ?? ''}'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, size: 20),
+                                      onPressed: () => _editDialog(p),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                      onPressed: () => _delete(p['id']?.toString() ?? ''),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth >= 900) {
-                      return _buildDataTable();
-                    }
-                    return RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _programs.length,
-                        itemBuilder: (context, i) {
-                          final p = _programs[i];
-                          final univName = p['universities']?['name']?.toString() ?? '—';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
-                                child: Text((p['degree_type']?.toString().substring(0, 1).toUpperCase() ?? 'P'), style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
-                              ),
-                              title: Text(p['program_name']?.toString() ?? ''),
-                              subtitle: Text('$univName  •  ${p['degree_type']?.toString() ?? ''}  •  ${p['duration']?.toString() ?? ''}  •  ${p['intake_type']?.toString() ?? ''}  •  ${p['major']?.toString() ?? ''}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 20),
-                                    onPressed: () => _editDialog(p),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                    onPressed: () => _delete(p['id']?.toString() ?? ''),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton.extended(
+      ),
+      floatingActionButton: CurtainDrop(
+        index: 3,
+        child: FloatingActionButton.extended(
         onPressed: () => _editDialog(null),
         icon: const Icon(Icons.add),
         label: const Text('Add Program'),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
+      ),
       ),
     );
   }
@@ -242,6 +249,8 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
     final langCtrl = TextEditingController(text: existing?['language']?.toString() ?? '');
     final deadlineCtrl = TextEditingController(text: existing?['deadline']?.toString() ?? '');
     final descCtrl = TextEditingController(text: existing?['description']?.toString() ?? '');
+    final dataSourceCtrl = TextEditingController(text: existing?['data_source']?.toString() ?? '');
+    final linkCtrl = TextEditingController(text: existing?['link']?.toString() ?? '');
 
     final result = await showDialog<bool>(
       context: context,
@@ -330,6 +339,10 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   onChanged: (v) => setDialogState(() => acceptsMoi = v ?? false),
                   contentPadding: EdgeInsets.zero,
                 ),
+                const SizedBox(height: 12),
+                TextField(controller: dataSourceCtrl, decoration: const InputDecoration(labelText: 'Data Source (e.g. daad_api)', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+                const SizedBox(height: 12),
+                TextField(controller: linkCtrl, decoration: const InputDecoration(labelText: 'Program Link URL', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
               ],
             ),
           ),
@@ -377,6 +390,8 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
         'requires_ielts': requiresIelts,
         'min_ielts_score': requiresIelts && ieltsScoreCtrl.text.trim().isNotEmpty ? double.tryParse(ieltsScoreCtrl.text.trim()) : null,
         'accepts_moi': acceptsMoi,
+        'data_source': dataSourceCtrl.text.trim(),
+        'link': linkCtrl.text.trim(),
       };
       if (existing != null) {
         await Supabase.instance.client.from('university_programs').update(data).eq('id', existing['id']);

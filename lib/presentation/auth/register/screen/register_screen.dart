@@ -4,8 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/widgets/curtain_drop.dart';
 import '../../../../core/errors/message_error_handler.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../../../core/storage/local_storage_service.dart';
 import '../../widgets/custom_auth_field.dart';
@@ -57,16 +60,16 @@ class RegisterScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.isDark ? AppColors.darkBackground : AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.textDark,
-              size: 20,
-            ),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                size: 20,
+              ),
             onPressed: () => context.pop(),
           ),
         ),
@@ -77,105 +80,125 @@ class RegisterScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Create Account",
-                  style: GoogleFonts.poppins(
-                    fontSize: 28.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                CurtainDrop(
+                  index: 0,
+                  child: Text(
+                    AppLocalizations.of(context).translate('createAccount'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                      color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                    ),
                   ),
                 ),
-                SizedBox(height: 8.h),
-                Text(
-                  "Join UniPath to achieve your dreams in Germany.",
-                  style: GoogleFonts.poppins(
-                    fontSize: 14.sp,
-                    color: AppColors.textGrey,
+                CurtainDrop(
+                  index: 1,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: Text(
+                      AppLocalizations.of(context).translate('registerSubtitle'),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14.sp,
+                        color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 30.h),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomAuthField(
-                        hint: "Username",
-                        prefixIcon: Icons.person_outline,
-                        controller: _usernameController,
-                        autofocus: true,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a username';
-                          }
-                          if (value.trim().length < 3) {
-                            return 'Username must be at least 3 characters';
-                          }
-                          return null;
-                        },
+                CurtainDrop(
+                  index: 2,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CustomAuthField(
+                          hint: AppLocalizations.of(context).translate('username'),
+                          prefixIcon: Icons.person_outline,
+                          controller: _usernameController,
+                          autofocus: true,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return AppLocalizations.of(context).translate('enterUsername');
+                            }
+                            if (value.trim().length < 3) {
+                              return AppLocalizations.of(context).translate('usernameMinLength');
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 16.w),
-                    Expanded(
-                      child: CustomAuthField(
-                        hint: "Phone (optional)",
-                        prefixIcon: Icons.phone_outlined,
-                        controller: _phoneController,
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: CustomAuthField(
+                          hint: AppLocalizations.of(context).translate('phoneOptional'),
+                          prefixIcon: Icons.phone_outlined,
+                          controller: _phoneController,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-
-                CustomAuthField(
-                  hint: "Email address",
-                  prefixIcon: Icons.email_outlined,
-                  controller: _emailController,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email address';
-                    }
-                    if (!_emailRegex.hasMatch(value.trim())) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
+                CurtainDrop(
+                  index: 3,
+                  child: CustomAuthField(
+                    hint: AppLocalizations.of(context).translate('email'),
+                    prefixIcon: Icons.email_outlined,
+                    controller: _emailController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return AppLocalizations.of(context).translate('enterEmailAddress');
+                      }
+                      if (!_emailRegex.hasMatch(value.trim())) {
+                        return AppLocalizations.of(context).translate('enterValidEmail');
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-                CustomAuthField(
-                  hint: "Password",
-                  prefixIcon: Icons.lock_outline,
-                  isPassword: true,
-                  controller: _passwordController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
+                CurtainDrop(
+                  index: 4,
+                  child: CustomAuthField(
+                    hint: AppLocalizations.of(context).translate('password'),
+                    prefixIcon: Icons.lock_outline,
+                    isPassword: true,
+                    controller: _passwordController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return AppLocalizations.of(context).translate('enterPasswordRegister');
+                      }
+                      if (value.length < 6) {
+                        return AppLocalizations.of(context).translate('passwordMinLengthRegister');
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-                CustomAuthField(
-                  hint: "Confirm password",
-                  prefixIcon: Icons.lock_outline,
-                  isPassword: true,
-                  controller: _confirmPasswordController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
+                CurtainDrop(
+                  index: 5,
+                  child: CustomAuthField(
+                    hint: AppLocalizations.of(context).translate('confirmPassword'),
+                    prefixIcon: Icons.lock_outline,
+                    isPassword: true,
+                    controller: _confirmPasswordController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return AppLocalizations.of(context).translate('confirmYourPassword');
+                      }
+                      if (value != _passwordController.text) {
+                        return AppLocalizations.of(context).translate('passwordsNotMatch');
+                      }
+                      return null;
+                    },
+                  ),
                 ),
 
                 SizedBox(height: 24.h),
-
-                BlocBuilder<RegisterCubit, RegisterState>(
+                CurtainDrop(
+                  index: 6,
+                  child: BlocBuilder<RegisterCubit, RegisterState>(
                   builder: (context, state) {
                     return LoadingButton(
-                      text: "Create Account",
+                      text: AppLocalizations.of(context).translate('createAccount'),
                       isLoading: state is RegisterLoading,
                       onPressed: state is RegisterLoading
                           ? null
@@ -183,28 +206,31 @@ class RegisterScreen extends StatelessWidget {
                     );
                   },
                 ),
+                ),
                 SizedBox(height: 24.h),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: TextStyle(color: AppColors.textGrey),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        context.push('/login');
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                CurtainDrop(
+                  index: 7,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context).translate('alreadyHaveAccount'),
+                        style: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/login');
+                        },
+                        child: Text(
+                          AppLocalizations.of(context).translate('login'),
+                          style: TextStyle(
+                            color: context.isDark ? AppColors.primaryPurple : AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 SizedBox(height: 30.h),
               ],
@@ -228,6 +254,8 @@ class RegisterScreen extends StatelessWidget {
         username: _usernameController.text.trim(),
         phone: _phoneController.text.trim(),
         gpa: profileData?['gpa'],
+        academicAverage: profileData?['academicAverage'],
+        highSchoolScore: profileData?['highSchoolScore'],
         maxGpa: profileData?['maxGpa'],
         minGpa: profileData?['minGpa'],
         hasMoi: profileData?['hasMoi'],

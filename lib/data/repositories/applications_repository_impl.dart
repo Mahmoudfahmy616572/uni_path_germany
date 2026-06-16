@@ -62,6 +62,7 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
         hasCv: userData['has_cv'],
         hasSop: userData['has_sop'],
         hasBachelorCert: userData['has_bachelor_cert'],
+        hasLanguageCert: userData['has_language_cert'],
       );
     }).toList();
   }

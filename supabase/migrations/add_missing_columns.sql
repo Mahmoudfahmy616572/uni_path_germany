@@ -21,3 +21,7 @@ ADD COLUMN IF NOT EXISTS curriculum TEXT,
 ADD COLUMN IF NOT EXISTS requires_ielts BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS min_ielts_score NUMERIC,
 ADD COLUMN IF NOT EXISTS accepts_moi BOOLEAN DEFAULT FALSE;
+
+-- Language certificate upload column for profiles
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS has_language_cert TEXT;

@@ -51,11 +51,17 @@ class UserEntity {
   final String languagePreference;
   final String degreeLevel;
   final double gpa;
+  final double? academicAverage;
+  final double? highSchoolScore;
   final double maxGpa;
   final double minGpa;
   final bool hasIelts;
   final double ieltsScore;
+  final bool hasToefl;
+  final double toeflScore;
   final bool hasMoi; 
+  final String nationality;
+  final List<String> preferredCities;
   final String budgetRange;
   final List<String> goals;
   final NotificationPreferences notificationPreferences; 
@@ -72,11 +78,17 @@ class UserEntity {
     this.languagePreference = 'English',
     this.degreeLevel = "Bachelor's Degree", // ✅ صحّحنا الـ default
     this.gpa = 0.0,
+    this.academicAverage,
+    this.highSchoolScore,
     this.maxGpa = 4.0,
     this.minGpa = 1.0,
     this.hasIelts = false,
     this.ieltsScore = 0.0,
-    this.hasMoi = false, // ✅ جديد
+    this.hasToefl = false,
+    this.toeflScore = 0.0,
+    this.hasMoi = false,
+    this.nationality = '',
+    this.preferredCities = const [],
     this.budgetRange = '',
     this.goals = const [],
     this.notificationPreferences = const NotificationPreferences(), // ✅ جديد

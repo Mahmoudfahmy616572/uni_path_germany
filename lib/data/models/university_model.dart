@@ -17,6 +17,7 @@ class UniversityModel extends UniversityEntity {
     super.hasCv,
     super.hasSop,
     super.hasBachelorCert,
+    super.hasLanguageCert,
     super.description,
     super.rankings,
     super.logoUrl,
@@ -65,6 +66,7 @@ class UniversityModel extends UniversityEntity {
       hasCv: json['has_cv'],
       hasSop: json['has_sop'],
       hasBachelorCert: json['has_bachelor_cert'],
+      hasLanguageCert: json['has_language_cert'],
     );
   }
 
@@ -83,6 +85,7 @@ class UniversityModel extends UniversityEntity {
       hasCv: hasCv,
       hasSop: hasSop,
       hasBachelorCert: hasBachelorCert,
+      hasLanguageCert: hasLanguageCert,
       description: description,
       rankings: rankings,
       logoUrl: logoUrl,

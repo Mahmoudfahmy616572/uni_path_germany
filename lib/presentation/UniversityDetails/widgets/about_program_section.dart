@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+
 class AboutProgramSection extends StatelessWidget {
   final String? description;
   const AboutProgramSection({super.key, this.description});
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
          Text(
-          'About the University',
+          loc.translate('aboutUniversity'),
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+            color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
           ),
         ),
         SizedBox(height: 12.h),
         Text(
           description ??
-              "Detailed description about the university will be available soon.",
+              loc.translate('descriptionPlaceholder'),
           style:  TextStyle(
             fontSize: 13.sp,
-            color: const Color(0xFF475569),
+            color: context.isDark ? AppColors.textMuted : const Color(0xFF475569),
             height: 1.5,
           ),
           maxLines: 3,
@@ -35,15 +40,15 @@ class AboutProgramSection extends StatelessWidget {
           InkWell(
             onTap: () => _showFullDescription(context, description!),
             child: Row(
-              children: const [
+              children: [
                 Text(
-                  "Read more",
-                  style: TextStyle(
+                  loc.translate('readMore'),
+                  style: const TextStyle(
                     color: Color(0xFF4F46E5),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.keyboard_arrow_down,
                   color: Color(0xFF4F46E5),
                   size: 18,
@@ -57,15 +62,19 @@ class AboutProgramSection extends StatelessWidget {
   }
 
   void _showFullDescription(BuildContext context, String desc) {
+    final loc = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('About the University'),
+        title: Text(loc.translate('aboutUniversity')),
         content: SingleChildScrollView(
           child: Text(desc, style: const TextStyle(fontSize: 14, height: 1.5)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(loc.translate('close')),
+          ),
         ],
       ),
     );

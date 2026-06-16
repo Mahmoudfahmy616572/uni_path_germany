@@ -69,4 +69,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     await remoteDataSource.updateProfile(userId: userId, updates: updates);
   }
+
+  @override
+  Future<void> deleteAccount() async {
+    await remoteDataSource.deleteAccount();
+  }
 }

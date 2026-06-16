@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
+
 class AdminOverviewScreen extends StatefulWidget {
   const AdminOverviewScreen({super.key});
 
@@ -16,6 +18,8 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   int _universityCount = 0;
   int _applicationCount = 0;
   int _documentUsers = 0;
+  int _daadProgramCount = 0;
+  int _daadMatchedUniversities = 0;
   List<Map<String, dynamic>> _recentUsers = [];
   bool _loading = true;
 
@@ -33,6 +37,8 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     try { final d = await Supabase.instance.client.from('my_applications').select('id'); if (mounted) _applicationCount = d.length; } catch (_) {}
     try { final d = await Supabase.instance.client.from('profiles').select('id').or('has_transcripts.not.is.null,has_cv.not.is.null,has_sop.not.is.null,has_bachelor_cert.not.is.null'); if (mounted) _documentUsers = d.length; } catch (_) {}
     try { final d = await Supabase.instance.client.from('profiles').select('id, username, email, created_at').order('created_at', ascending: false).limit(8); if (mounted) _recentUsers = List<Map<String, dynamic>>.from(d); } catch (_) {}
+    try { final d = await Supabase.instance.client.from('university_programs').select('id').eq('data_source', 'daad_api'); if (mounted) _daadProgramCount = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('universities').select('ba_ban_id').not('ba_ban_id', 'is', null); if (mounted) _daadMatchedUniversities = d.length; } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
@@ -45,18 +51,20 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text('Dashboard', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            const CurtainDrop(index: 0, child: Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
             const SizedBox(height: 4),
-            Text('Welcome back, Admin', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+            CurtainDrop(index: 1, child: Text('Welcome back, Admin', style: TextStyle(color: Colors.grey[600], fontSize: 14))),
             const SizedBox(height: 24),
             if (_loading)
-              const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+              const CurtainDrop(index: 2, child: Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator())))
             else ...[
-              _buildStatsRow(),
+              CurtainDrop(index: 2, child: _buildStatsRow()),
+              const SizedBox(height: 24),
+              CurtainDrop(index: 2, child: _buildDaadRow()),
               const SizedBox(height: 32),
-              _buildQuickActions(context),
+              CurtainDrop(index: 3, child: _buildQuickActions(context)),
               const SizedBox(height: 32),
-              _buildRecentActivity(),
+              CurtainDrop(index: 4, child: _buildRecentActivity()),
             ],
           ],
         ),
@@ -76,6 +84,22 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
             _StatCard(Icons.school_outlined, 'Universities', _formatCount(_universityCount), const Color(0xFF10B981)),
             _StatCard(Icons.assignment_outlined, 'Applications', _formatCount(_applicationCount), const Color(0xFFF59E0B)),
             _StatCard(Icons.folder_outlined, 'Documents', _formatCount(_documentUsers), const Color(0xFFEF4444)),
+          ].map((card) => SizedBox(width: (constraints.maxWidth - 16 * (cols - 1)) / cols, child: card)).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildDaadRow() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = constraints.maxWidth > 600 ? 2 : 1;
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            _StatCard(Icons.storage_outlined, 'DAAD Programs', _formatCount(_daadProgramCount), const Color(0xFF8B5CF6)),
+            _StatCard(Icons.cloud_sync_outlined, 'Universities with DAAD', _formatCount(_daadMatchedUniversities), const Color(0xFF06B6D4)),
           ].map((card) => SizedBox(width: (constraints.maxWidth - 16 * (cols - 1)) / cols, child: card)).toList(),
         );
       },

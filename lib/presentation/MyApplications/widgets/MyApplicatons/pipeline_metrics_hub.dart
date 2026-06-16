@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/app_theme.dart';
+
 class PipelineMetricsHub extends StatelessWidget {
   final int upcomingDeadlines;
   final int matchAverage;
@@ -17,25 +21,23 @@ class PipelineMetricsHub extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          // كارد الـ Deadlines
           Expanded(
-            child: _buildMetricCard(
+            child: _buildMetricCard(context,
               icon: Icons.calendar_today_outlined,
               iconColor: const Color(0xFFEF4444),
-              title: 'Upcoming Deadlines',
+              title: 'upcomingDeadlines',
               value: '$upcomingDeadlines',
-              subtitle: 'In the next 30 days',
+              subtitle: 'inTheNext30Days',
             ),
           ),
           SizedBox(width: 12.w),
-          // كارد الـ Match Average
           Expanded(
-            child: _buildMetricCard(
+            child: _buildMetricCard(context,
               icon: Icons.folder_open_outlined,
               iconColor: const Color(0xFF10B981),
-              title: 'Your Match Average',
+              title: 'yourMatchAverage',
               value: '$matchAverage%',
-              subtitle: 'Good Chance •',
+              subtitle: 'goodChance',
               subtitleColor: const Color(0xFF10B981),
             ),
           ),
@@ -44,7 +46,7 @@ class PipelineMetricsHub extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard({
+  Widget _buildMetricCard(BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -52,12 +54,13 @@ class PipelineMetricsHub extends StatelessWidget {
     required String subtitle,
     Color subtitleColor = const Color(0xFF64748B),
   }) {
+    final loc = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
@@ -75,10 +78,10 @@ class PipelineMetricsHub extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  loc.translate(title),
                   style: TextStyle(
                     fontSize: 11.sp,
-                    color: Color(0xFF64748B),
+                    color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -87,13 +90,12 @@ class PipelineMetricsHub extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: 18.sp,
-                
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
                   ),
                 ),
                 Text(
-                  subtitle,
+                  loc.translate(subtitle),
                   style: TextStyle(
                     fontSize: 10.sp,
                     color: subtitleColor,

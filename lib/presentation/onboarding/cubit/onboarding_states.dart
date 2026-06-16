@@ -13,11 +13,19 @@ class OnboardingDataState extends OnboardingState {
   final String targetIntake;
   final String studyLevel;
   final String fieldOfInterest;
-  final String languagePreference; // 🎯 الحقل الجديد المضاف
+  final String languagePreference;
   final bool hasIELTS;
   final double ieltsScore;
+  final String testType;
+  final bool moiConfirmed;
+  final String token;
+  final bool hasMoi;
+  final bool noneOfTheAbove;
   final double gpa;
   final String gpaScale;
+  final double? academicAverage;
+  final double? highSchoolScore;
+  final bool hasStudiedUniversity;
   final String tuitionBudget;
   final List<String> studentGoals;
   final bool isLoading;
@@ -31,8 +39,16 @@ class OnboardingDataState extends OnboardingState {
     this.languagePreference = 'English',
     this.hasIELTS = false,
     this.ieltsScore = 0.0,
+    this.testType = '',
+    this.moiConfirmed = false,
+    this.token = '',
+    this.hasMoi = false,
+    this.noneOfTheAbove = false,
     this.gpa = 0.0,
     this.gpaScale = '4.0',
+    this.academicAverage,
+    this.highSchoolScore,
+    this.hasStudiedUniversity = false,
     this.tuitionBudget = '',
     this.studentGoals = const [],
     this.isLoading = false,
@@ -47,8 +63,16 @@ class OnboardingDataState extends OnboardingState {
     String? languagePreference,
     bool? hasIELTS,
     double? ieltsScore,
+    String? testType,
+    bool? moiConfirmed,
+    String? token,
+    bool? hasMoi,
+    bool? noneOfTheAbove,
     double? gpa,
     String? gpaScale,
+    double? academicAverage,
+    double? highSchoolScore,
+    bool? hasStudiedUniversity,
     String? tuitionBudget,
     List<String>? studentGoals,
     bool? isLoading,
@@ -62,8 +86,16 @@ class OnboardingDataState extends OnboardingState {
       languagePreference: languagePreference ?? this.languagePreference,
       hasIELTS: hasIELTS ?? this.hasIELTS,
       ieltsScore: ieltsScore ?? this.ieltsScore,
+      testType: testType ?? this.testType,
+      moiConfirmed: moiConfirmed ?? this.moiConfirmed,
+      token: token ?? this.token,
+      hasMoi: hasMoi ?? this.hasMoi,
+      noneOfTheAbove: noneOfTheAbove ?? this.noneOfTheAbove,
       gpa: gpa ?? this.gpa,
       gpaScale: gpaScale ?? this.gpaScale,
+      academicAverage: academicAverage ?? this.academicAverage,
+      highSchoolScore: highSchoolScore ?? this.highSchoolScore,
+      hasStudiedUniversity: hasStudiedUniversity ?? this.hasStudiedUniversity,
       tuitionBudget: tuitionBudget ?? this.tuitionBudget,
       studentGoals: studentGoals ?? this.studentGoals,
       isLoading: isLoading ?? this.isLoading,
@@ -80,8 +112,16 @@ class OnboardingDataState extends OnboardingState {
     languagePreference,
     hasIELTS,
     ieltsScore,
+    testType,
+    moiConfirmed,
+    token,
+    hasMoi,
+    noneOfTheAbove,
     gpa,
     gpaScale,
+    academicAverage,
+    highSchoolScore,
+    hasStudiedUniversity,
     tuitionBudget,
     studentGoals,
     isLoading,

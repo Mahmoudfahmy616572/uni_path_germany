@@ -4,6 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/animated_match_score.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../cubit/university_search_cubit.dart';
@@ -32,14 +37,12 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
     return BlocProvider(
       create: (context) => UniversitySearchCubit()..updateFilters(query: ''),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: Colors.white,
           elevation: 0,
           title: Text(
-            'Study in Germany',
+            AppLocalizations.of(context).translate('studyInGermany'),
             style: GoogleFonts.poppins(
-              color: const Color(0xFF0F172A),
+              color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
               fontWeight: FontWeight.bold,
               fontSize: 18.sp,
             ),
@@ -84,21 +87,34 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                     padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
                     child: Column(
                       children: [
-                        _buildSearchBar(context),
+                        CurtainDrop(
+                          index: 0,
+                          child: _buildSearchBar(context),
+                        ),
                         SizedBox(height: 16.h),
                         // 🎯 تم تعديل هذا الـ Widget ليشمل اختيار الـ Intake
-                        SearchDropdownsRow(
-                          currentIntake: (state)
-                              .selectedCountry, // استخدمنا الحقل مؤقتاً لتمرير الـ Intake
-                          currentDegree: state.selectedDegree,
-                          currentMajor: state.selectedMajor,
+                        CurtainDrop(
+                          index: 1,
+                          child: SearchDropdownsRow(
+                            currentIntake: (state)
+                                .selectedCountry, // استخدمنا الحقل مؤقتاً لتمرير الـ Intake
+                            currentDegree: state.selectedDegree,
+                            currentMajor: state.selectedMajor,
+                          ),
                         ),
                         SizedBox(height: 20.h),
-                        AdvancedFilterPanel(
-                          requiresIelts: state.requiresIelts,
-                          maxTuition: state.maxTuition,
-                          selectedLanguage: state.selectedLanguage,
-                          acceptsMoi: state.acceptsMoi,
+                        CurtainDrop(
+                          index: 2,
+                          child: AdvancedFilterPanel(
+                            requiresIelts: state.requiresIelts,
+                            maxTuition: state.maxTuition,
+                            selectedLanguage: state.selectedLanguage,
+                            acceptsMoi: state.acceptsMoi,
+                            selectedLocation: state.selectedLocation,
+                            availableLocations: context
+                                .read<UniversitySearchCubit>()
+                                .availableLocations,
+                          ),
                         ),
                       ],
                     ),
@@ -121,17 +137,17 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
   Widget _buildSearchBar(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
       child: TextField(
         controller: _textSearchController,
         onChanged: (val) =>
             context.read<UniversitySearchCubit>().updateFilters(query: val),
         decoration: InputDecoration(
-          hintText: 'Search for courses or universities...',
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+          hintText: AppLocalizations.of(context).translate('searchForCourses'),
+          prefixIcon: Icon(Icons.search, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
@@ -180,8 +196,8 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF8FAFC),
+        decoration: BoxDecoration(
+          color: context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
@@ -191,8 +207,8 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
           children: [
             SizedBox(height: 16.h),
             Text(
-              '${results.length} Universities Found',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              '${results.length} ${AppLocalizations.of(context).translate('universitiesFound')}',
+              style: TextStyle(fontWeight: FontWeight.bold, color: context.isDark ? AppColors.textMain : null),
             ),
             Expanded(
               child: ListView.builder(
@@ -202,7 +218,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                   final uni = results[index];
                   return Card(
                     child: ListTile(
-                      tileColor: Colors.white,
+                      tileColor: context.isDark ? AppColors.darkCardBg : Colors.white,
                       onTap: () =>
                           context.push('/university_details', extra: uni),
                       title: Text(
@@ -212,8 +228,8 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                       subtitle: Text(
                         '${uni.programs.length} Matching Programs',
                       ),
-                      trailing: Text(
-                        '${uni.matchPercentage}%',
+                      trailing: AnimatedScoreText(
+                        score: uni.matchPercentage,
                         style: const TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.bold,

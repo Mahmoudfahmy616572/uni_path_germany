@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/curtain_drop.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_states.dart';
 
@@ -13,7 +16,6 @@ class GoalsStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø£Ù‡Ø¯Ø§Ù Ø§Ù„Ù…Ù‚ØªØ±Ø­Ø© Ù„Ù„Ø¯Ø±Ø§Ø³Ø© ÙÙŠ Ø§Ù„Ø®Ø§Ø±Ø¬
     final goalsList = [
       {'title': 'Find Scholarships', 'icon': Icons.card_giftcard_rounded},
       {'title': 'Post-Study Work Visa', 'icon': Icons.work_outline_rounded},
@@ -27,19 +29,25 @@ class GoalsStepWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'What are your primary\nstudy goals?',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
-              height: 1.3,
+          CurtainDrop(
+            index: 0,
+            child: Text(
+              AppLocalizations.of(context).translate('goalsHeading'),
+              style: TextStyle(
+                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Select all that apply to your future plans',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 15.sp),
+          CurtainDrop(
+            index: 1,
+            child: Text(
+              AppLocalizations.of(context).translate('goalsSubtitle'),
+              style: TextStyle(color: context.textMutedColor, fontSize: 15.sp),
+            ),
           ),
           SizedBox(height: 32.h),
 
@@ -48,56 +56,59 @@ class GoalsStepWidget extends StatelessWidget {
               itemCount: goalsList.length,
               itemBuilder: (context, index) {
                 final goal = goalsList[index];
-                // Ø§Ù„ØªØ£ÙƒØ¯ Ø¥Ø°Ø§ ÙƒØ§Ù† Ø§Ù„Ù‡Ø¯Ù Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ Ø§Ù„Ù€ List Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ø¨Ø§Ù„Ù€ state
                 final isSelected = state.studentGoals.contains(goal['title']);
+                final curtainIndex = index + 2;
 
-                return GestureDetector(
-                  onTap: () => cubit.toggleGoal(goal['title'] as String),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: EdgeInsets.all(18.r),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.08)
-                          : AppColors.inputBackground,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
+                return CurtainDrop(
+                  index: curtainIndex,
+                  child: GestureDetector(
+                    onTap: () => cubit.toggleGoal(goal['title'] as String),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.all(18.r),
+                      decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          goal['icon'] as IconData,
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : context.inputBgColor,
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
                           color: isSelected
                               ? AppColors.primary
-                              : AppColors.textGrey,
-                          size: 24,
+                              : Colors.transparent,
+                          width: 2,
                         ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          child: Text(
-                            goal['title'] as String,
-                            style: TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w500,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            goal['icon'] as IconData,
+                            color: isSelected
+                                ? AppColors.primary
+                                : context.textMutedColor,
+                            size: 24,
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            child: Text(
+                              goal['title'] as String,
+                              style: TextStyle(
+                                color: context.isDark ? AppColors.textMain : AppColors.textDark,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                        Checkbox(
-                          value: isSelected,
-                          activeColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6.r),
+                          Checkbox(
+                            value: isSelected,
+                            activeColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            onChanged: (_) =>
+                                cubit.toggleGoal(goal['title'] as String),
                           ),
-                          onChanged: (_) =>
-                              cubit.toggleGoal(goal['title'] as String),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );

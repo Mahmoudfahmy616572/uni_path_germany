@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:germany_travel/core/widgets/curtain_drop.dart';
+
 class AdminShell extends StatefulWidget {
   final Widget child;
   const AdminShell({super.key, required this.child});
@@ -80,59 +82,72 @@ class _AdminShellState extends State<AdminShell> {
       color: const Color(0xFF1E293B),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+          CurtainDrop(
+            index: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.shield_outlined, color: Colors.white, size: 22),
                   ),
-                  child: const Icon(Icons.shield_outlined, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('UniPath', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text('Admin', style: TextStyle(color: Colors.white38, fontSize: 12)),
-                  ],
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('UniPath', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text('Admin', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           const Divider(color: Colors.white12, height: 1),
           const SizedBox(height: 8),
-          ...navItems.map((item) => _SidebarTile(
-            item: item,
-            selected: selectedIndex == navItems.indexOf(item),
-            onTap: () {
-              if (selectedIndex != navItems.indexOf(item)) {
-                context.go(item.path);
-              }
-            },
-          )),
+          ...navItems.asMap().entries.map((entry) {
+            final i = entry.key;
+            final item = entry.value;
+            return CurtainDrop(
+              index: i + 1,
+              child: _SidebarTile(
+                item: item,
+                selected: selectedIndex == i,
+                onTap: () {
+                  if (selectedIndex != i) {
+                    context.go(item.path);
+                  }
+                },
+              ),
+            );
+          }),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () => context.go('/profile'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.arrow_back, color: Colors.white54, size: 18),
-                    SizedBox(width: 8),
-                    Text('My Profile', style: TextStyle(color: Colors.white54, fontSize: 13)),
-                  ],
+          CurtainDrop(
+            index: 8,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => context.go('/profile'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.arrow_back, color: Colors.white54, size: 18),
+                      SizedBox(width: 8),
+                      Text('My Profile', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                    ],
+                  ),
                 ),
               ),
             ),

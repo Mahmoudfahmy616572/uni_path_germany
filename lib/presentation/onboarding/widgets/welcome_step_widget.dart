@@ -1,7 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/curtain_drop.dart';
 
 class WelcomeStepWidget extends StatelessWidget {
   const WelcomeStepWidget({super.key});
@@ -13,46 +16,45 @@ class WelcomeStepWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            height: 220,
-            width: 220,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child:  Center(
-              child: Text('ðŸŽ“', style: TextStyle(fontSize: 80.sp)),
+          CurtainDrop(
+            index: 0,
+            child: Container(
+              height: 220,
+              width: 220,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text('🎓', style: TextStyle(fontSize: 80.sp)),
+              ),
             ),
           ),
           SizedBox(height: 40.h),
-          RichText(
-            textAlign: TextAlign.center,
-            text:  TextSpan(
+          CurtainDrop(
+            index: 1,
+            child: Text(
+              AppLocalizations.of(context).translate('welcomeTitle'),
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 32.sp,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
+                color: context.isDark ? AppColors.textMain : AppColors.textDark,
               ),
-              children: [
-                TextSpan(
-                  text: 'Let\'s personalize\n',
-                  style: TextStyle(color: AppColors.textDark),
-                ),
-                TextSpan(
-                  text: 'your experience',
-                  style: TextStyle(color: AppColors.primary),
-                ),
-              ],
             ),
           ),
           SizedBox(height: 16.h),
-           Text(
-            'We\'ll ask you a few questions to find the best universities and programs for you.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textGrey,
-              fontSize: 16.sp,
-              height: 1.5,
+          CurtainDrop(
+            index: 2,
+            child: Text(
+              AppLocalizations.of(context).translate('welcomeSubtitle'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: context.textMutedColor,
+                fontSize: 16.sp,
+                height: 1.5,
+              ),
             ),
           ),
         ],

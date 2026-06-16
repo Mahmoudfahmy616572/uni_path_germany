@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
 import '../../../domain/entities/university_entity.dart';
 
 class DetailsHeader extends StatelessWidget {
@@ -31,9 +33,9 @@ class DetailsHeader extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
           ),
           clipBehavior: Clip.antiAlias,
           child: _buildLogo(),
@@ -50,7 +52,7 @@ class DetailsHeader extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
                 ),
               ),
               SizedBox(height: 4.h),
@@ -58,7 +60,7 @@ class DetailsHeader extends StatelessWidget {
                 degreeType,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: const Color(0xFF64748B),
+                  color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -78,14 +80,14 @@ class DetailsHeader extends StatelessWidget {
                     Icon(
                       Icons.location_on_outlined,
                       size: 14.sp,
-                      color: const Color(0xFF94A3B8),
+                      color: context.isDark ? AppColors.textMuted : const Color(0xFF94A3B8),
                     ),
                     SizedBox(width: 4.w),
                     Text(
                       university.location!,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: const Color(0xFF64748B),
+                        color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -97,28 +99,35 @@ class DetailsHeader extends StatelessWidget {
         SizedBox(width: 8.w),
 
         // 3. دائرة الـ Match Percentage
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 50.w,
-              height: 50.h,
-              child: CircularProgressIndicator(
-                value: university.matchPercentage / 100,
-                backgroundColor: const Color(0xFFDCFCE7),
-                color: const Color(0xFF10B981),
-                strokeWidth: 4,
-              ),
-            ),
-            Text(
-              '${university.matchPercentage}%',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF15803D),
-              ),
-            ),
-          ],
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: university.matchPercentage.toDouble()),
+          duration: const Duration(milliseconds: 1500),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 50.w,
+                  height: 50.h,
+                  child: CircularProgressIndicator(
+                    value: value / 100,
+                    backgroundColor: const Color(0xFFDCFCE7),
+                    color: const Color(0xFF10B981),
+                    strokeWidth: 4,
+                  ),
+                ),
+                Text(
+                  '${value.round()}%',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF15803D),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
