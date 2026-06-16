@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/providers/language_provider.dart';
 import '../../../core/services/ai/ai_usage_service.dart';
 import '../../../core/services/ai/gemini_service.dart';
 import '../../../core/services/services_locator.dart';
@@ -160,6 +161,9 @@ class GenerateSheet extends StatefulWidget {
 class GenerateSheetState extends State<GenerateSheet> {
   final _gemini = GeminiService();
   final _usageService = sl<AiUsageService>();
+
+  String get _langCode =>
+      sl<LanguageProvider>().locale.languageCode;
 
   // Form state
   late final TextEditingController _nameCtrl;
@@ -456,6 +460,7 @@ class GenerateSheetState extends State<GenerateSheet> {
           studentName: name,
           studentBackground: bg,
           targetDegree: widget.degreeType,
+          languageCode: _langCode,
         );
       } else {
         result = await _gemini.generateSop(
@@ -466,6 +471,7 @@ class GenerateSheetState extends State<GenerateSheet> {
           studentName: name,
           studentBackground: bg,
           programHighlights: widget.major.isNotEmpty ? 'Focus on $widget.major' : 'General program',
+          languageCode: _langCode,
         );
       }
 

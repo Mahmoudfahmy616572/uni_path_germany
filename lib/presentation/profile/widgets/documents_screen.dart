@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/providers/language_provider.dart';
 import '../../../core/services/ai/ai_usage_service.dart';
 import '../../../core/services/ai/gemini_service.dart';
 import '../../../core/services/services_locator.dart';
@@ -96,6 +97,21 @@ class _AiDocReviewButton extends StatefulWidget {
 class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
   final _gemini = GeminiService();
   final _usageService = sl<AiUsageService>();
+  int _remainingUses = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRemaining();
+  }
+
+  Future<void> _loadRemaining() async {
+    final remaining = await _usageService.getRemainingUses();
+    if (mounted) setState(() => _remainingUses = remaining);
+  }
+
+  String get _langCode =>
+      sl<LanguageProvider>().locale.languageCode;
 
   Future<void> _reviewDocuments(BuildContext context) async {
     final canUse = await _usageService.canUseAi();
@@ -179,6 +195,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
       final allReviews = <Map<String, dynamic>>[];
       final studentProfile = state.studentProfile!;
       final programName = 'German University Application';
+      int validReviewCount = 0;
 
       final bool hasIelts = studentProfile['has_ielts'] == true;
       final bool hasToefl = studentProfile['has_toefl'] == true;
@@ -202,38 +219,69 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         final String? url = _toUrlOrNull(_rawDocValue(uni, col));
         if (url != null) {
           try {
-            stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+            stepLabel = 'Downloading ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
             final response = await Dio(BaseOptions(responseType: ResponseType.bytes)).get(url);
-            if (response.statusCode == 200) {
-              final mimeType = response.headers.value('content-type') ?? 'application/pdf';
-              final reviews = await _gemini.reviewDocumentWithPdf(
-                programName: programName,
-                docType: docType,
-                title: title,
-                pdfBytes: Uint8List.fromList(response.data as List<int>),
-                mimeType: mimeType,
-              );
+            if (response.statusCode != 200) {
               allReviews.add({
                 'doc_type': docType,
                 'title': title,
                 'status': 'uploaded',
-                'tips': reviews.map((r) => r['suggestion']?.toString() ?? '').toList(),
-                'importance': reviews.isNotEmpty
-                    ? reviews.map((r) => r['severity']?.toString() ?? 'medium')
-                        .fold<String>('medium',
-                            (a, b) => b == 'high' ? 'high' : a)
-                    : 'medium',
+                'tips': ['File URL returned status ${response.statusCode}. Re-upload the document.'],
+                'importance': 'medium',
                 '_program_name': programName,
               });
+              continue;
             }
-          } catch (_) {
+
+            stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+            updateSheet(() {});
+
+            final mimeType = response.headers.value('content-type') ?? 'application/pdf';
+            final reviews = await _gemini.reviewDocumentWithPdf(
+              programName: programName,
+              docType: docType,
+              title: title,
+              pdfBytes: Uint8List.fromList(response.data as List<int>),
+              mimeType: mimeType,
+              languageCode: _langCode,
+            );
+            if (GeminiService.hasValidFeedback(reviews)) {
+              validReviewCount++;
+            }
             allReviews.add({
               'doc_type': docType,
               'title': title,
               'status': 'uploaded',
-              'tips': ['Could not read file content. Try re-uploading.'],
+              'tips': reviews.map((r) => r['suggestion']?.toString() ?? '').toList(),
+              'importance': reviews.isNotEmpty
+                  ? reviews.map((r) => r['severity']?.toString() ?? 'medium')
+                      .fold<String>('medium',
+                          (a, b) => b == 'high' ? 'high' : a)
+                  : 'medium',
+              '_program_name': programName,
+            });
+          } on DioException catch (e) {
+            final msg = e.type == DioExceptionType.connectionTimeout
+                ? 'Download timed out. Check your internet connection.'
+                : e.type == DioExceptionType.badResponse
+                    ? 'Server returned ${e.response?.statusCode}. Re-upload the document.'
+                    : 'Could not download the file. Check your connection.';
+            allReviews.add({
+              'doc_type': docType,
+              'title': title,
+              'status': 'uploaded',
+              'tips': [msg],
+              'importance': 'medium',
+              '_program_name': programName,
+            });
+          } catch (e) {
+            allReviews.add({
+              'doc_type': docType,
+              'title': title,
+              'status': 'uploaded',
+              'tips': ['AI analysis failed: ${e.toString()}'],
               'importance': 'medium',
               '_program_name': programName,
             });
@@ -256,6 +304,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
               'language': studentProfile['language_preference'] ?? '',
             },
             uploadStatus: uploadStatus,
+            languageCode: _langCode,
           );
           final docTip = suggestions.where((t) => t['doc_type']?.toString() == docType).toList();
           allReviews.add({
@@ -273,7 +322,10 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         }
       }
 
-      await _usageService.recordUsage();
+      if (validReviewCount > 0) {
+        await _usageService.recordUsage();
+      }
+      await _loadRemaining();
 
       if (mounted) {
         Navigator.pop(context);
@@ -327,25 +379,39 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _reviewDocuments(context),
-        icon: const Icon(Icons.auto_awesome, size: 18),
-        label: Text(
-          AppLocalizations.of(context).translate('aiReview'),
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF8B5CF6),
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 14.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
+    final remainingLabel = AppLocalizations.of(context).translate('remainingUses');
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _reviewDocuments(context),
+            icon: const Icon(Icons.auto_awesome, size: 18),
+            label: Text(
+              AppLocalizations.of(context).translate('aiReview'),
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              elevation: 0,
+            ),
           ),
-          elevation: 0,
         ),
-      ),
+        if (_remainingUses > 0)
+          Padding(
+            padding: EdgeInsets.only(top: 6.h),
+            child: Text(
+              '$remainingLabel $_remainingUses/10',
+              style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+            ),
+          ),
+      ],
     );
   }
 }

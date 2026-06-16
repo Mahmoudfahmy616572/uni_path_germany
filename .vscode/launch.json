@@ -7,19 +7,22 @@
         {
             "name": "uni_path_germany",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "uni_path_germany (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "uni_path_germany (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "args": ["--dart-define-from-file=.env"]
         }
     ]
 }

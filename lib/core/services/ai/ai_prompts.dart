@@ -1,8 +1,12 @@
 class AiPrompts {
+  static String _lang(String code) =>
+      code == 'ar' ? '\nRespond in Arabic. Use formal Arabic language.\n' : '';
+
   static String improvementSuggestions({
     required Map<String, dynamic> studentProfile,
     required Map<String, dynamic> programDetails,
     required Map<String, dynamic> breakdown,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions advisor. Analyze this student's profile against a program and give 3-5 specific, actionable suggestions to improve their match score.
@@ -53,7 +57,7 @@ Format as JSON array with this exact structure:
   }
 ]
 
-Return ONLY the JSON array, no markdown, no code fences.
+${_lang(languageCode)}Return ONLY the JSON array, no markdown, no code fences.
 ''';
   }
 
@@ -71,6 +75,7 @@ Return ONLY the JSON array, no markdown, no code fences.
     required String programName,
     required String docType,
     required String documentContent,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions officer. Review this $docType for the "$programName" program and give feedback.
@@ -87,7 +92,7 @@ Give 3-5 specific improvement suggestions. Format as JSON array:
   }
 ]
 
-Return ONLY the JSON array, no markdown, no code fences.
+${_lang(languageCode)}Return ONLY the JSON array, no markdown, no code fences.
 ''';
   }
 
@@ -95,6 +100,7 @@ Return ONLY the JSON array, no markdown, no code fences.
     required Map<String, dynamic> studentProfile,
     required Map<String, dynamic> programDetails,
     required Map<String, dynamic> uploadStatus,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions document specialist. Analyze this student's application documents and give specific advice to improve each one.
@@ -139,7 +145,7 @@ Format as JSON array:
   }
 ]
 
-Return ONLY the JSON array, no markdown, no code fences.
+${_lang(languageCode)}Return ONLY the JSON array, no markdown, no code fences.
 ''';
   }
 
@@ -150,6 +156,7 @@ Return ONLY the JSON array, no markdown, no code fences.
     required String major,
     required String studentName,
     required String studentBackground,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions consultant. Generate a tailored $degreeType application document for "$programName" at "$universityName".
@@ -159,7 +166,7 @@ Background: $studentBackground
 Major: $major
 
 Generate a professional document optimized for this specific program. Return as plain text with markdown formatting only (no JSON).
-''';
+${_lang(languageCode)}''';
   }
 
   static String cvGeneration({
@@ -169,6 +176,7 @@ Generate a professional document optimized for this specific program. Return as 
     required String studentName,
     required String studentBackground,
     required String targetDegree,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions consultant. Generate a professional **CV (Lebenslauf)** for a German master's application.
@@ -187,7 +195,7 @@ Rules:
 - Keep to 1-2 pages worth of content
 - Be professional and precise — German universities value clarity
 
-Return ONLY the CV content as markdown, no extra commentary.
+${_lang(languageCode)}Return ONLY the CV content as markdown, no extra commentary.
 ''';
   }
 
@@ -199,6 +207,7 @@ Return ONLY the CV content as markdown, no extra commentary.
     required String studentName,
     required String studentBackground,
     required String programHighlights,
+    String languageCode = 'en',
   }) {
     return '''
 You are a German university admissions consultant. Generate a compelling **Motivation Letter (SOP)** for a German university application.
@@ -222,7 +231,7 @@ Rules:
 Program Highlights to emphasize:
 $programHighlights
 
-Return ONLY the letter as markdown, no extra commentary.
+${_lang(languageCode)}Return ONLY the letter as markdown, no extra commentary.
 ''';
   }
 }

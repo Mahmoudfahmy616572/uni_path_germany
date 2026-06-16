@@ -211,11 +211,14 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      final Map<String, dynamic> profile = (await Supabase.instance.client
+      Map<String, dynamic> profile = (await Supabase.instance.client
           .from('profiles')
           .select()
           .eq('id', user.id)
           .maybeSingle()) ?? <String, dynamic>{};
+
+      // Verify that stored document URLs still point to existing files
+      profile = await _verifyDocumentUrls(profile, user);
 
       // 🎯 تحديث matchScore لكل برنامج بناءً على أحدث بيانات الطالب
       _fullProgramsList = _fullProgramsList.map((p) {
@@ -315,5 +318,59 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
       hasCv: col == 'has_cv' ? val : uni.hasCv,
       hasLanguageCert: col == 'has_language_cert' ? val : uni.hasLanguageCert,
     );
+  }
+
+  /// Checks stored document URLs against actual files in Supabase Storage.
+  /// Clears any URL that points to a deleted file and persists the cleanup.
+  Future<Map<String, dynamic>> _verifyDocumentUrls(
+      Map<String, dynamic> profile, User user) async {
+    const docCols = [
+      'has_transcripts',
+      'has_bachelor_cert',
+      'has_sop',
+      'has_cv',
+      'has_language_cert',
+    ];
+
+    final futures = docCols.map((col) async {
+      final url = profile[col]?.toString() ?? '';
+      if (!url.startsWith('http')) return null;
+      if (await _urlExists(url)) return null;
+      return col;
+    }).toList();
+
+    final staleCols =
+        (await Future.wait(futures)).whereType<String>().toList();
+
+    if (staleCols.isEmpty) return profile;
+
+    final updates = <String, dynamic>{};
+    for (final col in staleCols) {
+      updates[col] = null;
+    }
+    await Supabase.instance.client
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+    for (final col in staleCols) {
+      profile[col] = null;
+    }
+    return profile;
+  }
+
+  Future<bool> _urlExists(String url) async {
+    final client = HttpClient();
+    try {
+      final uri = Uri.parse(url);
+      final req = await client.headUrl(uri);
+      req.followRedirects = false;
+      final response = await req.close();
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
   }
 }

@@ -105,11 +105,13 @@ class GeminiService {
     required Map<String, dynamic> studentProfile,
     required Map<String, dynamic> programDetails,
     required Map<String, dynamic> breakdown,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.improvementSuggestions(
       studentProfile: studentProfile,
       programDetails: programDetails,
       breakdown: breakdown,
+      languageCode: languageCode,
     );
     final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
@@ -126,11 +128,13 @@ class GeminiService {
     required String programName,
     required String docType,
     required String documentContent,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.documentReview(
       programName: programName,
       docType: docType,
       documentContent: documentContent,
+      languageCode: languageCode,
     );
     final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
@@ -144,11 +148,13 @@ class GeminiService {
     required Map<String, dynamic> studentProfile,
     required Map<String, dynamic> programDetails,
     required Map<String, dynamic> uploadStatus,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.documentSuggestions(
       studentProfile: studentProfile,
       programDetails: programDetails,
       uploadStatus: uploadStatus,
+      languageCode: languageCode,
     );
     final text = await _callGemini(prompt);
     final result = _parseJsonResponse(text);
@@ -167,9 +173,13 @@ class GeminiService {
     required String title,
     required Uint8List pdfBytes,
     String mimeType = 'application/pdf',
+    String languageCode = 'en',
   }) async {
+    final langInstruction = languageCode == 'ar'
+        ? ' Respond in Arabic. Use formal Arabic language.'
+        : '';
     final prompt =
-        'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]';
+        'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]$langInstruction';
 
     final text = await _callGeminiWithPdf(prompt, pdfBytes, mimeType);
     final result = _parseJsonResponse(text);
@@ -187,6 +197,7 @@ class GeminiService {
     required String major,
     required String studentName,
     required String studentBackground,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.documentGeneration(
       programName: programName,
@@ -195,6 +206,7 @@ class GeminiService {
       major: major,
       studentName: studentName,
       studentBackground: studentBackground,
+      languageCode: languageCode,
     );
     return await _callGemini(prompt);
   }
@@ -206,6 +218,7 @@ class GeminiService {
     required String studentName,
     required String studentBackground,
     required String targetDegree,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.cvGeneration(
       programName: programName,
@@ -214,6 +227,7 @@ class GeminiService {
       studentName: studentName,
       studentBackground: studentBackground,
       targetDegree: targetDegree,
+      languageCode: languageCode,
     );
     return await _callGemini(prompt);
   }
@@ -226,6 +240,7 @@ class GeminiService {
     required String studentName,
     required String studentBackground,
     required String programHighlights,
+    String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.sopGeneration(
       programName: programName,
@@ -235,8 +250,38 @@ class GeminiService {
       studentName: studentName,
       studentBackground: studentBackground,
       programHighlights: programHighlights,
+      languageCode: languageCode,
     );
     return await _callGemini(prompt);
+  }
+
+  /// Returns true if the AI review list contains actual document feedback
+  /// (not empty or "could not see file" style errors).
+  static bool hasValidFeedback(List<Map<String, dynamic>> reviews) {
+    if (reviews.isEmpty) return false;
+    final firstIssue =
+        (reviews.first['issue']?.toString() ?? '').toLowerCase();
+    final cantSee = [
+      'cannot see',
+      "couldn't see",
+      'could not see',
+      'no document',
+      'no file',
+      'no attachment',
+      'no pdf',
+      'unable to read',
+      'cannot read',
+      'could not read',
+      'do not have access',
+      'not provided',
+      'not attached',
+      'file not found',
+    ];
+    if (cantSee.any((p) => firstIssue.contains(p))) return false;
+    if (reviews.every((r) => (r['suggestion']?.toString() ?? '').isEmpty)) {
+      return false;
+    }
+    return true;
   }
 
   List<Map<String, dynamic>> _parseJsonResponse(String text) {

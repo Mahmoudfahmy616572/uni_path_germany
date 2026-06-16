@@ -165,8 +165,14 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     required String columnName,
     required File file,
   }) async {
+    final user = client.auth.currentUser;
+    final userLabel = _getUserLabel(user);
     final ext = file.path.split('.').last.toLowerCase();
-    final path = '$userId/global/$columnName.$ext';
+    final path = '$userLabel/global/$columnName.$ext';
+
+    // Delete old file before uploading new one
+    await _deleteExistingFile(path);
+
     const maxRetries = 3;
     for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
@@ -183,6 +189,29 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     final url = client.storage.from('documents').getPublicUrl(path);
     await client.from('profiles').update({columnName: url}).eq('id', userId);
     return url;
+  }
+
+  String _getUserLabel(User? user) {
+    if (user == null) return 'unknown';
+    final displayName = user.userMetadata?['full_name']?.toString() ??
+        user.userMetadata?['name']?.toString() ?? '';
+    if (displayName.isNotEmpty) return _sanitizeLabel(displayName);
+    if (user.email != null && user.email!.contains('@')) {
+      return _sanitizeLabel(user.email!.split('@').first);
+    }
+    return user.id;
+  }
+
+  String _sanitizeLabel(String label) {
+    return label.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_\-.]'), '').trim();
+  }
+
+  Future<void> _deleteExistingFile(String path) async {
+    try {
+      await client.storage.from('documents').remove([path]);
+    } catch (_) {
+      // File doesn't exist or can't be deleted — proceed with upload
+    }
   }
 
   @override
