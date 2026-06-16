@@ -48,10 +48,14 @@ void main() async {
   await LocalStorageService.init();
 
   await Supabase.initialize(
-    url:
-        'https://marrlrggovghhnmhtbgs.supabase.co', // <-- Replace with your Supabase URL
-    publishableKey:
-        'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe', // <-- Replace with your Anon Key
+    url: const String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://marrlrggovghhnmhtbgs.supabase.co',
+    ),
+    publishableKey: const String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe',
+    ),
     debug: true,
   );
   // Firebase init
