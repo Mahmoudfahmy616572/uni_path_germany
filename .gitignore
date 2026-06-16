@@ -53,5 +53,12 @@ all_project_code.txt
 temp_test.txt
 19
 
+# Server (Dart Shelf proxy for Gemini)
+server/.env
+server/.dart_tool/
+server/build/
+server/.packages
+server/pubspec.lock
+
 # FlutterFire (auto-generated)
 lib/firebase_options.dart

@@ -1,26 +1,21 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:dio/dio.dart';
 
 import 'ai_prompts.dart';
 
 class GeminiService {
-  static const String _apiKey =
-      String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+  final Dio _dio;
 
-  final GenerativeModel _model;
-
-  GeminiService()
-      : _model = GenerativeModel(
-          model: 'gemini-2.5-flash',
-          apiKey: _apiKey,
-          requestOptions: const RequestOptions(apiVersion: 'v1'),
-          generationConfig: GenerationConfig(
-            temperature: 0.4,
-            maxOutputTokens: 8192,
-          ),
-        );
+  GeminiService({String? serverUrl})
+      : _dio = Dio(BaseOptions(
+          baseUrl: serverUrl ??
+              const String.fromEnvironment('SERVER_URL',
+                  defaultValue: 'http://localhost:8080'),
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 120),
+        ));
 
   Future<List<Map<String, dynamic>>> getImprovementSuggestions({
     required Map<String, dynamic> studentProfile,
@@ -32,12 +27,13 @@ class GeminiService {
       programDetails: programDetails,
       breakdown: breakdown,
     );
-
-    final response = await _model.generateContent([Content.text(prompt)]);
-    final text = response.text ?? '[]';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    final text = response.data['text'] as String? ?? '';
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
-      final preview = text.length > 200 ? '${text.substring(0, 100)}...[${text.length} chars]...${text.substring(text.length - 100)}' : text;
+      final preview = text.length > 200
+          ? '${text.substring(0, 100)}...[${text.length} chars]...${text.substring(text.length - 100)}'
+          : text;
       throw Exception('Improve parse failed. Text: $preview');
     }
     return result;
@@ -53,9 +49,8 @@ class GeminiService {
       docType: docType,
       documentContent: documentContent,
     );
-
-    final response = await _model.generateContent([Content.text(prompt)]);
-    final text = response.text ?? '[]';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    final text = response.data['text'] as String? ?? '';
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
       throw Exception('Gemini: $text');
@@ -73,11 +68,13 @@ class GeminiService {
       programDetails: programDetails,
       uploadStatus: uploadStatus,
     );
-    final response = await _model.generateContent([Content.text(prompt)]);
-    final text = response.text ?? '[]';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    final text = response.data['text'] as String? ?? '';
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
-      final preview = text.length > 200 ? '${text.substring(0, 100)}...[${text.length} chars]...${text.substring(text.length - 100)}' : text;
+      final preview = text.length > 200
+          ? '${text.substring(0, 100)}...[${text.length} chars]...${text.substring(text.length - 100)}'
+          : text;
       throw Exception('DocSuggest parse failed. Text: $preview');
     }
     return result;
@@ -90,17 +87,22 @@ class GeminiService {
     required Uint8List pdfBytes,
     String mimeType = 'application/pdf',
   }) async {
-    final prompt = 'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]';
+    final prompt =
+        'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]';
 
-    final content = Content.multi([
-      TextPart(prompt),
-      DataPart(mimeType, pdfBytes),
-    ]);
-    final response = await _model.generateContent([content]);
-    final text = response.text ?? '[]';
+    final formData = FormData.fromMap({
+      'prompt': prompt,
+      'file': MultipartFile.fromBytes(pdfBytes,
+          filename: 'document.pdf', contentType: DioMediaType.parse(mimeType)),
+    });
+
+    final response =
+        await _dio.post('/api/ai/chat-with-pdf', data: formData);
+    final text = response.data['text'] as String? ?? '';
     final result = _parseJsonResponse(text);
     if (result.isEmpty && text != '[]') {
-      throw Exception('PDF review parse failed. Text: ${text.length > 200 ? text.substring(0, 200) : text}');
+      throw Exception(
+          'PDF review parse failed. Text: ${text.length > 200 ? text.substring(0, 200) : text}');
     }
     return result;
   }
@@ -121,9 +123,8 @@ class GeminiService {
       studentName: studentName,
       studentBackground: studentBackground,
     );
-
-    final response = await _model.generateContent([Content.text(prompt)]);
-    return response.text ?? 'Generation failed. Please try again.';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
   }
 
   Future<String> generateCv({
@@ -142,9 +143,8 @@ class GeminiService {
       studentBackground: studentBackground,
       targetDegree: targetDegree,
     );
-
-    final response = await _model.generateContent([Content.text(prompt)]);
-    return response.text ?? 'Generation failed. Please try again.';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
   }
 
   Future<String> generateSop({
@@ -165,9 +165,8 @@ class GeminiService {
       studentBackground: studentBackground,
       programHighlights: programHighlights,
     );
-
-    final response = await _model.generateContent([Content.text(prompt)]);
-    return response.text ?? 'Generation failed. Please try again.';
+    final response = await _dio.post('/api/ai/chat', data: {'prompt': prompt});
+    return response.data['text'] as String? ?? 'Generation failed. Please try again.';
   }
 
   List<Map<String, dynamic>> _parseJsonResponse(String text) {
@@ -175,7 +174,8 @@ class GeminiService {
       final start = text.indexOf('[');
       final end = text.lastIndexOf(']');
       if (start == -1 || end == -1 || end <= start) {
-        throw FormatException('No valid JSON array brackets. start=$start end=$end len=${text.length}');
+        throw FormatException(
+            'No valid JSON array brackets. start=$start end=$end len=${text.length}');
       }
       final cleaned = text.substring(start, end + 1).trim();
       final decoded = jsonDecode(cleaned);
