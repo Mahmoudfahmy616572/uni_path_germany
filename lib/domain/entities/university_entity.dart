@@ -26,6 +26,13 @@ class UniversityEntity {
   final String? location;
   final String? websiteUrl;
 
+  // Portal tracking fields
+  final String? portalUrl;
+  final String portalStatus;
+  final String paymentStatus;
+  final String? submittedAt;
+  final bool autoTrack;
+
   UniversityEntity({
     required this.id,
     required this.name,
@@ -47,6 +54,11 @@ class UniversityEntity {
     this.imageUrl,
     this.location,
     this.websiteUrl,
+    this.portalUrl,
+    this.portalStatus = 'pending',
+    this.paymentStatus = 'unpaid',
+    this.submittedAt,
+    this.autoTrack = false,
   });
 
   UniversityEntity copyWith({
@@ -70,6 +82,11 @@ class UniversityEntity {
     String? imageUrl,
     String? location,
     String? websiteUrl,
+    String? portalUrl,
+    String? portalStatus,
+    String? paymentStatus,
+    String? submittedAt,
+    bool? autoTrack,
   }) {
     return UniversityEntity(
       id: id ?? this.id,
@@ -92,6 +109,11 @@ class UniversityEntity {
       imageUrl: imageUrl ?? this.imageUrl,
       location: location ?? this.location,
       websiteUrl: websiteUrl ?? this.websiteUrl,
+      portalUrl: portalUrl ?? this.portalUrl,
+      portalStatus: portalStatus ?? this.portalStatus,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      submittedAt: submittedAt ?? this.submittedAt,
+      autoTrack: autoTrack ?? this.autoTrack,
     );
   }
 }

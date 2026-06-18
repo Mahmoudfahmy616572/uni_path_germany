@@ -5,8 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/localization/app_localizations.dart';
 
-import '../../../../core/services/auth/auth_service.dart';
-import '../../../../core/services/auth/go_router_refresh_stream.dart';
+import '../../../core/services/auth/auth_service.dart';
+import '../../../core/services/auth/go_router_refresh_stream.dart';
+import 'logger.dart';
 import '../../domain/entities/university_entity.dart';
 import '../../presentation/Home/screen/home_screen.dart';
 import '../../presentation/MyApplications/cubit/my_applications_cubits.dart';
@@ -23,6 +24,7 @@ import '../../presentation/profile/cubit/profile_state.dart';
 import '../../presentation/profile/screen/profile_screen.dart';
 import '../../presentation/profile/widgets/documents_screen.dart';
 import '../../presentation/profile/widgets/setting_screen.dart';
+import '../../presentation/profile/widgets/email_tracking_screen.dart';
 import '../../presentation/admin/shell/admin_shell.dart';
 import '../../presentation/admin/overview/admin_overview_screen.dart';
 import '../../presentation/admin/users/admin_users_screen.dart';
@@ -36,6 +38,8 @@ import '../services/services_locator.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
+
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/onboarding',
@@ -46,25 +50,34 @@ final GoRouter appRouter = GoRouter(
     final bool isLoggedIn = session != null;
     final String currentLocation = state.matchedLocation;
 
-    print('🔀 ROUTER REDIRECT: location=$currentLocation, isLoggedIn=$isLoggedIn');
+    log.i('ROUTER REDIRECT: location=$currentLocation, isLoggedIn=$isLoggedIn');
 
     if (!isLoggedIn &&
         currentLocation != '/login' &&
         currentLocation != '/register' &&
         currentLocation != '/onboarding') {
-      print('🔀 REDIRECT -> /login');
+      // During OAuth, send deep link back to /register where the listener is
+      if (currentLocation == '/' && AuthService.isOAuthInProgress) {
+        log.i('OAuth pending — returning to /register');
+        return '/register';
+      }
+      log.i('REDIRECT -> /login');
       return '/login';
     }
     if (isLoggedIn &&
         (currentLocation == '/login' ||
             currentLocation == '/register' ||
-            currentLocation == '/onboarding')) {
-      // For profile completeness, let the screen handle it (HomeScreen checks)
-      print('🔀 REDIRECT -> /home');
+            currentLocation == '/onboarding' ||
+            currentLocation == '/')) {
+      // Don't redirect away from /register during OAuth — the cubit needs to stay alive
+      if (currentLocation == '/register' && AuthService.isOAuthInProgress) {
+        log.i('OAuth pending — staying on /register');
+        return null;
+      }
+      log.i('REDIRECT -> /home');
       return '/home';
     }
-    // REMOVED: Admin guard moved to AdminShell (was too early here — race with profile load)
-    print('🔀 NO REDIRECT');
+    log.i('NO REDIRECT');
     return null;
   },
   routes: [
@@ -77,15 +90,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/login',
-      builder: (context, state) => BlocProvider(
-        create: (context) => sl<LoginCubit>(),
+      builder: (context, state) => BlocProvider.value(
+        value: sl<LoginCubit>(),
         child: LoginScreen(),
       ),
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => BlocProvider(
-        create: (context) => sl<RegisterCubit>(),
+      builder: (context, state) => BlocProvider.value(
+        value: sl<RegisterCubit>(),
         child: RegisterScreen(
           profileData: state.extra as Map<String, dynamic>?,
         ),
@@ -100,6 +113,12 @@ final GoRouter appRouter = GoRouter(
         final profileCubit = state.extra as ProfileCubit;
         return _SettingsRouteHandler(cubit: profileCubit);
       },
+    ),
+
+    GoRoute(
+      path: '/email-tracking',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const EmailTrackingScreen(),
     ),
 
     GoRoute(

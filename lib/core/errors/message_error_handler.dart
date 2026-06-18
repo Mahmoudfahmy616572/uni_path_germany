@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/logger.dart';
+
 class AuthErrorHandler {
   static String getFriendlyErrorMessage(
     BuildContext context,
@@ -9,8 +11,7 @@ class AuthErrorHandler {
     final bool isArabic = currentLang == 'ar';
     final error = supabaseError.toLowerCase();
 
-    // DEBUG LOG
-    print('🔴 AuthErrorHandler received: $error');
+    log.i('AuthErrorHandler received: $error');
 
     // 0. Email confirmation required
     if (error.contains('email_confirm') ||

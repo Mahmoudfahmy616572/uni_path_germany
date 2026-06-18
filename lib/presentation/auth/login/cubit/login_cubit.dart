@@ -1,12 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../domain/repositories/auth_repository.dart';
 import 'login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   final AuthRepository authRepository;
+  StreamSubscription? _authSub;
 
   LoginCubit(this.authRepository) : super(LoginInitial());
+
+  @override
+  Future<void> close() async {
+    await _authSub?.cancel();
+    return super.close();
+  }
 
   Future<void> login({
     required String emailOrUsername,
@@ -58,6 +68,32 @@ class LoginCubit extends Cubit<LoginState> {
       }
 
       emit(LoginError(errorMessage));
+    }
+  }
+
+  Future<void> signInWithOAuth(OAuthProvider provider) async {
+    try {
+      await authRepository.signInWithOAuth(provider);
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((authState) {
+        if (authState.session != null) {
+          _authSub?.cancel();
+          _authSub = null;
+          if (!isClosed) emit(LoginSuccess());
+        }
+      });
+    } catch (e) {
+      if (!isClosed) emit(LoginError('OAuth login failed: $e'));
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    if (isClosed) return;
+    emit(LoginLoading());
+    try {
+      await authRepository.resetPassword(email);
+      if (!isClosed) emit(LoginPasswordResetSent());
+    } catch (e) {
+      if (!isClosed) emit(LoginError('Failed to send reset email: $e'));
     }
   }
 }

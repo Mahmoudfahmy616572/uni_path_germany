@@ -66,6 +66,14 @@ class SideNavigationBar extends StatelessWidget {
                   context.push('/settings', extra: context.read<ProfileCubit>());
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.email_outlined),
+                title: const Text('Email Tracking'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/email-tracking');
+                },
+              ),
               if (state is ProfileLoaded && state.user.role == 'admin')
                 ListTile(
                   leading: const Icon(Icons.shield_outlined, color: Color(0xFF6366F1)),

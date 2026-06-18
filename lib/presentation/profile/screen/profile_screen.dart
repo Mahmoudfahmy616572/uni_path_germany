@@ -139,6 +139,16 @@ class ProfileScreen extends StatelessWidget {
                             CurtainDrop(
                               index: 4,
                               child: ProfileToolItem(
+                                icon: Icons.email_outlined,
+                                iconColor: const Color(0xFF6366F1),
+                                title: 'Email Tracking',
+                                subtitle: 'Auto-detect application status from emails',
+                                onTap: () => context.push('/email-tracking'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 5,
+                              child: ProfileToolItem(
                                 icon: Icons.settings_outlined,
                                 iconColor: Colors.grey,
                                 title: AppLocalizations.of(context).translate('accountSettings'),
@@ -160,7 +170,7 @@ class ProfileScreen extends StatelessWidget {
 
                             if (state.user.role == 'admin')
                               CurtainDrop(
-                                index: 5,
+                                index: 6,
                                 child: ProfileToolItem(
                                   icon: Icons.shield_outlined,
                                   iconColor: const Color(0xFF6366F1),
@@ -170,7 +180,7 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ),
                             CurtainDrop(
-                              index: 6,
+                              index: 7,
                               child: ProfileToolItem(
                                 icon: Icons.logout,
                                 iconColor: Colors.red,

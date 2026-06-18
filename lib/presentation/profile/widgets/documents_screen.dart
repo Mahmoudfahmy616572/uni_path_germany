@@ -1,17 +1,20 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:dio/dio.dart';
 
-import '../../../core/themes/app_colors.dart';
-import '../../../core/themes/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/language_provider.dart';
 import '../../../core/services/ai/ai_usage_service.dart';
 import '../../../core/services/ai/gemini_service.dart';
+import '../../../core/services/ai/review_cache_service.dart';
 import '../../../core/services/services_locator.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/themes/app_theme.dart';
+import '../../../core/utils/missing_doc_templates.dart';
 import '../../../core/utils/requirements_check_list.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../UniversityDetails/cubit/university_details_cubit.dart';
@@ -27,12 +30,18 @@ String? _toUrlOrNull(dynamic value) {
 dynamic _rawDocValue(UniversityEntity? uni, String col) {
   if (uni == null) return null;
   switch (col) {
-    case 'has_transcripts': return uni.hasTranscripts;
-    case 'has_bachelor_cert': return uni.hasBachelorCert;
-    case 'has_sop': return uni.hasSop;
-    case 'has_cv': return uni.hasCv;
-    case 'has_language_cert': return uni.hasLanguageCert;
-    default: return null;
+    case 'has_transcripts':
+      return uni.hasTranscripts;
+    case 'has_bachelor_cert':
+      return uni.hasBachelorCert;
+    case 'has_sop':
+      return uni.hasSop;
+    case 'has_cv':
+      return uni.hasCv;
+    case 'has_language_cert':
+      return uni.hasLanguageCert;
+    default:
+      return null;
   }
 }
 
@@ -55,7 +64,8 @@ class DocumentsScreen extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             AppLocalizations.of(context).translate('uploadDocuments'),
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                color: Colors.black, fontWeight: FontWeight.bold),
           ),
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.black),
@@ -67,16 +77,19 @@ class DocumentsScreen extends StatelessWidget {
             children: [
               Text(
                 AppLocalizations.of(context).translate('uploadDocuments'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text(
-                "Files uploaded here will automatically be used for all your German university applications.",
-                style: TextStyle(color: Colors.grey),
+              Text(
+                AppLocalizations.of(context).translate('uploadDescription'),
+                style: const TextStyle(color: Colors.grey),
               ),
               SizedBox(height: 24.h),
 
               _AiDocReviewButton(),
+              SizedBox(height: 12.h),
+              _AiGenerateButton(),
               SizedBox(height: 16.h),
 
               // الآن سيجد هذا الويدجيت الـ Cubit فوقه مباشرة ولن يحدث Error
@@ -95,8 +108,9 @@ class _AiDocReviewButton extends StatefulWidget {
 }
 
 class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
-  final _gemini = GeminiService();
+  final _gemini = sl<GeminiService>();
   final _usageService = sl<AiUsageService>();
+  final _cacheService = sl<ReviewCacheService>();
   int _remainingUses = 0;
 
   @override
@@ -110,16 +124,17 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
     if (mounted) setState(() => _remainingUses = remaining);
   }
 
-  String get _langCode =>
-      sl<LanguageProvider>().locale.languageCode;
+  String get _langCode => sl<LanguageProvider>().locale.languageCode;
 
   Future<void> _reviewDocuments(BuildContext context) async {
+    final local = AppLocalizations.of(context);
     final canUse = await _usageService.canUseAi();
     if (!canUse) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).translate('monthlyLimitReached')),
+            content: Text(
+                AppLocalizations.of(context).translate('monthlyLimitReached')),
             backgroundColor: const Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
           ),
@@ -130,7 +145,9 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
     // التحقق من وجود ملفات مرفوعة
     final uniForCheck = context.read<UniversityDetailsCubit>().state;
-    final currentUni = uniForCheck is UniversitySaveStatus ? uniForCheck.currentUniversity : null;
+    final currentUni = uniForCheck is UniversitySaveStatus
+        ? uniForCheck.currentUniversity
+        : null;
     final hasAnyDoc = [
       _toUrlOrNull(currentUni?.hasTranscripts),
       _toUrlOrNull(currentUni?.hasBachelorCert),
@@ -158,7 +175,8 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).translate('profileDataNotLoaded')),
+            content: Text(
+                AppLocalizations.of(context).translate('profileDataNotLoaded')),
             backgroundColor: const Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
           ),
@@ -168,14 +186,6 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
     }
 
     final uni = state.currentUniversity;
-    final uploadStatus = {
-      'has_transcripts': _toUrlOrNull(state.currentUniversity?.hasTranscripts) != null,
-      'has_bachelor_cert': _toUrlOrNull(state.currentUniversity?.hasBachelorCert) != null,
-      'has_sop': _toUrlOrNull(state.currentUniversity?.hasSop) != null,
-      'has_cv': _toUrlOrNull(state.currentUniversity?.hasCv) != null,
-      'has_language_cert': _toUrlOrNull(state.currentUniversity?.hasLanguageCert) != null,
-    };
-
     String stepLabel = '';
     void Function(void Function()) updateSheet = (_) {};
 
@@ -199,8 +209,8 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
       final bool hasIelts = studentProfile['has_ielts'] == true;
       final bool hasToefl = studentProfile['has_toefl'] == true;
-      final bool hasLanguageCertNeeded = hasIelts || hasToefl ||
-          studentProfile['has_moi'] == true;
+      final bool hasLanguageCertNeeded =
+          hasIelts || hasToefl || studentProfile['has_moi'] == true;
 
       final docConfigs = [
         ('has_transcripts', 'Academic Transcripts', 'transcripts'),
@@ -213,33 +223,95 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
       for (int i = 0; i < docConfigs.length; i++) {
         final (col, title, docType) = docConfigs[i];
-        stepLabel = 'Downloading ${i + 1}/${docConfigs.length} — $title';
+        stepLabel =
+            '${local.translate('downloadLabel')} ${i + 1}/${docConfigs.length} — $title';
         updateSheet(() {});
 
         final String? url = _toUrlOrNull(_rawDocValue(uni, col));
         if (url != null) {
+          // Check cache first — if file URL hasn't changed, reuse old review
+          final cached = await _cacheService.getCachedReview(
+            docType: docType,
+            currentUrl: url,
+          );
+          if (cached != null) {
+            allReviews.add({
+              'doc_type': docType,
+              'title': title,
+              'status': 'uploaded',
+              'tips':
+                  cached.map((r) => r['suggestion']?.toString() ?? '').toList(),
+              'importance': cached.isNotEmpty
+                  ? cached
+                      .map((r) => r['severity']?.toString() ?? 'medium')
+                      .fold<String>(
+                          'medium', (a, b) => b == 'high' ? 'high' : a)
+                  : 'medium',
+              '_program_name': programName,
+            });
+            stepLabel =
+                '${local.translate('cachedLabel')} ${i + 1}/${docConfigs.length} — $title';
+            updateSheet(() {});
+            await Future.delayed(const Duration(milliseconds: 300));
+            continue;
+          }
+
           try {
-            stepLabel = 'Downloading ${i + 1}/${docConfigs.length} — $title';
+            stepLabel =
+                '${local.translate('downloadLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
-            final response = await Dio(BaseOptions(responseType: ResponseType.bytes)).get(url);
-            if (response.statusCode != 200) {
+            // Retry up to 3 times for transient server errors (429, 502, 503)
+            Response? response;
+            const maxDownloadRetries = 3;
+            for (int attempt = 0; attempt < maxDownloadRetries; attempt++) {
+              try {
+                response = await Dio(
+                  BaseOptions(responseType: ResponseType.bytes),
+                ).get(url);
+                break;
+              } on DioException catch (e) {
+                final isTransient = e.type == DioExceptionType.badResponse &&
+                    (e.response?.statusCode == 429 ||
+                        e.response?.statusCode == 502 ||
+                        e.response?.statusCode == 503);
+                if (attempt < maxDownloadRetries - 1 && isTransient) {
+                  await Future.delayed(Duration(seconds: 2 * (attempt + 1)));
+                  continue;
+                }
+                rethrow;
+              }
+            }
+
+            if (response == null || response.statusCode != 200) {
               allReviews.add({
                 'doc_type': docType,
                 'title': title,
                 'status': 'uploaded',
-                'tips': ['File URL returned status ${response.statusCode}. Re-upload the document.'],
+                'tips': [
+                  response != null
+                      ? local
+                          .translate('serverReturned')
+                          .replaceAll('{code}', response.statusCode.toString())
+                      : local.translate('couldNotDownload'),
+                ],
                 'importance': 'medium',
                 '_program_name': programName,
               });
               continue;
             }
 
-            stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+            stepLabel =
+                '${local.translate('analyzeLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
-            final mimeType = response.headers.value('content-type') ?? 'application/pdf';
+            // Delay between docs to avoid hitting Gemini rate limit (429)
+            if (i > 0) await Future.delayed(const Duration(seconds: 2));
+
+            final mimeType =
+                response.headers.value('content-type') ?? 'application/pdf';
             final reviews = await _gemini.reviewDocumentWithPdf(
+              studentProfile: studentProfile,
               programName: programName,
               docType: docType,
               title: title,
@@ -250,24 +322,33 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
             if (GeminiService.hasValidFeedback(reviews)) {
               validReviewCount++;
             }
+            await _cacheService.storeReview(
+              docType: docType,
+              url: url,
+              reviews: reviews,
+            );
             allReviews.add({
               'doc_type': docType,
               'title': title,
               'status': 'uploaded',
-              'tips': reviews.map((r) => r['suggestion']?.toString() ?? '').toList(),
+              'tips': reviews
+                  .map((r) => r['suggestion']?.toString() ?? '')
+                  .toList(),
               'importance': reviews.isNotEmpty
-                  ? reviews.map((r) => r['severity']?.toString() ?? 'medium')
-                      .fold<String>('medium',
-                          (a, b) => b == 'high' ? 'high' : a)
+                  ? reviews
+                      .map((r) => r['severity']?.toString() ?? 'medium')
+                      .fold<String>(
+                          'medium', (a, b) => b == 'high' ? 'high' : a)
                   : 'medium',
               '_program_name': programName,
             });
           } on DioException catch (e) {
             final msg = e.type == DioExceptionType.connectionTimeout
-                ? 'Download timed out. Check your internet connection.'
+                ? local.translate('downloadTimedOut')
                 : e.type == DioExceptionType.badResponse
-                    ? 'Server returned ${e.response?.statusCode}. Re-upload the document.'
-                    : 'Could not download the file. Check your connection.';
+                    ? local.translate('serverReturned').replaceAll(
+                        '{code}', e.response?.statusCode.toString() ?? '')
+                    : local.translate('couldNotDownload');
             allReviews.add({
               'doc_type': docType,
               'title': title,
@@ -281,39 +362,30 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
               'doc_type': docType,
               'title': title,
               'status': 'uploaded',
-              'tips': ['AI analysis failed: ${e.toString()}'],
+              'tips': [
+                local.translate('aiFailed').replaceAll('{error}', e.toString())
+              ],
               'importance': 'medium',
               '_program_name': programName,
             });
           }
         } else {
-          if (col == 'has_language_cert') continue; // optional
-          stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+          stepLabel =
+              '${local.translate('recommendationsLabel')} ${i + 1}/${docConfigs.length} — $title';
           updateSheet(() {});
 
-          final suggestions = await _gemini.getDocumentSuggestions(
-            studentProfile: studentProfile,
-            programDetails: {
-              'name': programName,
-              'major': studentProfile['target_major'] ?? '',
-              'degree': studentProfile['degree_level'] ?? '',
-              'required_gpa': 0,
-              'requires_ielts': false,
-              'min_ielts': 0,
-              'accepts_moi': false,
-              'language': studentProfile['language_preference'] ?? '',
-            },
-            uploadStatus: uploadStatus,
-            languageCode: _langCode,
-          );
-          final docTip = suggestions.where((t) => t['doc_type']?.toString() == docType).toList();
+          final staticSuggestions =
+              MissingDocTemplates.getSuggestions(studentProfile);
+          final docTip = staticSuggestions
+              .where((t) => t['doc_type']?.toString() == docType)
+              .toList();
           allReviews.add({
             'doc_type': docType,
             'title': title,
             'status': 'missing',
             'tips': docTip.isNotEmpty
                 ? (docTip.first['tips'] as List?)?.cast<String>() ?? []
-                : ['Upload this document to get AI feedback.'],
+                : [local.translate('uploadThisDoc')],
             'importance': docTip.isNotEmpty
                 ? (docTip.first['importance']?.toString() ?? 'medium')
                 : 'medium',
@@ -339,7 +411,9 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
     }
   }
 
-  void _showReviewSheet(BuildContext context, List<Map<String, dynamic>> reviews, {String? error}) {
+  void _showReviewSheet(
+      BuildContext context, List<Map<String, dynamic>> reviews,
+      {String? error}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -347,13 +421,16 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
       builder: (_) => AiDocumentReviewSheet(
         reviews: reviews,
         error: error,
-        onRetry: error != null ? () {
-          Navigator.pop(context);
-          _reviewDocuments(context);
-        } : null,
+        onRetry: error != null
+            ? () {
+                Navigator.pop(context);
+                _reviewDocuments(context);
+              }
+            : null,
         onGenerateDocument: (ctx, docType, programName) {
           final state = ctx.read<UniversityDetailsCubit>().state;
-          final studentProfile = state is UniversitySaveStatus ? state.studentProfile : null;
+          final studentProfile =
+              state is UniversitySaveStatus ? state.studentProfile : null;
           Navigator.pop(ctx);
           _openGenerator(ctx, docType, programName, studentProfile);
         },
@@ -361,25 +438,30 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
     );
   }
 
-  void _openGenerator(BuildContext ctx, String docType, String programName, Map<String, dynamic>? studentProfile) {
+  void _openGenerator(BuildContext ctx, String docType, String programName,
+      Map<String, dynamic>? studentProfile) {
     showModalBottomSheet(
       context: ctx,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => GenerateSheet(
-        programName: programName.isNotEmpty ? programName : 'German University Application',
+        programName: programName.isNotEmpty
+            ? programName
+            : 'German University Application',
         universityName: '',
         degreeType: 'Master',
         major: studentProfile?['target_major']?.toString() ?? '',
         studentName: studentProfile?['username']?.toString() ?? '',
-        studentBackground: 'GPA: ${studentProfile?['gpa'] ?? 'N/A'}, Major: ${studentProfile?['target_major'] ?? 'N/A'}',
+        studentBackground:
+            'GPA: ${studentProfile?['gpa'] ?? 'N/A'}, Major: ${studentProfile?['target_major'] ?? 'N/A'}',
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final remainingLabel = AppLocalizations.of(context).translate('remainingUses');
+    final remainingLabel =
+        AppLocalizations.of(context).translate('remainingUses');
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -417,49 +499,248 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 }
 
 // ─────────────────────────────────────────────────────────
-// _ReviewProgressSheet — loading indicator with step label
+// _AiGenerateButton — CV/SOP generation
 // ─────────────────────────────────────────────────────────
-class _ReviewProgressSheet extends StatelessWidget {
+class _AiGenerateButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          final state = context.read<UniversityDetailsCubit>().state;
+          final profile =
+              state is UniversitySaveStatus ? state.studentProfile : null;
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => GenerateSheet(
+              programName: 'German University Application',
+              universityName: '',
+              degreeType: 'Master',
+              major: profile?['target_major']?.toString() ?? '',
+              studentName: profile?['username']?.toString() ?? '',
+              studentBackground:
+                  'GPA: ${profile?['gpa'] ?? 'N/A'}, Major: ${profile?['target_major'] ?? 'N/A'}',
+            ),
+          );
+        },
+        icon: const Icon(Icons.auto_awesome, size: 16),
+        label: Text(
+          'Generate CV / SOP with AI',
+          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF8B5CF6),
+          side: const BorderSide(color: Color(0xFF8B5CF6)),
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// _ReviewProgressSheet — animated AI loading indicator
+// ─────────────────────────────────────────────────────────
+class _ReviewProgressSheet extends StatefulWidget {
   final String stepLabel;
   const _ReviewProgressSheet({required this.stepLabel});
 
   @override
+  State<_ReviewProgressSheet> createState() => _ReviewProgressSheetState();
+}
+
+class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(24.r),
-      decoration: BoxDecoration(
-        color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+      builder: (context, opacity, child) => Opacity(
+        opacity: opacity,
+        child: child,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(strokeWidth: 3),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Reviewing Your Documents',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 24.w),
+        decoration: BoxDecoration(
+          color: context.isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 80,
+              height: 80,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _pulseAnim,
+                    builder: (_, child) => Transform.scale(
+                      scale: _pulseAnim.value,
+                      child: child,
+                    ),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(
+                          colors: [
+                            Color(0xFF8B5CF6),
+                            Color(0xFF6366F1),
+                            Color(0xFF4F46E5),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const _AiSparkleLoader(),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            stepLabel.isNotEmpty ? stepLabel : 'Starting...',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            SizedBox(height: 20.h),
+            Text(
+              AppLocalizations.of(context).translate('reviewingDocuments'),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-        ],
+            SizedBox(height: 8.h),
+            Text(
+              widget.stepLabel.isNotEmpty
+                  ? widget.stepLabel
+                  : AppLocalizations.of(context).translate('starting'),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+            SizedBox(
+              width: 180.w,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3.r),
+                child: LinearProgressIndicator(
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  color: const Color(0xFF8B5CF6),
+                  minHeight: 3.h,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _AiSparkleLoader extends StatefulWidget {
+  const _AiSparkleLoader();
+
+  @override
+  State<_AiSparkleLoader> createState() => _AiSparkleLoaderState();
+}
+
+class _AiSparkleLoaderState extends State<_AiSparkleLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _spin;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat();
+    _spin = Tween<double>(begin: 0, end: 360).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _spin,
+      child: CustomPaint(
+        size: const Size(44, 44),
+        painter: _AiSparklePainter(),
+      ),
+    );
+  }
+}
+
+class _AiSparklePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 4; i++) {
+      final angle = (i * 90) * (3.14159 / 180);
+      final dist = size.width * 0.35;
+      final x = center.dx + dist * math.cos(angle);
+      final y = center.dy + dist * math.sin(angle);
+
+      final path = Path()
+        ..moveTo(x, y - 5)
+        ..lineTo(x + 3, y)
+        ..lineTo(x, y + 5)
+        ..lineTo(x - 3, y)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+
+    canvas.drawCircle(center, 3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

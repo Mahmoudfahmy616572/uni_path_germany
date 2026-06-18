@@ -4,6 +4,7 @@ import 'package:realtime_client/realtime_client.dart';
 
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
+import '../../../core/widgets/webview_screen.dart';
 
 class AdminApplicationsScreen extends StatefulWidget {
   const AdminApplicationsScreen({super.key});
@@ -21,6 +22,8 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
   static const int _pageSize = 30;
 
   final _statusOptions = ['saved', 'applied', 'interview', 'accepted', 'rejected', 'withdrawn'];
+  final _portalStatusOptions = ['pending', 'submitted', 'acknowledged', 'accepted', 'rejected'];
+  final _paymentStatusOptions = ['unpaid', 'paid', 'waived'];
   RealtimeChannel? _channel;
 
   @override
@@ -106,8 +109,11 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     final programNameCtrl = TextEditingController(text: existing['program_name']?.toString() ?? '');
     final universityIdCtrl = TextEditingController(text: existing['university_id']?.toString() ?? '');
     final programIdCtrl = TextEditingController(text: existing['program_id']?.toString() ?? '');
+    final portalUrlCtrl = TextEditingController(text: existing['portal_url']?.toString() ?? '');
     final notesCtrl = TextEditingController(text: existing['notes']?.toString() ?? '');
     String status = existing['status']?.toString() ?? 'saved';
+    String portalStatus = existing['portal_status']?.toString() ?? 'pending';
+    String paymentStatus = existing['payment_status']?.toString() ?? 'unpaid';
 
     final result = await showDialog<bool>(
       context: context,
@@ -142,6 +148,26 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                 style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
               ),
               const SizedBox(height: 12),
+              TextField(controller: portalUrlCtrl, decoration: const InputDecoration(labelText: 'Portal URL', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: portalStatus,
+                decoration: const InputDecoration(labelText: 'Portal Status', border: OutlineInputBorder()),
+                dropdownColor: const Color(0xFF1E293B),
+                items: _portalStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
+                onChanged: (v) => portalStatus = v ?? portalStatus,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: paymentStatus,
+                decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
+                dropdownColor: const Color(0xFF1E293B),
+                items: _paymentStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
+                onChanged: (v) => paymentStatus = v ?? paymentStatus,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 12),
               TextField(controller: notesCtrl, decoration: const InputDecoration(labelText: 'Notes', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14), maxLines: 3),
             ],
           ),
@@ -161,6 +187,9 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
         'university_id': universityIdCtrl.text.trim(),
         'program_id': programIdCtrl.text.trim(),
         'status': status,
+        'portal_url': portalUrlCtrl.text.trim(),
+        'portal_status': portalStatus,
+        'payment_status': paymentStatus,
         'notes': notesCtrl.text.trim(),
       }).eq('id', existing['id']);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application updated'), backgroundColor: Color(0xFF10B981)));
@@ -198,12 +227,15 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       'university_name': a['university_name'],
       'program_name': a['program_name'],
       'status': a['status'],
+      'portal_status': a['portal_status'] ?? 'pending',
+      'payment_status': a['payment_status'] ?? 'unpaid',
+      'portal_url': a['portal_url'] ?? '',
       'created_at': a['created_at'],
     }).toList();
     await exportCsv(
       data: csvData,
       filename: 'applications_export',
-      columns: ['user_id', 'university_name', 'program_name', 'status', 'created_at'],
+      columns: ['user_id', 'university_name', 'program_name', 'status', 'portal_status', 'payment_status', 'portal_url', 'created_at'],
     );
   }
 
@@ -219,24 +251,23 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                 DataColumn(label: Text('University')),
                 DataColumn(label: Text('Program')),
                 DataColumn(label: Text('Status')),
+                DataColumn(label: Text('Portal')),
+                DataColumn(label: Text('Payment')),
                 DataColumn(label: Text('Actions')),
               ],
               rows: _applications.map((a) => DataRow(cells: [
                 DataCell(Text(a['user_id']?.toString() ?? '')),
                 DataCell(Text(a['university_name']?.toString() ?? '')),
                 DataCell(Text(a['program_name']?.toString() ?? '')),
-                DataCell(Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _statusColor(a['status']?.toString() ?? '').withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(a['status']?.toString() ?? 'saved', style: TextStyle(fontSize: 11, color: _statusColor(a['status']?.toString() ?? ''), fontWeight: FontWeight.w600)),
-                )),
+                DataCell(_statusBadge(a['status']?.toString() ?? 'saved')),
+                DataCell(_portalBadge(a['portal_status']?.toString() ?? 'pending')),
+                DataCell(_paymentBadge(a['payment_status']?.toString() ?? 'unpaid')),
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _editDialog(a)),
+                    if (a['portal_url'] != null && a['portal_url'].toString().isNotEmpty)
+                      IconButton(icon: const Icon(Icons.open_in_new, size: 20), onPressed: () => _openPortal(a['portal_url'].toString())),
                     IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => _delete(a['id']?.toString() ?? '')),
                   ],
                 )),
@@ -267,6 +298,63 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       case 'applied': return const Color(0xFF6366F1);
       case 'withdrawn': return Colors.grey;
       default: return const Color(0xFF94A3B8);
+    }
+  }
+
+  Color _portalStatusColor(String status) {
+    switch (status) {
+      case 'submitted': return const Color(0xFF6366F1);
+      case 'acknowledged': return const Color(0xFFF59E0B);
+      case 'accepted': return const Color(0xFF10B981);
+      case 'rejected': return const Color(0xFFEF4444);
+      default: return const Color(0xFF94A3B8);
+    }
+  }
+
+  Color _paymentStatusColor(String status) {
+    switch (status) {
+      case 'paid': return const Color(0xFF10B981);
+      case 'waived': return const Color(0xFF6366F1);
+      default: return const Color(0xFF94A3B8);
+    }
+  }
+
+  Widget _statusBadge(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _statusColor(status).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(status, style: TextStyle(fontSize: 11, color: _statusColor(status), fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _portalBadge(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _portalStatusColor(status).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(status, style: TextStyle(fontSize: 11, color: _portalStatusColor(status), fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _paymentBadge(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _paymentStatusColor(status).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(status, style: TextStyle(fontSize: 11, color: _paymentStatusColor(status), fontWeight: FontWeight.w600)),
+    );
+  }
+
+  void _openPortal(String url) {
+    if (mounted) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WebViewScreen(url: url)));
     }
   }
 
@@ -359,6 +447,21 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                                       Text('User: $userId', style: const TextStyle(fontSize: 13)),
                                       const SizedBox(height: 8),
                                       Text('Program: ${a['program_name']?.toString() ?? ''}', style: const TextStyle(fontSize: 13)),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          _portalBadge(a['portal_status']?.toString() ?? 'pending'),
+                                          const SizedBox(width: 8),
+                                          _paymentBadge(a['payment_status']?.toString() ?? 'unpaid'),
+                                        ],
+                                      ),
+                                      if (a['portal_url'] != null && a['portal_url'].toString().isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        InkWell(
+                                          onTap: () => _openPortal(a['portal_url'].toString()),
+                                          child: Text('Portal: ${a['portal_url']}', style: const TextStyle(fontSize: 12, color: Color(0xFF6366F1), decoration: TextDecoration.underline)),
+                                        ),
+                                      ],
                                       const SizedBox(height: 8),
                                       Text('Notes: ${a['notes']?.toString() ?? '—'}', style: const TextStyle(fontSize: 13)),
                                       const SizedBox(height: 12),

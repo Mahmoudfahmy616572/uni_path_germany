@@ -408,6 +408,67 @@ class NotificationService {
     );
   }
 
+  // ──────────────────────────────────────────────
+  // PUBLIC: NOTIFY PORTAL STATUS CHANGE
+  // ──────────────────────────────────────────────
+  static Future<void> notifyPortalStatusChange({
+    required String programName,
+    required String universityName,
+    required String oldStatus,
+    required String newStatus,
+  }) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('notifications_enabled, application_updates')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (profile == null) return;
+
+      final bool notificationsEnabled = profile['notifications_enabled'] ?? true;
+      final bool applicationUpdates = profile['application_updates'] ?? true;
+
+      if (!notificationsEnabled || !applicationUpdates) return;
+    } catch (_) {
+      return;
+    }
+
+    String title;
+    String body;
+
+    switch (newStatus) {
+      case 'submitted':
+        title = '📤 تم إرسال الطلب';
+        body = 'تم إرسال طلبك لـ $programName في $universityName إلى بوابة التقديم';
+        break;
+      case 'acknowledged':
+        title = '✅ تم تأكيد الاستلام';
+        body = 'تم تأكيد استلام طلبك لـ $programName من $universityName';
+        break;
+      case 'accepted':
+        title = '🎉 تم القبول!';
+        body = 'مبارك! تم قبولك في $programName في $universityName';
+        break;
+      case 'rejected':
+        title = '❌ تم الرفض';
+        body = 'للأسف، تم رفض طلبك لـ $programName في $universityName';
+        break;
+      default:
+        title = '📋 تحديث حالة البوابة';
+        body = 'تغيرت حالة بوابة $programName إلى $newStatus';
+    }
+
+    await _showLocalNotification(
+      title: title,
+      body: body,
+      payload: 'portal_status:$newStatus:$programName',
+    );
+  }
+
   static String _formatDate(String dateStr) {
     return DeadlineParser.format(dateStr);
   }

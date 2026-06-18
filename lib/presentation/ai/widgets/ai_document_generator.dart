@@ -159,7 +159,7 @@ class GenerateSheet extends StatefulWidget {
 }
 
 class GenerateSheetState extends State<GenerateSheet> {
-  final _gemini = GeminiService();
+  final _gemini = sl<GeminiService>();
   final _usageService = sl<AiUsageService>();
 
   String get _langCode =>
@@ -475,7 +475,9 @@ class GenerateSheetState extends State<GenerateSheet> {
         );
       }
 
-      await _usageService.recordUsage();
+      if (result.isNotEmpty) {
+        await _usageService.recordUsage();
+      }
 
       if (mounted) setState(() { _result = result; _generating = false; });
     } catch (e) {

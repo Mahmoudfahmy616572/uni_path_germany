@@ -24,6 +24,11 @@ class UniversityModel extends UniversityEntity {
     super.imageUrl,
     super.location,
     super.websiteUrl,
+    super.portalUrl,
+    super.portalStatus,
+    super.paymentStatus,
+    super.submittedAt,
+    super.autoTrack,
   });
 
   factory UniversityModel.fromJson(
@@ -67,6 +72,11 @@ class UniversityModel extends UniversityEntity {
       hasSop: json['has_sop'],
       hasBachelorCert: json['has_bachelor_cert'],
       hasLanguageCert: json['has_language_cert'],
+      portalUrl: json['portal_url']?.toString(),
+      portalStatus: json['portal_status']?.toString() ?? 'pending',
+      paymentStatus: json['payment_status']?.toString() ?? 'unpaid',
+      submittedAt: json['submitted_at']?.toString(),
+      autoTrack: json['auto_track'] == true,
     );
   }
 
@@ -92,6 +102,11 @@ class UniversityModel extends UniversityEntity {
       imageUrl: imageUrl,
       location: location,
       websiteUrl: websiteUrl,
+      portalUrl: portalUrl,
+      portalStatus: portalStatus,
+      paymentStatus: paymentStatus,
+      submittedAt: submittedAt,
+      autoTrack: autoTrack,
     );
   }
 }

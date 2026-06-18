@@ -199,7 +199,7 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
       UniversitySearchLoaded(
         allResults: _cachedUniversities,
         filteredResults: filtered,
-        selectedCountry: 'Germany',
+        selectedIntake: _intake,
         selectedDegree: _degree,
         selectedMajor: _major,
         requiresIelts: _requiresIelts,

@@ -11,6 +11,7 @@
 //     ده مش في الـ widget — الـ widget بيعرض errorWidget صح
 //     لكن الـ _SimpleScoreDisplay overflow كان بيخفي ده
 
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -24,8 +25,10 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/services/ai/ai_usage_service.dart';
 import '../../../../core/services/ai/gemini_service.dart';
+import '../../../../core/services/ai/review_cache_service.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../core/utils/match_score_calculator.dart';
+import '../../../../core/utils/missing_doc_templates.dart';
 import '../../../../core/widgets/animated_match_score.dart';
 import '../../../../domain/entities/program_entity.dart';
 import '../../../../domain/entities/university_entity.dart';
@@ -249,11 +252,18 @@ class _BreakdownContent extends StatelessWidget {
                   details['language']['program_lang']?.toString() ?? '',
                 ),
               ),
+              _ScoreRow(
+                icon: Icons.description_outlined,
+                label: 'Documents',
+                score: details['completeness']['score'] as int,
+                maxScore: 10,
+                hint: _completenessHint(details['completeness'] as Map<String, dynamic>),
+              ),
               _IntakeRow(
                 studentIntake: details['intake']['student_intake']?.toString() ?? '',
                 programIntake: details['intake']['program_intake']?.toString() ?? '',
               ),
-              if (total < 90) ...[
+              if (total < 100) ...[
                 Divider(height: 20.h, color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
                 _ImproveTip(breakdownDetails: details),
               ],
@@ -376,6 +386,16 @@ class _BreakdownContent extends StatelessWidget {
       return 'Program is taught in ${program.toUpperCase()} — matches your preference ✓';
     }
     return 'Program is in $program — your preference is $student';
+  }
+
+  String _completenessHint(Map<String, dynamic> completeness) {
+    final missing = <String>[];
+    if (completeness['has_transcripts'] != true) missing.add('Transcripts');
+    if (completeness['has_bachelor_cert'] != true) missing.add('Bachelor Cert');
+    if (completeness['has_sop'] != true) missing.add('SOP');
+    if (completeness['has_cv'] != true) missing.add('CV');
+    if (missing.isEmpty) return 'All documents ready ✓';
+    return 'Missing: ${missing.join(', ')}';
   }
 }
 
@@ -594,6 +614,8 @@ class _ImproveTip extends StatelessWidget {
     final ielts = breakdownDetails['ielts']['score'] as int;
     final major = breakdownDetails['major']['score'] as int;
     final lang = breakdownDetails['language']['score'] as int;
+    final compl = breakdownDetails['completeness']['score'] as int;
+    final complMap = breakdownDetails['completeness'] as Map<String, dynamic>;
     final String studentIntake =
         breakdownDetails['intake']['student_intake']?.toString() ?? '';
     final String programIntake =
@@ -646,6 +668,16 @@ class _ImproveTip extends StatelessWidget {
       if (!compatible) {
         return 'This program runs in $programIntake — your target is $studentIntake. Consider updating your intake preference.';
       }
+    }
+
+    // Completeness tip (lowest priority — user may not have uploaded yet)
+    if (compl < 10) {
+      final missing = <String>[];
+      if (complMap['has_transcripts'] != true) missing.add('Transcripts');
+      if (complMap['has_bachelor_cert'] != true) missing.add('Bachelor Cert');
+      if (complMap['has_sop'] != true) missing.add('SOP');
+      if (complMap['has_cv'] != true) missing.add('CV');
+      return 'Upload ${missing.join(", ")} in My Documents to add +${10 - compl} pts to your match score.';
     }
 
     return null;
@@ -719,16 +751,6 @@ class _AiImproveButtonState extends State<_AiImproveButton> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(AppLocalizations.of(context).translate('cancel')),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                // 🚧 Placeholder: will navigate to payment screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context).translate('paymentComingSoon'))),
-                );
-              },
-              child: Text(AppLocalizations.of(context).translate('goToPayment')),
-            ),
           ],
         ),
       );
@@ -765,8 +787,9 @@ class _AiDocReviewButton extends StatefulWidget {
 }
 
 class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
-  final _gemini = GeminiService();
+  final _gemini = sl<GeminiService>();
   final _usageService = sl<AiUsageService>();
+  final _cacheService = sl<ReviewCacheService>();
   int _remainingUses = 0;
 
   String get _langCode =>
@@ -784,6 +807,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
   }
 
   Future<void> _reviewDocuments() async {
+    final local = AppLocalizations.of(context);
     final canUse = await _usageService.canUseAi();
     if (!canUse) {
       if (mounted) {
@@ -876,28 +900,84 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         }
 
         if (url is String && url.startsWith('http')) {
+          // Check cache first
+          final cached = await _cacheService.getCachedReview(
+            docType: docType,
+            currentUrl: url,
+          );
+          if (cached != null) {
+            allReviews.add({
+              'doc_type': docType,
+              'title': title,
+              'status': 'uploaded',
+              'tips': cached
+                  .map((r) => r['suggestion']?.toString() ?? '')
+                  .toList(),
+              'importance': cached.isNotEmpty
+                  ? cached
+                      .map((r) => r['severity']?.toString() ?? 'medium')
+                      .fold<String>(
+                          'medium', (a, b) => b == 'high' ? 'high' : a)
+                  : 'medium',
+              '_program_name': programName,
+            });
+            stepLabel = '${local.translate('cachedLabel')} ${i + 1}/${docConfigs.length} — $title';
+            updateSheet(() {});
+            await Future.delayed(const Duration(milliseconds: 300));
+            continue;
+          }
+
           try {
-            stepLabel = 'Downloading ${i + 1}/${docConfigs.length} — $title';
+            stepLabel = '${local.translate('downloadLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
-            final response = await Dio(BaseOptions(responseType: ResponseType.bytes)).get(url);
-            if (response.statusCode != 200) {
+            // Retry up to 3 times for transient server errors (429, 502, 503)
+            Response? response;
+            const maxDownloadRetries = 3;
+            for (int attempt = 0; attempt < maxDownloadRetries; attempt++) {
+              try {
+                response = await Dio(
+                  BaseOptions(responseType: ResponseType.bytes),
+                ).get(url);
+                break;
+              } on DioException catch (e) {
+                final isTransient = e.type == DioExceptionType.badResponse &&
+                    (e.response?.statusCode == 429 ||
+                        e.response?.statusCode == 502 ||
+                        e.response?.statusCode == 503);
+                if (attempt < maxDownloadRetries - 1 && isTransient) {
+                  await Future.delayed(
+                      Duration(seconds: 2 * (attempt + 1)));
+                  continue;
+                }
+                rethrow;
+              }
+            }
+
+            if (response == null || response.statusCode != 200) {
               allReviews.add({
                 'doc_type': docType,
                 'title': title,
                 'status': 'uploaded',
-                'tips': ['File URL returned status ${response.statusCode}. Re-upload the document.'],
+                'tips': [
+                  response != null
+                      ? local.translate('serverReturned').replaceAll('{code}', response.statusCode.toString())
+                      : local.translate('couldNotDownload'),
+                ],
                 'importance': 'medium',
                 '_program_name': programName,
               });
               continue;
             }
 
-            stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+            stepLabel = '${local.translate('analyzeLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
+
+            if (i > 0) await Future.delayed(const Duration(seconds: 2));
 
             final mimeType = response.headers.value('content-type') ?? 'application/pdf';
             final reviews = await _gemini.reviewDocumentWithPdf(
+              studentProfile: widget.studentProfile,
               programName: programName,
               docType: docType,
               title: title,
@@ -908,6 +988,11 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
             if (GeminiService.hasValidFeedback(reviews)) {
               validReviewCount++;
             }
+            await _cacheService.storeReview(
+              docType: docType,
+              url: url,
+              reviews: reviews,
+            );
             allReviews.add({
               'doc_type': docType,
               'title': title,
@@ -925,10 +1010,10 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
             });
           } on DioException catch (e) {
             final msg = e.type == DioExceptionType.connectionTimeout
-                ? 'Download timed out. Check your internet connection.'
+                ? local.translate('downloadTimedOut')
                 : e.type == DioExceptionType.badResponse
-                    ? 'Server returned ${e.response?.statusCode}. Re-upload the document.'
-                    : 'Could not download the file. Check your connection.';
+                    ? local.translate('serverReturned').replaceAll('{code}', e.response?.statusCode.toString() ?? '')
+                    : local.translate('couldNotDownload');
             allReviews.add({
               'doc_type': docType,
               'title': title,
@@ -942,30 +1027,27 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
               'doc_type': docType,
               'title': title,
               'status': 'uploaded',
-              'tips': ['AI analysis failed: ${e.toString()}'],
+              'tips': [local.translate('aiFailed').replaceAll('{error}', e.toString())],
               'importance': 'medium',
               '_program_name': programName,
             });
           }
         } else {
-          stepLabel = 'Analyzing ${i + 1}/${docConfigs.length} — $title';
+          stepLabel = '${local.translate('recommendationsLabel')} ${i + 1}/${docConfigs.length} — $title';
           updateSheet(() {});
 
-          final tips = await _gemini.getDocumentSuggestions(
-            studentProfile: widget.studentProfile,
-            programDetails: widget.programDetails,
-            uploadStatus: widget.uploadStatus,
-            languageCode: _langCode,
-          );
-          final docTip =
-              tips.where((t) => t['doc_type']?.toString() == docType).toList();
+          final staticSuggestions =
+              MissingDocTemplates.getSuggestions(widget.studentProfile);
+          final docTip = staticSuggestions
+              .where((t) => t['doc_type']?.toString() == docType)
+              .toList();
           allReviews.add({
             'doc_type': docType,
             'title': title,
             'status': 'missing',
             'tips': docTip.isNotEmpty
                 ? (docTip.first['tips'] as List?)?.cast<String>() ?? []
-                : ['Upload this document to get AI feedback.'],
+                : [local.translate('uploadThisDoc')],
             'importance': docTip.isNotEmpty
                 ? (docTip.first['importance']?.toString() ?? 'medium')
                 : 'medium',
@@ -987,7 +1069,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
       if (mounted) {
         Navigator.pop(context);
         _showResults([],
-            error: 'Failed to review documents. Check your connection.');
+            error: local.translate('reviewFailed'));
       }
     }
   }
@@ -1041,49 +1123,204 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 // ─────────────────────────────────────────────────────────
 // _ReviewProgressSheet — loading indicator with step label
 // ─────────────────────────────────────────────────────────
-class _ReviewProgressSheet extends StatelessWidget {
+class _ReviewProgressSheet extends StatefulWidget {
   final String stepLabel;
   const _ReviewProgressSheet({required this.stepLabel});
 
   @override
+  State<_ReviewProgressSheet> createState() => _ReviewProgressSheetState();
+}
+
+class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(24.r),
-      decoration: BoxDecoration(
-        color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+      builder: (context, opacity, child) => Opacity(
+        opacity: opacity,
+        child: child,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(strokeWidth: 3),
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Reviewing Your Documents',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 24.w),
+        decoration: BoxDecoration(
+          color: context.isDark ? AppColors.darkCardBg : Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 80,
+              height: 80,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _pulseAnim,
+                    builder: (_, child) => Transform.scale(
+                      scale: _pulseAnim.value,
+                      child: child,
+                    ),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(
+                          colors: [
+                            Color(0xFF8B5CF6),
+                            Color(0xFF6366F1),
+                            Color(0xFF4F46E5),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const _AiSparkleLoader(),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            stepLabel.isNotEmpty ? stepLabel : 'Starting...',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            SizedBox(height: 20.h),
+            Text(
+              AppLocalizations.of(context).translate('reviewingDocuments'),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-        ],
+            SizedBox(height: 8.h),
+            Text(
+              widget.stepLabel.isNotEmpty
+                  ? widget.stepLabel
+                  : AppLocalizations.of(context).translate('starting'),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+            SizedBox(
+              width: 180.w,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3.r),
+                child: LinearProgressIndicator(
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  color: const Color(0xFF8B5CF6),
+                  minHeight: 3.h,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _AiSparkleLoader extends StatefulWidget {
+  const _AiSparkleLoader();
+
+  @override
+  State<_AiSparkleLoader> createState() => _AiSparkleLoaderState();
+}
+
+class _AiSparkleLoaderState extends State<_AiSparkleLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _spin;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat();
+    _spin = Tween<double>(begin: 0, end: 360).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _spin,
+      child: CustomPaint(
+        size: const Size(44, 44),
+        painter: _AiSparklePainter(),
+      ),
+    );
+  }
+}
+
+class _AiSparklePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    // Draw 4 diamond sparkles rotating
+    for (int i = 0; i < 4; i++) {
+      final angle = (i * 90) * (3.14159 / 180);
+      final dist = size.width * 0.35;
+      final x = center.dx + dist * math.cos(angle);
+      final y = center.dy + dist * math.sin(angle);
+
+      final path = Path()
+        ..moveTo(x, y - 5)
+        ..lineTo(x + 3, y)
+        ..lineTo(x, y + 5)
+        ..lineTo(x - 3, y)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+
+    // Center dot
+    canvas.drawCircle(center, 3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // ─────────────────────────────────────────────────────────

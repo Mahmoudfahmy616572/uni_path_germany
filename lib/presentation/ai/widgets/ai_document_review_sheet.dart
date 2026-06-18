@@ -21,6 +21,10 @@ class AiDocumentReviewSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.only(top: 12.h),
       decoration: const BoxDecoration(
         color: Color(0xFFF8FAFC),
@@ -252,32 +256,64 @@ class _DocReviewCard extends StatelessWidget {
           ),
           SizedBox(height: 10.h),
           if (tips.isNotEmpty)
-            ...tips.map((tip) => Padding(
-              padding: EdgeInsets.only(bottom: 4.h),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '• ',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: docColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      tip,
+            ...tips.map((tip) {
+              final timeMatch = RegExp(r'^\(([^)]+)\):?\s*').firstMatch(tip);
+              String timeLabel = '';
+              String tipText = tip;
+              if (timeMatch != null) {
+                timeLabel = timeMatch.group(1) ?? '';
+                tipText = tip.substring(timeMatch.end);
+              }
+              return Padding(
+                padding: EdgeInsets.only(bottom: 6.h),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: const Color(0xFF475569),
-                        height: 1.4,
+                        color: docColor,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              )),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (timeLabel.isNotEmpty)
+                            Container(
+                              margin: EdgeInsets.only(bottom: 2.h),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 6.w, vertical: 1.h),
+                              decoration: BoxDecoration(
+                                color: docColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                timeLabel,
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: docColor,
+                                ),
+                              ),
+                            ),
+                          Text(
+                            tipText,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF475569),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
             if (onGenerate != null &&
                 (docType == 'cv' || docType == 'sop') &&
                 isUploaded) ...[

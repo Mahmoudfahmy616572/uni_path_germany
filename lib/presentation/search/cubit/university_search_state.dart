@@ -17,7 +17,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
   final List<UniversityEntity> filteredResults; // الجامعات المطابقة
 
   // فلاتر المستخدم الحالية
-  final String selectedCountry;
+  final String selectedIntake;
   final String selectedDegree;
   final String selectedMajor;
   final bool requiresIelts;
@@ -29,7 +29,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
   const UniversitySearchLoaded({
     required this.allResults,
     required this.filteredResults,
-    required this.selectedCountry,
+    required this.selectedIntake,
     required this.selectedDegree,
     required this.selectedMajor,
     required this.requiresIelts,
@@ -43,7 +43,7 @@ class UniversitySearchLoaded extends UniversitySearchState {
   List<Object?> get props => [
     allResults,
     filteredResults,
-    selectedCountry,
+    selectedIntake,
     selectedDegree,
     selectedMajor,
     requiresIelts,

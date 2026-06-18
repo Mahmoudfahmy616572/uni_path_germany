@@ -64,10 +64,9 @@ class AdmissionAnalysisTables extends StatelessWidget {
         final double workExpScore = breakdown != null
             ? (breakdown['breakdown']['language']['score'] as int) / 15.0
             : 0.0;
-        // Note: intake score is separate (10 pts), we'll show it as 5th metric if needed
 
         final double overallScore = breakdown != null
-            ? (breakdown['total'] as int) / 90.0
+            ? (breakdown['total'] as int) / 100.0
             : 0.0;
 
         return Column(

@@ -225,4 +225,36 @@ class MyApplicationsCubit extends Cubit<MyApplicationsState> {
       }
     }
   }
+
+  void updateLocalApp(
+    String universityId, {
+    String? programId,
+    String? portalStatus,
+    String? paymentStatus,
+    bool? autoTrack,
+  }) {
+    if (state is MyApplicationsLoaded) {
+      final currentState = state as MyApplicationsLoaded;
+      final updatedList = currentState.allApplications.map((uni) {
+        final appProgramId = uni.programs.isNotEmpty ? uni.programs.first.id : '';
+        final isSame = uni.id == universityId && (programId == null || appProgramId == programId);
+        if (!isSame) return uni;
+        return uni.copyWith(
+          portalStatus: portalStatus,
+          paymentStatus: paymentStatus,
+          autoTrack: autoTrack,
+        );
+      }).toList();
+      emit(
+        currentState.copyWith(
+          allApplications: updatedList,
+          filteredApplications: _applyFilter(
+            updatedList,
+            currentState.activeFilter,
+          ),
+          statusCounts: _calculateCounts(updatedList),
+        ),
+      );
+    }
+  }
 }

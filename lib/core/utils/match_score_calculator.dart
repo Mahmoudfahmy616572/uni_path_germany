@@ -2,14 +2,15 @@
 // FILE: lib/core/utils/match_score_calculator.dart
 // ====================
 //
-// الـ Matching Score بيتحسب من 90 نقطة موزعة كالآتي:
+// الـ Matching Score بيتحسب من 100 نقطة موزعة كالآتي:
 //
 //  [35 pts] GPA — Bavarian formula (German GPA)
 //  [25 pts] Target Major
 //  [15 pts] IELTS / Language Certificate
 //  [15 pts] Language of Instruction
+//  [10 pts] Application Completeness — document readiness
 //
-// الإجمالي = 90 نقطة (تم إزالة Intake Semester من الحساب).
+// الإجمالي = 100 نقطة.
 // لو الـ degree_level مش متطابق → 0 (hard filter).
 //
 // GPA: بندخل الدرجة الخام (GPA 4 / GPA 5 / percentage 100%)
@@ -101,7 +102,12 @@ class MatchScoreCalculator {
       programLanguage: programLanguage.toLowerCase(),
     );
 
-    return score.clamp(0, 90);
+    // ── 5. Application Completeness (10 نقطة) ─────────────
+    score += _calculateCompletenessScore(
+      studentProfile: studentProfile,
+    );
+
+    return score.clamp(0, 100);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -412,16 +418,46 @@ class MatchScoreCalculator {
   }
 
   // ─────────────────────────────────────────────────────────
+  // 5. Application Completeness Score — 10 نقطة
+  // ─────────────────────────────────────────────────────────
+  // بتقيس مدى جاهزية المستندات الأساسية المطلوبة للتقديم:
+  //
+  //  Transcripts (كشف الدرجات) موجود     → 3 نقاط
+  //  Bachelor Certificate (شهادة البكالوريوس) → 3 نقاط
+  //  SOP / Motivation Letter موجود       → 2 نقطة
+  //  CV / Resume موجود                   → 2 نقطة
+  //                                     ─────
+  //                           المجموع   10 نقاط
+  //
+  // لو المستند مش موجود في الـ profile، بنعتبره 0.
+  // ─────────────────────────────────────────────────────────
+  static int _calculateCompletenessScore({
+    required Map<String, dynamic> studentProfile,
+  }) {
+    bool hasDoc(String key) {
+      final val = studentProfile[key];
+      return val is String && val.isNotEmpty;
+    }
+
+    int docs = 0;
+    if (hasDoc('has_transcripts')) docs += 3;
+    if (hasDoc('has_bachelor_cert')) docs += 3;
+    if (hasDoc('has_sop')) docs += 2;
+    if (hasDoc('has_cv')) docs += 2;
+    return docs.clamp(0, 10);
+  }
+
+  // ─────────────────────────────────────────────────────────
   // Score Label — للـ UI
   // ─────────────────────────────────────────────────────────
   // بترجع نص وصفي بناءً على الـ score النهائي.
   // ─────────────────────────────────────────────────────────
   static String getScoreLabel(int score) {
-    if (score >= 85) return 'Excellent Match';
-    if (score >= 70) return 'Strong Match';
-    if (score >= 55) return 'Good Match';
-    if (score >= 40) return 'Fair Match';
-    if (score >= 25) return 'Weak Match';
+    if (score >= 90) return 'Excellent Match';
+    if (score >= 75) return 'Strong Match';
+    if (score >= 60) return 'Good Match';
+    if (score >= 45) return 'Fair Match';
+    if (score >= 30) return 'Weak Match';
     return 'Not Recommended';
   }
 
@@ -492,12 +528,15 @@ class MatchScoreCalculator {
       studentLangPref: studentLangPref,
       programLanguage: programLanguage.toLowerCase(),
     );
+    final int completenessScore = _calculateCompletenessScore(
+      studentProfile: studentProfile,
+    );
 
     final int rawTotal =
-        gpaScore + majorScore + ieltsScore + langScore;
+        gpaScore + majorScore + ieltsScore + langScore + completenessScore;
     final int total = degreeMismatch
         ? 0
-        : rawTotal.clamp(0, 90);
+        : rawTotal.clamp(0, 100);
 
     return {
       'total': total,
@@ -528,6 +567,14 @@ class MatchScoreCalculator {
           'max': 15,
           'student_pref': studentProfile['language_preference'],
           'program_lang': programLanguage,
+        },
+        'completeness': {
+          'score': completenessScore,
+          'max': 10,
+          'has_transcripts': studentProfile['has_transcripts'] is String && (studentProfile['has_transcripts'] as String).isNotEmpty,
+          'has_bachelor_cert': studentProfile['has_bachelor_cert'] is String && (studentProfile['has_bachelor_cert'] as String).isNotEmpty,
+          'has_sop': studentProfile['has_sop'] is String && (studentProfile['has_sop'] as String).isNotEmpty,
+          'has_cv': studentProfile['has_cv'] is String && (studentProfile['has_cv'] as String).isNotEmpty,
         },
         'intake': {
           'score': 0,

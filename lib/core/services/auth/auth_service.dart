@@ -6,6 +6,9 @@ class AuthService {
   final SupabaseClient client;
   bool cachedIsAdmin = false;
 
+  /// Prevents router redirect from /register during OAuth
+  static bool isOAuthInProgress = false;
+
   AuthService(this.client);
 
   Stream<AuthStatus> get authStateChanges =>
@@ -15,12 +18,10 @@ class AuthService {
             : AuthStatus.unauthenticated;
       });
 
-  // Check if user has valid session (for app startup)
   Future<bool> hasValidSession() async {
     final session = client.auth.currentSession;
     if (session == null) return false;
     try {
-      // Verify session is still valid by getting user
       final user = client.auth.currentUser;
       return user != null;
     } catch (_) {

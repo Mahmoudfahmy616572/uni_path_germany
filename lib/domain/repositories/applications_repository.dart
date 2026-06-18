@@ -19,6 +19,7 @@ abstract class ApplicationsRepository {
     required String universityId,
     required String columnName,
     required File file,
+    void Function(double progress)? onProgress,
   });
 
   // 🎯 دالة تحديث الحالة (التي تسببت في الخطأ)
@@ -45,5 +46,16 @@ abstract class ApplicationsRepository {
   Future<Map<String, dynamic>?> getApplicationDetails({
     required String universityId,
     required String programId,
+  });
+
+  // 🎯 تحديث حالة بوابة التقديم والدفع
+  Future<void> updatePortalStatus({
+    required String universityId,
+    required String programId,
+    required String portalStatus,
+    String? paymentStatus,
+    String? portalUrl,
+    String? submittedAt,
+    bool? autoTrack,
   });
 }

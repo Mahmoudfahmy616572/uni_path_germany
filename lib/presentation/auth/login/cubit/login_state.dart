@@ -10,3 +10,5 @@ class LoginError extends LoginState {
   final String message;
   LoginError(this.message);
 }
+
+class LoginPasswordResetSent extends LoginState {}

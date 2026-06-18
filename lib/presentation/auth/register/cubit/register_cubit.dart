@@ -1,5 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../../core/services/auth/auth_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/universities_repository.dart';
 import 'register_state.dart';
@@ -7,9 +12,17 @@ import 'register_state.dart';
 class RegisterCubit extends Cubit<RegisterState> {
   final AuthRepository authRepository;
   final UniversitiesRepository universitiesRepository;
+  StreamSubscription? _authSub;
 
   RegisterCubit(this.authRepository, this.universitiesRepository)
     : super(RegisterInitial());
+
+  @override
+  Future<void> close() async {
+    AuthService.isOAuthInProgress = false;
+    await _authSub?.cancel();
+    return super.close();
+  }
 
   Future<void> registerUser({
     required String email,
@@ -29,6 +42,7 @@ class RegisterCubit extends Cubit<RegisterState> {
     required String languagePreference,
     String? degreeLevel,
   }) async {
+    AuthService.isOAuthInProgress = false;
     // حماية أساسية
     if (email.isEmpty || password.length < 6) {
       if (!isClosed) {
@@ -68,7 +82,7 @@ class RegisterCubit extends Cubit<RegisterState> {
           degreeLevel: degreeLevel ?? '', // 🎯 تمرير مستوى الدرجة
         );
       } catch (profileError) {
-        print("❌ Profile Sync Error (Non-blocking): $profileError");
+        log.e("Profile Sync Error (Non-blocking): $profileError");
       }
 
       // 🎯 النجاح
@@ -80,7 +94,7 @@ class RegisterCubit extends Cubit<RegisterState> {
         String errorMessage = e.toString().replaceAll('Exception:', '').trim();
         
         // LOG THE ACTUAL ERROR FOR DEBUGGING
-        print('🔴 REGISTER ERROR: $errorMessage');
+        log.e('Register error: $errorMessage');
         
         // Handle specific Supabase errors
         final lowerError = errorMessage.toLowerCase();
@@ -125,6 +139,57 @@ class RegisterCubit extends Cubit<RegisterState> {
         
         emit(RegisterError(errorMessage));
       }
+    }
+  }
+
+  Future<void> signInWithOAuth(
+    OAuthProvider provider, {
+    Map<String, dynamic>? profileData,
+  }) async {
+    try {
+      AuthService.isOAuthInProgress = true;
+      log.i('OAuth: opening browser for $provider');
+      await authRepository.signInWithOAuth(provider);
+      log.i('OAuth: browser opened, setting up auth listener');
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((authState) async {
+        log.i('OAuth: auth event=${authState.event} session=${authState.session != null}');
+        if (authState.session != null) {
+          _authSub?.cancel();
+          _authSub = null;
+          log.i('OAuth: session found, profileData=${profileData != null}');
+          if (profileData != null) {
+            await _doSaveProfile(profileData);
+          }
+          AuthService.isOAuthInProgress = false;
+          if (!isClosed) emit(RegisterSuccess());
+        }
+      });
+    } catch (e) {
+      AuthService.isOAuthInProgress = false;
+      if (!isClosed) emit(RegisterError('OAuth registration failed: $e'));
+    }
+  }
+
+  Future<void> _doSaveProfile(Map<String, dynamic> profileData) async {
+    try {
+      log.i('OAuth: saving profile gpa=${profileData['gpa']} major=${profileData['targetMajor']}');
+      await universitiesRepository.completeStudentProfile(
+        gpa: (profileData['gpa'] as num?)?.toDouble() ?? 0.0,
+        academicAverage: (profileData['academicAverage'] as num?)?.toDouble(),
+        highSchoolScore: (profileData['highSchoolScore'] as num?)?.toDouble(),
+        maxGpa: (profileData['maxGpa'] as num?)?.toDouble() ?? 4.0,
+        minGpa: (profileData['minGpa'] as num?)?.toDouble() ?? 1.0,
+        hasMoi: profileData['hasMoi'] as bool? ?? false,
+        hasIelts: profileData['hasIelts'] as bool? ?? false,
+        ieltsScore: (profileData['ieltsScore'] as num?)?.toDouble(),
+        targetMajor: profileData['targetMajor'] as String? ?? '',
+        intake: profileData['intake'] as String? ?? 'Both Semesters',
+        languagePreference: profileData['languagePreference'] as String? ?? 'English',
+        degreeLevel: profileData['degreeLevel'] as String? ?? '',
+      );
+      log.i('OAuth: profile saved successfully');
+    } catch (e) {
+      log.e('OAuth: profile save failed: $e');
     }
   }
 }

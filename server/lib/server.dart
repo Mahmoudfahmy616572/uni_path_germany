@@ -5,6 +5,8 @@ import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_router/shelf_router.dart';
 
 import 'handlers/ai_handler.dart';
+import 'handlers/compress_handler.dart';
+import 'handlers/email_handler.dart';
 
 Middleware corsHeaders() {
   return (innerHandler) {
@@ -33,10 +35,16 @@ Future<void> main() async {
   }
 
   final aiHandler = AiHandler(apiKey);
+  final compressHandler = CompressHandler();
+  final emailHandler = EmailHandler(apiKey);
 
   final router = Router()
     ..post('/api/ai/chat', aiHandler.chat)
-    ..post('/api/ai/chat-with-pdf', aiHandler.chatWithPdf);
+    ..post('/api/ai/chat-with-pdf', aiHandler.chatWithPdf)
+    ..post('/api/compress-pdf', compressHandler.compressPdf)
+    ..post('/api/email/gmail/callback', emailHandler.gmailCallback)
+    ..post('/api/email/outlook/callback', emailHandler.outlookCallback)
+    ..post('/api/email/sync', emailHandler.syncEmails);
 
   final handler = const Pipeline()
       .addMiddleware(corsHeaders())

@@ -43,20 +43,22 @@ class GeminiService {
           'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
     }
 
-    final response = await _dio.post(
-      '$_baseUrl:generateContent?key=$_apiKey',
-      data: {
-        'contents': [
-          {'parts': [{'text': prompt}]}
-        ],
-        'generationConfig': {
-          'temperature': temperature,
-          'maxOutputTokens': maxOutputTokens,
+    return await _retryOnRateLimit(() async {
+      final response = await _dio.post(
+        '$_baseUrl:generateContent?key=$_apiKey',
+        data: {
+          'contents': [
+            {'parts': [{'text': prompt}]}
+          ],
+          'generationConfig': {
+            'temperature': temperature,
+            'maxOutputTokens': maxOutputTokens,
+          },
         },
-      },
-    );
-    return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
-        '';
+      );
+      return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+          '';
+    });
   }
 
   Future<String> _callGeminiWithPdf(
@@ -79,26 +81,47 @@ class GeminiService {
     }
 
     final base64Data = base64Encode(pdfBytes);
-    final response = await _dio.post(
-      '$_baseUrl:generateContent?key=$_apiKey',
-      data: {
-        'contents': [
-          {
-            'parts': [
-              {'text': prompt},
-              {
-                'inlineData': {
-                  'mimeType': mimeType,
-                  'data': base64Data,
+    return await _retryOnRateLimit(() async {
+      final response = await _dio.post(
+        '$_baseUrl:generateContent?key=$_apiKey',
+        data: {
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt},
+                {
+                  'inlineData': {
+                    'mimeType': mimeType,
+                    'data': base64Data,
+                  }
                 }
-              }
-            ]
-          }
-        ],
-      },
-    );
-    return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
-        '';
+              ]
+            }
+          ],
+        },
+      );
+      return response.data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+          '';
+    });
+  }
+
+  /// Retry on 429 (Rate Limit) with exponential backoff up to 3 attempts
+  Future<T> _retryOnRateLimit<T>(Future<T> Function() fn) async {
+    const maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } on DioException catch (e) {
+        if (attempt < maxRetries - 1 &&
+            e.type == DioExceptionType.badResponse &&
+            e.response?.statusCode == 429) {
+          await Future.delayed(Duration(seconds: 5 * (attempt + 1)));
+          continue;
+        }
+        rethrow;
+      }
+    }
+    throw Exception('Rate limit retry exhausted');
   }
 
   Future<List<Map<String, dynamic>>> getImprovementSuggestions({
@@ -125,12 +148,14 @@ class GeminiService {
   }
 
   Future<List<Map<String, dynamic>>> reviewDocument({
+    required Map<String, dynamic> studentProfile,
     required String programName,
     required String docType,
     required String documentContent,
     String languageCode = 'en',
   }) async {
     final prompt = AiPrompts.documentReview(
+      studentProfile: studentProfile,
       programName: programName,
       docType: docType,
       documentContent: documentContent,
@@ -168,6 +193,7 @@ class GeminiService {
   }
 
   Future<List<Map<String, dynamic>>> reviewDocumentWithPdf({
+    required Map<String, dynamic> studentProfile,
     required String programName,
     required String docType,
     required String title,
@@ -175,11 +201,13 @@ class GeminiService {
     String mimeType = 'application/pdf',
     String languageCode = 'en',
   }) async {
-    final langInstruction = languageCode == 'ar'
-        ? ' Respond in Arabic. Use formal Arabic language.'
-        : '';
-    final prompt =
-        'You are a German university admissions officer. Review the attached $title document for the "$programName" program. Give 3-5 specific, actionable improvement suggestions. Return ONLY a JSON array with this exact structure, no markdown, no code fences: [{"issue":"string","severity":"high|medium|low","suggestion":"string"}]$langInstruction';
+    final prompt = AiPrompts.reviewDocumentWithPdf(
+      studentProfile: studentProfile,
+      programName: programName,
+      docType: docType,
+      title: title,
+      languageCode: languageCode,
+    );
 
     final text = await _callGeminiWithPdf(prompt, pdfBytes, mimeType);
     final result = _parseJsonResponse(text);
@@ -295,7 +323,7 @@ class GeminiService {
       final cleaned = text.substring(start, end + 1).trim();
       final decoded = jsonDecode(cleaned);
       if (decoded is List) {
-        return decoded.cast<Map<String, dynamic>>();
+        return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
       }
       return [];
     } catch (e) {

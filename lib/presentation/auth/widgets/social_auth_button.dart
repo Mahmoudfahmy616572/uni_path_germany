@@ -9,12 +9,14 @@ class SocialAuthButton extends StatelessWidget {
   final String text;
   final FaIconData icon;
   final Color iconColor;
+  final VoidCallback? onPressed;
 
   const SocialAuthButton({
     super.key,
     required this.text,
     required this.icon,
     required this.iconColor,
+    this.onPressed,
   });
 
   @override
@@ -31,7 +33,7 @@ class SocialAuthButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12.r),
           ),
         ),
-        onPressed: () {},
+        onPressed: onPressed,
         icon: FaIcon(icon, color: iconColor),
         label: Text(
           text,

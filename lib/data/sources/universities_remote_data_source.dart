@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/logger.dart';
 import '../../core/utils/match_score_calculator.dart';
 
 abstract class UniversitiesRemoteDataSource {
@@ -122,7 +123,7 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
           .compareTo(a['calculated_score'] as int));
       return scoredUnis;
     } catch (e) {
-      print("❌ Error in DataSource: $e");
+      log.e("DataSource error: $e");
       throw Exception('Failed to fetch data');
     }
   }

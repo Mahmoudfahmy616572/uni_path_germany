@@ -23,6 +23,10 @@ abstract class AuthRemoteDataSource {
   Future<void> updateEmail(String newEmail);
 
   Future<void> deleteAccount();
+
+  Future<void> signInWithOAuth(OAuthProvider provider);
+
+  Future<void> resetPassword(String email);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -117,5 +121,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (user == null) throw Exception('No authenticated user');
     await client.from('profiles').delete().eq('id', user.id);
     await client.auth.signOut();
+  }
+
+  @override
+  Future<void> signInWithOAuth(OAuthProvider provider) async {
+    await client.auth.signInWithOAuth(provider);
+  }
+
+  @override
+  Future<void> resetPassword(String email) async {
+    await client.auth.resetPasswordForEmail(email);
   }
 }

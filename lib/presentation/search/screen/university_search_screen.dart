@@ -96,8 +96,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         CurtainDrop(
                           index: 1,
                           child: SearchDropdownsRow(
-                            currentIntake: (state)
-                                .selectedCountry, // استخدمنا الحقل مؤقتاً لتمرير الـ Intake
+                            currentIntake: state.selectedIntake,
                             currentDegree: state.selectedDegree,
                             currentMajor: state.selectedMajor,
                           ),

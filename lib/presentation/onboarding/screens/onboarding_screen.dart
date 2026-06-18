@@ -3,9 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/utils/logger.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/language_provider.dart';
 import '../../../core/providers/theme_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/services/auth/auth_service.dart';
 import '../../../core/services/services_locator.dart' as di;
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
@@ -36,6 +40,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final int _totalSteps = 11;
 
   @override
+  void initState() {
+    super.initState();
+    _checkExistingProfile();
+  }
+
+  Future<void> _checkExistingProfile() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) return;
+    final authService = di.sl<AuthService>();
+    if (!mounted) return;
+    final profileComplete = await authService.isProfileComplete();
+    if (profileComplete && mounted) {
+      context.go('/home');
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -47,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       create: (context) => OnboardingCubit(),
       child: BlocConsumer<OnboardingCubit, OnboardingState>(
         listener: (context, state) {
-          print('🔄 ONBOARDING LISTENER: ${state.runtimeType}');
+          log.i('ONBOARDING LISTENER: ${state.runtimeType}');
           if (state is OnboardingDataState && state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -57,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             );
           }
           if (state is OnboardingSuccess) {
-            print('🔄 ONBOARDING SUCCESS - going to /home');
+            log.i('ONBOARDING SUCCESS - going to /home');
             context.go('/home');
           }
         },
@@ -206,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: state.isLoading
                             ? null
                             : () {
-                                print('🔘 BUTTON PRESSED: Step ${state.currentStep}, isLoading: ${state.isLoading}');
+                                log.i('BUTTON PRESSED: Step ${state.currentStep}, isLoading: ${state.isLoading}');
                                 _handleNextAction(state, cubit);
                               },
                           child: state.isLoading
@@ -247,7 +268,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _handleNextAction(OnboardingDataState state, OnboardingCubit cubit) {
     final errorMessage = _validateCurrentStep(state);
     if (errorMessage != null) {
-      print('🔴 ONBOARDING VALIDATION FAILED: $errorMessage');
+      log.e('ONBOARDING VALIDATION FAILED: $errorMessage');
       CustomSnackBar.show(context, message: errorMessage, isError: true);
       return;
     }
@@ -304,7 +325,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'budgetRange': state.tuitionBudget,
         'goals': state.studentGoals,
       };
-      print('🚀 Navigating to /register with data: $collectedData');
+      log.i('Navigating to /register with data: $collectedData');
       context.push('/register', extra: collectedData);
     } else {
       _pageController.nextPage(

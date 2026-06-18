@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/utils/logger.dart';
 import '../../../../core/widgets/curtain_drop.dart';
 import '../../../../core/errors/message_error_handler.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -11,8 +14,11 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../../../core/storage/local_storage_service.dart';
+import '../../../../core/widgets/auth_background.dart';
+import '../../../../core/widgets/curtain_drop.dart';
 import '../../widgets/custom_auth_field.dart';
 import '../../widgets/loading_button.dart';
+import '../../widgets/social_auth_button.dart';
 import '../cubit/register_cubit.dart';
 import '../cubit/register_state.dart';
 
@@ -37,20 +43,27 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🔨 REGISTER SCREEN BUILD');
+    log.i('REGISTER SCREEN BUILD');
     return BlocListener<RegisterCubit, RegisterState>(
       listener: (context, state) async {
-        print('🔄 REGISTER LISTENER: ${state.runtimeType}');
+        log.i('REGISTER LISTENER: ${state.runtimeType}');
         if (state is RegisterSuccess) {
-          print('✅ REGISTER SUCCESS - going to /onboarding');
-          await LocalStorageService.saveCredentials(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            rememberMe: true,
+          log.i('REGISTER SUCCESS - going to /home');
+          CustomSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).translate('registerSuccess'),
+            isError: false,
           );
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (_emailController.text.trim().isNotEmpty && _passwordController.text.isNotEmpty) {
+            await LocalStorageService.saveCredentials(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+              rememberMe: true,
+            );
+          }
           if (!context.mounted) return;
-          // Navigate to onboarding to complete profile
-          context.go('/onboarding');
+          context.go('/home');
         } else if (state is RegisterError) {
           final friendlyMessage = AuthErrorHandler.getFriendlyErrorMessage(
             context,
@@ -60,7 +73,7 @@ class RegisterScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: context.isDark ? AppColors.darkBackground : AppColors.background,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -75,9 +88,10 @@ class RegisterScreen extends StatelessWidget {
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
+          child: AuthBackground(
+            child: Form(
+              key: _formKey,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CurtainDrop(
@@ -211,6 +225,40 @@ class RegisterScreen extends StatelessWidget {
                 CurtainDrop(
                   index: 7,
                   child: Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.r),
+                        child: Text(
+                          AppLocalizations.of(context).translate('or'),
+                          style: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey),
+                        ),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                CurtainDrop(
+                  index: 8,
+                  child: Column(
+                    children: [
+                      SocialAuthButton(
+                        text: "Continue with Google",
+                        icon: FontAwesomeIcons.google,
+                        iconColor: Colors.red,
+                        onPressed: () => context.read<RegisterCubit>().signInWithOAuth(
+                          OAuthProvider.google,
+                          profileData: profileData,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                CurtainDrop(
+                  index: 9,
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
@@ -237,6 +285,7 @@ class RegisterScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

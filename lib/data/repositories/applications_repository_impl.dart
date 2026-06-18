@@ -91,6 +91,7 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
     required String universityId,
     required String columnName,
     required File file,
+    void Function(double progress)? onProgress,
   }) async {
     final user = Supabase.instance.client.auth.currentUser;
     return await remoteDataSource.uploadDocument(
@@ -98,6 +99,7 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
       universityId: universityId,
       columnName: columnName,
       file: file,
+      onProgress: onProgress,
     );
   }
 
@@ -152,6 +154,29 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
     return await remoteDataSource.getApplicationDetails(
       universityId: universityId,
       programId: programId,
+    );
+  }
+
+  @override
+  Future<void> updatePortalStatus({
+    required String universityId,
+    required String programId,
+    required String portalStatus,
+    String? paymentStatus,
+    String? portalUrl,
+    String? submittedAt,
+    bool? autoTrack,
+  }) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    await remoteDataSource.updatePortalStatus(
+      userId: user!.id,
+      universityId: universityId,
+      programId: programId,
+      portalStatus: portalStatus,
+      paymentStatus: paymentStatus,
+      portalUrl: portalUrl,
+      submittedAt: submittedAt,
+      autoTrack: autoTrack,
     );
   }
 }

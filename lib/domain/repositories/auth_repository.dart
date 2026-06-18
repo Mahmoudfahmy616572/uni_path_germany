@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../entities/user_entity.dart';
 
 abstract class AuthRepository {
@@ -26,4 +28,10 @@ abstract class AuthRepository {
 
   // 🎯 حذف الحساب بالكامل
   Future<void> deleteAccount();
+
+  // 🎯 تسجيل الدخول عبر OAuth (Google, Apple, Facebook)
+  Future<void> signInWithOAuth(OAuthProvider provider);
+
+  // 🎯 إعادة تعيين كلمة المرور
+  Future<void> resetPassword(String email);
 }

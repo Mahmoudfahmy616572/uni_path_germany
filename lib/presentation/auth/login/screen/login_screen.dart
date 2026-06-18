@@ -6,6 +6,7 @@ import 'package:germany_travel/presentation/auth/login/cubit/login_cubit.dart';
 import 'package:germany_travel/presentation/auth/login/cubit/login_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/message_error_handler.dart';
 import '../../../../core/services/auth/auth_service.dart';
@@ -15,6 +16,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
+import '../../../../core/widgets/auth_background.dart';
 import '../../../../core/widgets/curtain_drop.dart';
 import '../../widgets/custom_auth_field.dart';
 import '../../widgets/loading_button.dart';
@@ -67,11 +69,48 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog(BuildContext context) {
+    final emailController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(context).translate('resetPassword')),
+        content: CustomAuthField(
+          hint: AppLocalizations.of(context).translate('email'),
+          prefixIcon: Icons.email_outlined,
+          controller: emailController,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context).translate('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (emailController.text.trim().isNotEmpty) {
+                context.read<LoginCubit>().resetPassword(emailController.text.trim());
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text(AppLocalizations.of(context).translate('send')),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) async {
         if (state is LoginSuccess) {
+          CustomSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).translate('loginSuccess'),
+            isError: false,
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+
           await LocalStorageService.saveCredentials(
             email: _emailOrUsernameController.text.trim(),
             password: _passwordController.text,
@@ -86,6 +125,12 @@ class _LoginScreenState extends State<LoginScreen> {
           } else {
             context.go('/onboarding');
           }
+        } else if (state is LoginPasswordResetSent) {
+          CustomSnackBar.show(
+            context,
+            message: AppLocalizations.of(context).translate('passwordResetSent'),
+            isError: false,
+          );
         } else if (state is LoginError) {
           final friendlyMessage = AuthErrorHandler.getFriendlyErrorMessage(
             context,
@@ -96,11 +141,12 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: context.isDark ? AppColors.darkBackground : AppColors.background,
+        backgroundColor: Colors.transparent,
         body: SingleChildScrollView(
-          child: Column(
-            children: [
-              CurtainDrop(
+          child: AuthBackground(
+            child: Column(
+              children: [
+                CurtainDrop(
                 index: 0,
                 child: SizedBox(
                   height: 280,
@@ -215,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => _showForgotPasswordDialog(context),
                           child: Text(
                             AppLocalizations.of(context).translate('forgotPassword'),
                             style: TextStyle(color: context.isDark ? AppColors.primaryPurple : AppColors.primary),
@@ -281,20 +327,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-                      const SocialAuthButton(
+                      SocialAuthButton(
                         text: "Continue with Google",
                         icon: FontAwesomeIcons.google,
                         iconColor: Colors.red,
-                      ),
-                      const SocialAuthButton(
-                        text: "Continue with Apple",
-                        icon: FontAwesomeIcons.apple,
-                        iconColor: Colors.black,
-                      ),
-                      const SocialAuthButton(
-                        text: "Continue with Facebook",
-                        icon: FontAwesomeIcons.facebook,
-                        iconColor: Colors.blue,
+                        onPressed: () => context.read<LoginCubit>().signInWithOAuth(OAuthProvider.google),
                       ),
 
                       SizedBox(height: 20.h),
@@ -328,6 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

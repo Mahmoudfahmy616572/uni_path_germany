@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,7 +24,9 @@ import '../../presentation/auth/register/cubit/register_cubit.dart';
 import '../../presentation/profile/cubit/profile_cubit.dart';
 import 'ai/ai_usage_service.dart';
 import 'ai/gemini_service.dart';
+import 'ai/review_cache_service.dart';
 import 'auth/auth_service.dart';
+import 'email_tracking/email_connection_service.dart';
 
 final sl = GetIt.instance;
 
@@ -65,7 +68,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ThemeProvider());
   sl.registerLazySingleton(() => LanguageProvider());
 
-  // 6. AI Services
-  sl.registerLazySingleton(() => GeminiService());
+  // 6. Email Tracking
+  sl.registerLazySingleton(() => EmailConnectionService(sl()));
+
+  // 7. AI Services
+  sl.registerLazySingleton(() => GeminiService(
+    apiKey: dotenv.env['GEMINI_API_KEY'],
+    serverUrl: dotenv.env['SERVER_URL'],
+  ));
   sl.registerLazySingleton(() => AiUsageService(sl()));
+  sl.registerLazySingleton(() => ReviewCacheService());
 }

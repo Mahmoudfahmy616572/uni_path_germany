@@ -16,6 +16,7 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/logger.dart';
 import '../../../core/utils/match_score_calculator.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
@@ -136,7 +137,7 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
         );
       }
     } catch (e) {
-      print('Error updating notes: $e');
+      log.e('Error updating notes: $e');
     }
   }
 
@@ -151,14 +152,28 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
     Map<String, double> progressMap = Map<String, double>.from(
       status.fileUploadProgress,
     );
-    progressMap[columnName] = 0.1;
+    progressMap[columnName] = 0.0;
     emit(status.copyWith(fileUploadProgress: progressMap));
+
+    DateTime lastProgressEmit = DateTime.now();
 
     try {
       final String url = await repository.uploadDocument(
         universityId: universityId,
         columnName: columnName,
         file: file,
+        onProgress: (progress) {
+          if (!isClosed) {
+            final now = DateTime.now();
+            if (now.difference(lastProgressEmit).inMilliseconds < 50) return;
+            lastProgressEmit = now;
+            final map = Map<String, double>.from(
+              _getCurrentStatus().fileUploadProgress,
+            );
+            map[columnName] = progress;
+            emit(_getCurrentStatus().copyWith(fileUploadProgress: map));
+          }
+        },
       );
 
       if (!isClosed) {
@@ -173,6 +188,15 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
             fileUploadProgress: Map.from(progressMap),
           ),
         );
+
+        // Update global profile flags when uploading from the Vault
+        if (universityId == 'global') {
+          final col = columnName.replaceAll('-url', '');
+          await Supabase.instance.client
+              .from('profiles')
+              .update({col: true})
+              .eq('id', Supabase.instance.client.auth.currentUser!.id);
+        }
 
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -293,7 +317,7 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
         );
       }
     } catch (e) {
-      print('Error checking save status: $e');
+      log.e('Error checking save status: $e');
     }
   }
 
@@ -357,6 +381,28 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
       profile[col] = null;
     }
     return profile;
+  }
+
+  Future<void> updatePortalStatus({
+    required String universityId,
+    required String programId,
+    required String portalStatus,
+    String? paymentStatus,
+    String? portalUrl,
+    String? submittedAt,
+    bool? autoTrack,
+  }) async {
+    try {
+      await repository.updatePortalStatus(
+        universityId: universityId,
+        programId: programId,
+        portalStatus: portalStatus,
+        paymentStatus: paymentStatus,
+        portalUrl: portalUrl,
+        submittedAt: submittedAt,
+        autoTrack: autoTrack,
+      );
+    } catch (_) {}  // silently fail; portal tracking is non-critical
   }
 
   Future<bool> _urlExists(String url) async {
