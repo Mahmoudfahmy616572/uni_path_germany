@@ -82,8 +82,8 @@ class _SnackBarContentState extends State<_SnackBarContent>
           boxShadow: [
             BoxShadow(
               color: bgColor.withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 12.r,
+              offset: Offset(0, 4.r),
             ),
           ],
         ),

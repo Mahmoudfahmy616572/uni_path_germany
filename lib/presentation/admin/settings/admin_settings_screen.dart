@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
 
@@ -45,38 +47,38 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         children: [
-          const Text('Admin Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-          const SizedBox(height: 16),
+          Text('Admin Settings', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          SizedBox(height: 16.h),
           _card(
             children: [
-              const Text('App Configuration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-              const SizedBox(height: 16),
+              Text('App Configuration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              SizedBox(height: 16.h),
               _infoRow('App Name', 'UniPath'),
               _infoRow('Version', '1.0.0'),
               _infoRow('Supabase Project', 'marrlrggovghhnmhtbgs'),
               _infoRow('Environment', 'Production'),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _card(
             children: [
-              const Text('Database Overview', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-              const SizedBox(height: 16),
+              Text('Database Overview', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              SizedBox(height: 16.h),
               _infoRow('Total Users', _userCount.toString()),
               _infoRow('Total Universities', _univCount.toString()),
               _infoRow('Total Applications', _appCount.toString()),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _card(
             children: [
-              const Text('Quick Info', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-              const SizedBox(height: 16),
+              Text('Quick Info', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              SizedBox(height: 16.h),
               Text(
                 'This admin panel manages all data in the UniPath Supabase database. Changes made here are reflected immediately.',
-                style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.5),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13.sp, height: 1.5),
               ),
             ],
           ),
@@ -87,11 +89,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Widget _card({required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8.r, offset: Offset(0.r, 2.r))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,14 +104,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Widget _infoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Row(
         children: [
           SizedBox(
-            width: 160,
-            child: Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+            width: 160.w,
+            child: Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13.sp)),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
+          Expanded(child: Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13.sp))),
         ],
       ),
     );

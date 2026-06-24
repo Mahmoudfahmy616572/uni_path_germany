@@ -17,6 +17,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 
 import '../../../../core/themes/app_colors.dart';
@@ -25,7 +26,9 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/services/ai/ai_usage_service.dart';
 import '../../../../core/services/ai/gemini_service.dart';
+import '../../../../core/services/review_service.dart';
 import '../../../../core/services/ai/review_cache_service.dart';
+import '../../../../core/services/premium_service.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../core/utils/match_score_calculator.dart';
 import '../../../../core/utils/missing_doc_templates.dart';
@@ -34,6 +37,7 @@ import '../../../../domain/entities/program_entity.dart';
 import '../../../../domain/entities/university_entity.dart';
 import '../../ai/widgets/ai_document_generator.dart';
 import '../../ai/widgets/ai_document_review_sheet.dart';
+import '../../ai/widgets/ai_improvement_sheet.dart';
 import '../../ai/widgets/ai_suggestion_button.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
@@ -461,7 +465,7 @@ class _ScoreRow extends StatelessWidget {
               value: pct.clamp(0.0, 1.0),
               backgroundColor: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
               valueColor: AlwaysStoppedAnimation<Color>(barColor),
-              minHeight: 5,
+              minHeight: 5.h,
             ),
           ),
           SizedBox(height: 4.h),
@@ -737,23 +741,55 @@ class _AiImproveButton extends StatefulWidget {
 }
 
 class _AiImproveButtonState extends State<_AiImproveButton> {
+  final _premiumService = sl<PremiumService>();
+  final _gemini = sl<GeminiService>();
 
   Future<void> _showAiSuggestions() async {
-    // 💎 Premium feature
-    if (mounted) {
-      showDialog(
+    final isPremium = await _premiumService.isPremium();
+    if (!mounted) return;
+
+    if (isPremium) {
+      showModalBottomSheet(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(AppLocalizations.of(context).translate('premiumFeature')),
-          content: Text(AppLocalizations.of(context).translate('premiumDescription')),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context).translate('cancel')),
-            ),
-          ],
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => FutureBuilder<List<Map<String, dynamic>>>(
+          future: _gemini.getImprovementSuggestions(
+            studentProfile: widget.studentProfile,
+            programDetails: widget.programDetails,
+            breakdown: widget.breakdown,
+            languageCode: sl<LanguageProvider>().locale.languageCode,
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AiImprovementSheet(
+                suggestions: [],
+                remainingUses: 0,
+                isLoading: true,
+              );
+            }
+            if (snapshot.hasError) {
+              return AiImprovementSheet(
+                suggestions: [],
+                remainingUses: 0,
+                error: snapshot.error.toString(),
+                onRetry: () {
+                  Navigator.pop(context);
+                  _showAiSuggestions();
+                },
+              );
+            }
+            return AiImprovementSheet(
+              suggestions: snapshot.data ?? [],
+              remainingUses: 999,
+            );
+          },
         ),
       );
+    } else {
+      if (mounted) {
+        context.push('/premium');
+      }
     }
   }
 
@@ -808,17 +844,9 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
   Future<void> _reviewDocuments() async {
     final local = AppLocalizations.of(context);
-    final canUse = await _usageService.canUseAi();
+    final canUse = await _usageService.canUseReview();
     if (!canUse) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).translate('monthlyLimitReached')),
-            backgroundColor: const Color(0xFFF59E0B),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) context.push('/premium');
       return;
     }
 
@@ -1058,6 +1086,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
       if (validReviewCount > 0) {
         await _usageService.recordUsage();
+        ReviewService.registerPositiveAction();
       }
       await _loadRemaining();
 
@@ -1104,8 +1133,22 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         degreeType: widget.programDetails['degree']?.toString() ?? '',
         major: widget.programDetails['major']?.toString() ?? '',
         studentName: studentProfile['username']?.toString() ?? '',
-        studentBackground:
-            'GPA: ${studentProfile['gpa'] ?? 'N/A'}, Target: ${studentProfile['target_major'] ?? 'N/A'}, IELTS: ${studentProfile['ielts_score'] ?? 'N/A'}',
+        studentBackground: [
+            'GPA: ${studentProfile['gpa'] ?? 'N/A'}',
+            'Major: ${studentProfile['target_major'] ?? 'N/A'}',
+            if (studentProfile['ielts_score'] != null) 'IELTS: ${studentProfile['ielts_score']}',
+            if (studentProfile['toefl_score'] != null) 'TOEFL: ${studentProfile['toefl_score']}',
+            if (studentProfile['has_moi'] == true) 'MOI: ${studentProfile['moi_language'] ?? 'Yes'}',
+          ].join(', '),
+        transcriptsUrl: (studentProfile['has_transcripts'] is String && (studentProfile['has_transcripts'] as String).startsWith('http'))
+            ? studentProfile['has_transcripts'] as String
+            : null,
+        bachelorCertUrl: (studentProfile['has_bachelor_cert'] is String && (studentProfile['has_bachelor_cert'] as String).startsWith('http'))
+            ? studentProfile['has_bachelor_cert'] as String
+            : null,
+        cvUrl: (studentProfile['has_cv'] is String && (studentProfile['has_cv'] as String).startsWith('http'))
+            ? studentProfile['has_cv'] as String
+            : null,
       ),
     );
   }
@@ -1175,8 +1218,8 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 80.r,
+              height: 80.r,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -1201,8 +1244,8 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2,
+                            blurRadius: 20.r,
+                            spreadRadius: 2.r,
                           ),
                         ],
                       ),

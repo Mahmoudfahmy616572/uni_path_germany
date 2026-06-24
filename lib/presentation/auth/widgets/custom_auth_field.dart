@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
 
 class CustomAuthField extends StatefulWidget {
@@ -52,28 +51,41 @@ class _CustomAuthFieldState extends State<CustomAuthField> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      height: 58.h,
+      margin: EdgeInsets.only(bottom: 18.h),
       decoration: BoxDecoration(
-        color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: context.isDark ? AppColors.darkBorder : Colors.grey.shade200),
+        color: isDark ? const Color(0xFF151C2F) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16.r),
+        border: isDark ? null : Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextFormField(
         controller: widget.controller,
         focusNode: _focusNode,
         obscureText: widget.isPassword ? _obscureText : false,
         validator: widget.validator,
+        style: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 15.sp,
+        ),
         decoration: InputDecoration(
-          filled: false,
           hintText: widget.hint,
-          hintStyle: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey, fontSize: 14.sp),
-          prefixIcon: Icon(widget.prefixIcon, color: context.isDark ? AppColors.textMuted : AppColors.textGrey, size: 20),
+          hintStyle: TextStyle(
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            fontSize: 14.sp,
+          ),
+          prefixIcon: Icon(
+            widget.prefixIcon,
+            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            size: 20,
+          ),
           suffixIcon: widget.isPassword
               ? IconButton(
                   icon: Icon(
                     _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     size: 20,
                   ),
                   onPressed: () {
@@ -84,7 +96,7 @@ class _CustomAuthFieldState extends State<CustomAuthField> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          contentPadding: EdgeInsets.symmetric(vertical: 16.h),
         ),
       ),
     );

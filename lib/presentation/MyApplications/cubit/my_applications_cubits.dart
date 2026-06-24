@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/services/gamification_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../../domain/repositories/applications_repository.dart';
@@ -149,6 +150,11 @@ class MyApplicationsCubit extends Cubit<MyApplicationsState> {
           programId: programId,
           newStatus: newStatus,
         );
+
+        // Gamification: increment on first apply
+        if (newStatus == 'applied' && oldStatus != 'applied') {
+          GamificationService.incrementStat('applications_submitted');
+        }
 
         // Send notification
         if (oldStatus != newStatus) {

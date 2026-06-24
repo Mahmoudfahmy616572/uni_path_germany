@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../utils/logger.dart';
+
 enum ConnectionStatus {
   connected,
   slow,
@@ -57,7 +59,8 @@ class ConnectivityService {
       } else {
         _updateStatus(ConnectionStatus.connected);
       }
-    } catch (_) {
+    } catch (e) {
+      log.e('Speed test error: $e');
       _updateStatus(ConnectionStatus.slow);
     }
   }

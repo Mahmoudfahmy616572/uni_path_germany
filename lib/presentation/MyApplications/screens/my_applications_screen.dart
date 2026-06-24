@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -23,11 +25,11 @@ class MyApplicationsScreen extends StatefulWidget {
 
 class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
-    // جلب البيانات عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<MyApplicationsCubit>().loadApplications();
@@ -37,6 +39,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -63,9 +66,9 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
               child: Column(
                 children: [
-                  const CurtainDrop(
+                  CurtainDrop(
                     index: 0,
-                    child: ShimmerCard(height: 40, borderRadius: 12),
+                    child: ShimmerCard(height: 40.h, borderRadius: 12.r),
                   ),
                   SizedBox(height: 16.h),
                   CurtainDrop(
@@ -74,15 +77,15 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                       children: List.generate(3, (i) => Expanded(
                         child: Padding(
                           padding: EdgeInsets.only(right: i < 2 ? 8.w : 0),
-                          child: const ShimmerCard(height: 70, borderRadius: 16),
+                          child: ShimmerCard(height: 70.h, borderRadius: 16.r),
                         ),
                       )),
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  const CurtainDrop(
+                  CurtainDrop(
                     index: 2,
-                    child: ShimmerCard(height: 50, borderRadius: 12),
+                    child: ShimmerCard(height: 50.h, borderRadius: 12.r),
                   ),
                   SizedBox(height: 16.h),
                   CurtainDrop(
@@ -90,7 +93,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                     child: Column(
                       children: List.generate(4, (i) => Padding(
                         padding: EdgeInsets.only(bottom: 12.h),
-                        child: const ShimmerCard(height: 100, borderRadius: 16),
+                        child: ShimmerCard(height: 100.h, borderRadius: 16.r),
                       )),
                     ),
                   ),
@@ -106,7 +109,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
                     SizedBox(height: 16.h),
                     Text(
                       "Error: ${state.message}",
@@ -137,9 +140,13 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (value) => context
-                          .read<MyApplicationsCubit>()
-                          .searchApplications(value),
+                      onChanged: (value) {
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(
+                          const Duration(milliseconds: 300),
+                          () => context.read<MyApplicationsCubit>().searchApplications(value),
+                        );
+                      },
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context).translate('searchPrograms'),
                         prefixIcon: Icon(
@@ -175,8 +182,8 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                 CurtainDrop(
                   index: 2,
                   child: PipelineMetricsHub(
-                    upcomingDeadlines: state.allApplications.length,
-                    matchAverage: 80, // يمكن ربطها بحسبة ديناميكية
+                    applications: state.allApplications,
+                    statusCounts: state.statusCounts,
                   ),
                 ),
 

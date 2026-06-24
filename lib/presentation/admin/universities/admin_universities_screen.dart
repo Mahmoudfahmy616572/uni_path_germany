@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/utils/csv_export.dart';
@@ -169,8 +170,8 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _editDialog(u)),
-                    IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => _delete(u['id']?.toString() ?? '')),
+                    IconButton(icon: Icon(Icons.edit_outlined, size: 20.sp), onPressed: () => _editDialog(u)),
+                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp), onPressed: () => _delete(u['id']?.toString() ?? '')),
                   ],
                 )),
               ])).toList(),
@@ -178,7 +179,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
           ),
           if (_hasMore && _searchCtrl.text.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8.h),
               child: _loadingMore
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
@@ -201,7 +202,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: Column(
@@ -210,22 +211,22 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
             index: 2,
             child: Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
                   hintText: 'Search by name, country...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  prefixIcon: Icon(Icons.search, size: 20.sp),
                   suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
+                    icon: Icon(Icons.clear, size: 18.sp),
                     onPressed: () { _searchCtrl.clear(); _filter(''); },
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                 ),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14.sp),
                 onChanged: _filter,
               ),
             ),
@@ -240,8 +241,8 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.school_outlined, size: 48, color: Colors.grey[300]),
-                              const SizedBox(height: 8),
+                              Icon(Icons.school_outlined, size: 48.sp, color: Colors.grey[300]),
+                              SizedBox(height: 8.h),
                               Text(_searchCtrl.text.isEmpty ? 'No universities yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
                             ],
                           ),
@@ -254,12 +255,12 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                             return RefreshIndicator(
                               onRefresh: _load,
                               child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                                padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
                                 itemCount: _filtered.length + (_hasMore && _searchCtrl.text.isEmpty ? 1 : 0),
                                 itemBuilder: (context, i) {
                                   if (i == _filtered.length) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding: EdgeInsets.symmetric(vertical: 8.h),
                                       child: Center(
                                         child: _loadingMore
                                             ? const CircularProgressIndicator()
@@ -273,7 +274,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                                   }
                                   final u = _filtered[i];
                                   return Card(
-                                    margin: const EdgeInsets.only(bottom: 8),
+                                    margin: EdgeInsets.only(bottom: 8.h),
                                     child: ListTile(
                                       leading: CircleAvatar(
                                         backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
@@ -285,11 +286,11 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
-                                            icon: const Icon(Icons.edit_outlined, size: 20),
+                                            icon: Icon(Icons.edit_outlined, size: 20.sp),
                                             onPressed: () => _editDialog(u),
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                            icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp),
                                             onPressed: () => _delete(u['id']?.toString() ?? ''),
                                           ),
                                         ],
@@ -351,6 +352,11 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
       setState(() {
         if (isLogo) uploadingLogo = true; else uploadingImage = true;
       });
+      if (pickedFile.path == null) {
+        setState(() { if (isLogo) uploadingLogo = false; else uploadingImage = false; });
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not access file'), backgroundColor: Colors.red));
+        return;
+      }
       final file = File(pickedFile.path!);
       final ext = pickedFile.extension ?? 'jpg';
       final path = '${isLogo ? 'logos' : 'images'}/${const Uuid().v4()}.$ext';
@@ -375,65 +381,65 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: countryCtrl, decoration: const InputDecoration(labelText: 'Country *', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'Ranking', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: locationCtrl, decoration: const InputDecoration(labelText: 'Location', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: websiteCtrl, decoration: const InputDecoration(labelText: 'Website URL', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: countryCtrl, decoration: const InputDecoration(labelText: 'Country *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'Ranking', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: locationCtrl, decoration: const InputDecoration(labelText: 'Location', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: websiteCtrl, decoration: const InputDecoration(labelText: 'Website URL', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      icon: uploadingLogo ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.image, size: 18),
-                      label: Text(logoUrl != null ? 'Change Logo' : 'Upload Logo', style: const TextStyle(fontSize: 12)),
+                      icon: uploadingLogo ? SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.image, size: 18.sp),
+                      label: Text(logoUrl != null ? 'Change Logo' : 'Upload Logo', style: TextStyle(fontSize: 12.sp)),
                       onPressed: uploadingLogo ? null : () => pickImage(true),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: OutlinedButton.icon(
-                      icon: uploadingImage ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.photo_library, size: 18),
-                      label: Text(imageUrl != null ? 'Change Image' : 'Upload Image', style: const TextStyle(fontSize: 12)),
+                      icon: uploadingImage ? SizedBox(width: 16.w, height: 16.h, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.photo_library, size: 18.sp),
+                      label: Text(imageUrl != null ? 'Change Image' : 'Upload Image', style: TextStyle(fontSize: 12.sp)),
                       onPressed: uploadingImage ? null : () => pickImage(false),
                     ),
                   ),
                 ],
               ),
               if (logoUrl != null) ...[
-                const SizedBox(height: 8),
-                Text('Logo: $logoUrl', style: TextStyle(fontSize: 11, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                SizedBox(height: 8.h),
+                Text('Logo: $logoUrl', style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
               if (imageUrl != null) ...[
-                const SizedBox(height: 4),
-                Text('Image: $imageUrl', style: TextStyle(fontSize: 11, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                SizedBox(height: 4.h),
+                Text('Image: $imageUrl', style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
-              const SizedBox(height: 12),
-              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: stateCtrl, decoration: const InputDecoration(labelText: 'State', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: streetCtrl, decoration: const InputDecoration(labelText: 'Street', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: postalCtrl, decoration: const InputDecoration(labelText: 'Postal Code', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
+              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: stateCtrl, decoration: const InputDecoration(labelText: 'State', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: streetCtrl, decoration: const InputDecoration(labelText: 'Street', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: postalCtrl, decoration: const InputDecoration(labelText: 'Postal Code', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: latCtrl, decoration: const InputDecoration(labelText: 'Latitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14))),
-                  const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: lonCtrl, decoration: const InputDecoration(labelText: 'Longitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14))),
+                  Expanded(child: TextField(controller: latCtrl, decoration: const InputDecoration(labelText: 'Latitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp))),
+                  SizedBox(width: 8.w),
+                  Expanded(child: TextField(controller: lonCtrl, decoration: const InputDecoration(labelText: 'Longitude', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp))),
                 ],
               ),
-              const SizedBox(height: 12),
-              TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'University Type', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: baBanCtrl, decoration: const InputDecoration(labelText: 'BA/BAN ID', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: const TextStyle(fontSize: 14)),
+              SizedBox(height: 12.h),
+              TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'University Type', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: baBanCtrl, decoration: const InputDecoration(labelText: 'BA/BAN ID', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: TextStyle(fontSize: 14.sp)),
             ],
           ),
         ),

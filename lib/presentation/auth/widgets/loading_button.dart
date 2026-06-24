@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/themes/app_colors.dart';
-import '../../../core/themes/app_theme.dart';
 
 class LoadingButton extends StatelessWidget {
   final String text;
@@ -33,27 +31,22 @@ class LoadingButton extends StatelessWidget {
       width: isLoading ? height : fullWidth,
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius ?? 12.r),
-        gradient: LinearGradient(
-          colors: backgroundColor != null
-              ? [backgroundColor!, backgroundColor!]
-              : [context.isDark ? AppColors.primaryPurple : AppColors.primary, (context.isDark ? AppColors.primaryPurple : AppColors.primary).withValues(alpha: 0.8)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (backgroundColor ?? (context.isDark ? AppColors.primaryPurple : AppColors.primary)).withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(borderRadius ?? 18.r),
+        gradient: backgroundColor != null
+            ? LinearGradient(
+                colors: [backgroundColor!, backgroundColor!],
+              )
+            : const LinearGradient(
+                colors: [Color(0xFF5B5EF7), Color(0xFF7C4DFF)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: isLoading ? null : onPressed,
-          borderRadius: BorderRadius.circular(borderRadius ?? 12.r),
+          borderRadius: BorderRadius.circular(borderRadius ?? 18.r),
           child: Center(
             child: isLoading
                 ? SizedBox(
@@ -70,7 +63,6 @@ class LoadingButton extends StatelessWidget {
                       color: textColor ?? Colors.white,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
                     ),
                   ),
           ),

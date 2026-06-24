@@ -18,6 +18,7 @@ class ProgramModel extends ProgramEntity {
     super.isRecommended,
     required super.intakeType,
     required super.matchScore,
+    super.programUrl,
   });
 
   factory ProgramModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +50,7 @@ class ProgramModel extends ProgramEntity {
       intakeType: json['intake_type']?.toString() ?? 'Winter',
       matchScore:
           int.tryParse(json['calculated_score']?.toString() ?? '0') ?? 0,
+      programUrl: json['program_url']?.toString() ?? json['link']?.toString(),
     );
   }
 
@@ -70,6 +72,7 @@ class ProgramModel extends ProgramEntity {
       isRecommended: isRecommended,
       intakeType: intakeType,
       matchScore: matchScore,
+      programUrl: programUrl,
     );
   }
 }

@@ -66,7 +66,7 @@ class BudgetStepWidget extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => cubit.updateBudget(budget['label']!),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      margin: EdgeInsets.symmetric(vertical: 8.h),
                       padding: EdgeInsets.all(18.r),
                       decoration: BoxDecoration(
                         color: isSelected
@@ -121,8 +121,8 @@ class BudgetStepWidget extends StatelessWidget {
                             )
                           else
                             Container(
-                              width: 22,
-                              height: 22,
+                              width: 22.r,
+                              height: 22.r,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(

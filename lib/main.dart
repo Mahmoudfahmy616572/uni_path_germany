@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,6 +11,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/services/gamification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/localization/app_localizations.dart';
@@ -51,6 +53,9 @@ void main() async {
   await Hive.initFlutter();
   await LocalStorageService.init();
 
+  // Gamification
+  await GamificationService.init();
+
   await Supabase.initialize(
     url: const String.fromEnvironment(
       'SUPABASE_URL',
@@ -60,11 +65,24 @@ void main() async {
       'SUPABASE_ANON_KEY',
       defaultValue: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe',
     ),
-    debug: true,
+    debug: kDebugMode,
   );
   // Firebase init
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Crashlytics — non-fatal errors in production, disabled in debug
+  if (kDebugMode) {
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+  } else {
+    FlutterError.onError = (details) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   // Service Locator first (so AuthService & others are ready)
   await di.init();

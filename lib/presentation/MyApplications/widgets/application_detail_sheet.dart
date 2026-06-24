@@ -134,6 +134,9 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
     final String programName = app.programs.isNotEmpty
         ? app.programs.first.programName
         : "Application";
+    final String? programUrl = app.programs.isNotEmpty
+        ? app.programs.first.programUrl
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -145,6 +148,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
             color: context.isDark ? AppColors.textMain : null,
           ),
         ),
+        SizedBox(height: 4.h),
         Text(
           programName,
           style: TextStyle(
@@ -153,6 +157,38 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        if (programUrl != null && programUrl.isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WebViewScreen(
+                      url: programUrl,
+                      title: programName,
+                    ),
+                  ),
+                );
+              },
+              icon: Icon(Icons.open_in_new, size: 15.sp),
+              label: Text(
+                'View Program Website',
+                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF4F46E5),
+                side: const BorderSide(color: Color(0xFFC7D2FE)),
+                padding: EdgeInsets.symmetric(vertical: 8.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -169,7 +205,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
         children: [
           Row(
             children: [
-              const Icon(Icons.travel_explore, size: 18, color: Color(0xFF8B5CF6)),
+              Icon(Icons.travel_explore, size: 18.sp, color: Color(0xFF8B5CF6)),
               SizedBox(width: 8.w),
               Text(
                 'Portal Status',
@@ -204,12 +240,12 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           SwitchListTile(
             value: _autoTrack,
             onChanged: (v) => _updatePortal(context, autoTrack: v),
-            title: const Text('Auto Track', style: TextStyle(fontSize: 13)),
-            subtitle: const Text('Automatically sync portal status', style: TextStyle(fontSize: 11)),
+            title: Text('Auto Track', style: TextStyle(fontSize: 13.sp)),
+            subtitle: Text('Automatically sync portal status', style: TextStyle(fontSize: 11.sp)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -224,7 +260,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
                     builder: (_) => WebViewScreen(url: app.portalUrl!),
                   ),
                 ),
-                icon: const Icon(Icons.open_in_browser, size: 16),
+                icon: Icon(Icons.open_in_browser, size: 16.sp),
                 label: const Text('Open Portal Link'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF4F46E5),
@@ -283,7 +319,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
                 ),
               );
             },
-            icon: const Icon(Icons.auto_awesome, size: 18),
+            icon: Icon(Icons.auto_awesome, size: 18.sp),
             label: Text(
               AppLocalizations.of(context).translate('aiReview'),
               style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
@@ -322,12 +358,32 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
                       : '',
                   major: profile?['target_major']?.toString() ?? '',
                   studentName: profile?['username']?.toString() ?? '',
-                  studentBackground:
-                      'GPA: ${profile?['gpa'] ?? 'N/A'}, Major: ${profile?['target_major'] ?? 'N/A'}',
+                  studentBackground: [
+                      'GPA: ${profile?['gpa'] ?? 'N/A'}',
+                      'Major: ${profile?['target_major'] ?? 'N/A'}',
+                      if (profile?['has_ielts'] == true && profile?['ielts_score'] != null) 'IELTS: ${profile?['ielts_score']}',
+                      if (profile?['has_toefl'] == true && profile?['toefl_score'] != null) 'TOEFL: ${profile?['toefl_score']}',
+                      if (profile?['has_moi'] == true) 'MOI: ${profile?['moi_language'] ?? 'Yes'}',
+                    ].join(', '),
+                  transcriptsUrl: profile != null && profile['has_transcripts'] is String
+                      ? (profile['has_transcripts'] as String).startsWith('http')
+                          ? profile['has_transcripts'] as String
+                          : null
+                      : null,
+                  bachelorCertUrl: profile != null && profile['has_bachelor_cert'] is String
+                      ? (profile['has_bachelor_cert'] as String).startsWith('http')
+                          ? profile['has_bachelor_cert'] as String
+                          : null
+                      : null,
+                  cvUrl: profile != null && profile['has_cv'] is String
+                      ? (profile['has_cv'] as String).startsWith('http')
+                          ? profile['has_cv'] as String
+                          : null
+                      : null,
                 ),
               );
             },
-            icon: const Icon(Icons.auto_awesome, size: 16),
+            icon: Icon(Icons.auto_awesome, size: 16.sp),
             label: Text(
               'Generate CV/SOP with AI',
               style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
@@ -438,7 +494,7 @@ class _StatusDropdown extends StatelessWidget {
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+          icon: Icon(icon, size: 16.sp, color: const Color(0xFF8B5CF6)),
           style: TextStyle(
             fontSize: 13.sp,
             color: context.isDark ? AppColors.textMain : Colors.black87,
@@ -468,8 +524,8 @@ class _DragHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 4,
+      width: 40.w,
+      height: 4.h,
       decoration: BoxDecoration(
         color: context.isDark ? AppColors.darkBorder : Colors.grey[300],
         borderRadius: BorderRadius.circular(2),

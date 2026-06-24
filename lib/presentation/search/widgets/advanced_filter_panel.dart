@@ -31,8 +31,11 @@ class AdvancedFilterPanel extends StatelessWidget {
       padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
         color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+            color: context.isDark
+                ? AppColors.darkBorder
+                : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,14 +49,18 @@ class AdvancedFilterPanel extends StatelessWidget {
                   Icon(
                     Icons.tune_rounded,
                     size: 18,
-                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
-                ),
-                SizedBox(width: 6.w),
+                    color: context.isDark
+                        ? AppColors.textMain
+                        : const Color(0xFF1E293B),
+                  ),
+                  SizedBox(width: 6.w),
                   Text(
                     AppLocalizations.of(context).translate('filters'),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                      color: context.isDark
+                          ? AppColors.textMain
+                          : const Color(0xFF1E293B),
                       fontSize: 15.sp,
                     ),
                   ),
@@ -61,14 +68,14 @@ class AdvancedFilterPanel extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  // استدعاء دالة المسح الشامل للفلاتر
                   context.read<UniversitySearchCubit>().clearAllFilters();
                 },
                 child: Text(
                   AppLocalizations.of(context).translate('clearAll'),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF6366F1), // اللون البنفسجي الرايق للتفاعل
+                    color: const Color(
+                        0xFF6366F1), // اللون البنفسجي الرايق للتفاعل
                     fontSize: 13.sp,
                   ),
                 ),
@@ -76,40 +83,52 @@ class AdvancedFilterPanel extends StatelessWidget {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Divider(
+                color: context.isDark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFF1F5F9)),
           ),
 
           // 1. زرار الـ IELTS التفاعلي
-          _buildToggleRow(context,
-            title: AppLocalizations.of(context).translate('ieltsRequired'),
+          _buildToggleRow(
+            context,
+            title:
+                AppLocalizations.of(context).translate('IELTS/TOEFL Required'),
             subtitle: 'Show programs requiring English test',
             value: requiresIelts,
             onToggle: () {
               context.read<UniversitySearchCubit>().updateFilters(
-                requiresIelts: !requiresIelts,
-              );
+                    requiresIelts: !requiresIelts,
+                  );
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Divider(
+                color: context.isDark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFF1F5F9)),
           ),
 
           // 🔥 2. زرار الـ MOI التفاعلي الجديد (بالملي زي الآيلتس)
-          _buildToggleRow(context,
+          _buildToggleRow(
+            context,
             title: AppLocalizations.of(context).translate('moiAccepted'),
             subtitle: 'Medium of Instruction certificate support',
             value: acceptsMoi,
             onToggle: () {
               context.read<UniversitySearchCubit>().updateFilters(
-                acceptsMoi: !acceptsMoi,
-              );
+                    acceptsMoi: !acceptsMoi,
+                  );
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Divider(
+                color: context.isDark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFF1F5F9)),
           ),
 
           // 3. الـ Slider الحركي للـ Max Tuition Fee
@@ -120,7 +139,9 @@ class AdvancedFilterPanel extends StatelessWidget {
                 AppLocalizations.of(context).translate('maxTuitionPerYear'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                  color: context.isDark
+                      ? AppColors.textMain
+                      : const Color(0xFF1E293B),
                   fontSize: 14.sp,
                 ),
               ),
@@ -128,7 +149,7 @@ class AdvancedFilterPanel extends StatelessWidget {
                 '€${maxTuition.toInt()}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF6366F1),
+                  color: const Color(0xFF6366F1),
                   fontSize: 14.sp,
                 ),
               ),
@@ -140,7 +161,7 @@ class AdvancedFilterPanel extends StatelessWidget {
               activeTrackColor: const Color(0xFF6366F1),
               inactiveTrackColor: const Color(0xFFE2E8F0),
               thumbColor: const Color(0xFF6366F1),
-              trackHeight: 4,
+              trackHeight: 4.h,
             ),
             child: Slider(
               min: 0,
@@ -149,14 +170,17 @@ class AdvancedFilterPanel extends StatelessWidget {
               value: maxTuition,
               onChanged: (val) {
                 context.read<UniversitySearchCubit>().updateFilters(
-                  maxTuition: val,
-                );
+                      maxTuition: val,
+                    );
               },
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Divider(
+                color: context.isDark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFF1F5F9)),
           ),
 
           // 4. اختيار لغة الدراسة (English / German)
@@ -164,7 +188,8 @@ class AdvancedFilterPanel extends StatelessWidget {
             AppLocalizations.of(context).translate('instructionLanguage'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              color:
+                  context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
               fontSize: 14.sp,
             ),
           ),
@@ -176,21 +201,25 @@ class AdvancedFilterPanel extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () {
                     context.read<UniversitySearchCubit>().updateFilters(
-                      language: lang,
-                    );
+                          language: lang,
+                        );
                   },
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    margin: EdgeInsets.symmetric(horizontal: 4.w),
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF6366F1)
-                          : context.isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
+                          : context.isDark
+                              ? AppColors.darkSurface
+                              : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF6366F1)
-                            : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                            : context.isDark
+                                ? AppColors.darkBorder
+                                : const Color(0xFFE2E8F0),
                       ),
                     ),
                     child: Center(
@@ -201,7 +230,9 @@ class AdvancedFilterPanel extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.white
-                              : context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                              : context.isDark
+                                  ? AppColors.textMuted
+                                  : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -211,8 +242,11 @@ class AdvancedFilterPanel extends StatelessWidget {
             }).toList(),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Divider(
+                color: context.isDark
+                    ? AppColors.darkBorder
+                    : const Color(0xFFF1F5F9)),
           ),
 
           // 5. فلتر الموقع/المدينة
@@ -220,18 +254,24 @@ class AdvancedFilterPanel extends StatelessWidget {
             AppLocalizations.of(context).translate('locationCity'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              color:
+                  context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
               fontSize: 14.sp,
             ),
           ),
           SizedBox(height: 12.h),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
             decoration: BoxDecoration(
-              color: context.isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
+              color: context.isDark
+                  ? AppColors.darkSurface
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+              border: Border.all(
+                  color: context.isDark
+                      ? AppColors.darkBorder
+                      : const Color(0xFFE2E8F0)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -243,7 +283,8 @@ class AdvancedFilterPanel extends StatelessWidget {
                 items: [
                   DropdownMenuItem(
                     value: 'All',
-                    child: Text(AppLocalizations.of(context).translate('allLocations')),
+                    child: Text(
+                        AppLocalizations.of(context).translate('allLocations')),
                   ),
                   ...availableLocations.map((loc) => DropdownMenuItem(
                         value: loc,
@@ -266,7 +307,8 @@ class AdvancedFilterPanel extends StatelessWidget {
   }
 
   // ويدجت مساعدة مخصصة وموحدة للأزرار التفاعلية (IELTS & MOI) لتوفير الكود ومنع التكرار
-  Widget _buildToggleRow(BuildContext context, {
+  Widget _buildToggleRow(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required bool value,
@@ -282,31 +324,37 @@ class AdvancedFilterPanel extends StatelessWidget {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                color: context.isDark
+                    ? AppColors.textMain
+                    : const Color(0xFF1E293B),
                 fontSize: 14.sp,
               ),
             ),
             SizedBox(height: 2.h),
             Text(
               subtitle,
-              style: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF94A3B8), fontSize: 11.sp),
+              style: TextStyle(
+                  color: context.isDark
+                      ? AppColors.textMuted
+                      : const Color(0xFF94A3B8),
+                  fontSize: 11.sp),
             ),
           ],
         ),
         GestureDetector(
           onTap: onToggle,
           child: Container(
-            width: 48,
-            height: 26,
+            width: 48.w,
+            height: 26.h,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(100.r),
               color: value ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 3),
+            padding: EdgeInsets.symmetric(horizontal: 3.w),
             alignment: value ? Alignment.centerRight : Alignment.centerLeft,
             child: Container(
-              width: 20,
-              height: 20,
+              width: 20.r,
+              height: 20.r,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,

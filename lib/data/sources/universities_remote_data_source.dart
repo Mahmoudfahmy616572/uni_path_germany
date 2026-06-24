@@ -1,5 +1,9 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/storage/local_storage_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/match_score_calculator.dart';
 
@@ -57,70 +61,42 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
         studentData['budget_range']?.toString(),
       );
 
-      // 🎯 جلب كل الجامعات المطابقة لدرجة الطالب الحالية
-      final response = await client
-          .from('universities')
-          .select('*, university_programs(*)')
-          .eq('country', 'Germany')
-          .ilike('university_programs.degree_type', '%$searchDegree%')
-          .order('name', ascending: true);
-
-      final List<Map<String, dynamic>> unis = List<Map<String, dynamic>>.from(
-        response as List,
+      // 🎯 جلب الجامعات — من Hive Cache أو Supabase
+      final cached = await LocalStorageService.getOfflineData<String>(
+        'universities_all',
+        maxAge: const Duration(hours: 1),
       );
-      List<Map<String, dynamic>> scoredUnis = [];
-
-      for (var uni in unis) {
-        final rawPrograms = uni['university_programs'] as List;
-        int maxScore = 0;
-        List<Map<String, dynamic>> validPrograms = [];
-
-        // ── Location bonus (preferred city match) ─────────
-        final String uniLocation = (uni['location'] as String? ?? '').toLowerCase();
-        final bool isPreferredCity = preferredCities.isEmpty
-            ? false
-            : preferredCities.any((c) => uniLocation.contains(c.toLowerCase()));
-        final int locationBonus = isPreferredCity ? 8 : 0;
-
-        for (var p in rawPrograms) {
-          int score = MatchScoreCalculator.calculate(
-            studentProfile: studentData,
-            programRequiredGpa: (p['required_gpa'] as num?)?.toDouble() ?? 0.0,
-            programRequiresIelts: p['requires_ielts'] ?? false,
-            programMinIelts: (p['min_ielts_score'] as num?)?.toDouble() ?? 0.0,
-            programAcceptsMoi: p['accepts_moi'] ?? false,
-            programMajor: p['major']?.toString() ?? '',
-            programName: p['program_name']?.toString() ?? '',
-            programLanguage: p['instruction_language']?.toString() ?? 'English',
-            programDegree: p['degree_type']?.toString() ?? '',
-          );
-
-          if (score > 0) {
-            // ── Budget bonus/penalty ──────────────────────
-            final int tuitionFee = _parseInt(p['tuition_fee_per_year']);
-            int budgetAdjustment = 0;
-            if (budgetMax != null && tuitionFee > 0) {
-              budgetAdjustment = tuitionFee <= budgetMax ? 5 : -5;
-            }
-
-            score = (score + locationBonus + budgetAdjustment).clamp(0, 100);
-            p['calculated_score'] = score;
-            p['is_recommended'] = score >= 60;
-            validPrograms.add(p);
-            if (score > maxScore) maxScore = score;
-          }
-        }
-
-        if (validPrograms.isNotEmpty) {
-          uni['university_programs'] = validPrograms;
-          uni['calculated_score'] = maxScore;
-          scoredUnis.add(uni);
-        }
+      List<Map<String, dynamic>> unis;
+      if (cached != null) {
+        unis = (jsonDecode(cached) as List).cast<Map<String, dynamic>>();
+      } else {
+        final response = await client
+            .from('universities')
+            .select('*, university_programs(*)')
+            .eq('country', 'Germany')
+            .order('name', ascending: true);
+        unis = List<Map<String, dynamic>>.from(response as List);
+        await LocalStorageService.cacheOfflineData(
+          'universities_all',
+          jsonEncode(unis),
+        );
       }
 
-      // ترتيب حسب أعلى نقاط مطابقة (الأفضل أولاً)
-      scoredUnis.sort((a, b) => (b['calculated_score'] as int)
-          .compareTo(a['calculated_score'] as int));
+      // 🎯 تصفية حسب الدرجة الدراسية client-side
+      unis.retainWhere((uni) {
+        final programs = uni['university_programs'] as List;
+        programs.retainWhere((p) =>
+            (p['degree_type'] as String? ?? '').toLowerCase().contains(searchDegree.toLowerCase()));
+        return programs.isNotEmpty;
+      });
+
+      // 🎯 حساب scores في Isolate منفصل عشان ميبقاش على main thread
+      final scoredUnis = await compute(_scoreAndSortUniversities, {
+        'unis': unis,
+        'studentData': studentData,
+        'preferredCities': preferredCities,
+        'budgetMax': budgetMax,
+      });
       return scoredUnis;
     } catch (e) {
       log.e("DataSource error: $e");
@@ -156,7 +132,7 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
   }
 
   /// يحوّل قيمة (num أو String) إلى int بأمان
-  int _parseInt(dynamic value) {
+  static int _parseIntStatic(dynamic value) {
     if (value == null) return 0;
     if (value is num) return value.toInt();
     if (value is String) {
@@ -166,4 +142,66 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
     }
     return 0;
   }
+}
+
+// ─── Top-level function for compute() isolate ────────────────
+List<Map<String, dynamic>> _scoreAndSortUniversities(Map<String, dynamic> params) {
+  final unis = (params['unis'] as List).cast<Map<String, dynamic>>();
+  final studentData = params['studentData'] as Map<String, dynamic>;
+  final preferredCities = (params['preferredCities'] as List?)?.cast<String>() ?? [];
+  final budgetMax = params['budgetMax'] as num?;
+
+  final List<Map<String, dynamic>> scoredUnis = [];
+
+  for (final uni in unis) {
+    final rawPrograms = uni['university_programs'] as List;
+    int maxScore = 0;
+    final List<Map<String, dynamic>> validPrograms = [];
+
+    final uniLocation = (uni['location'] as String? ?? '').toLowerCase();
+    final isPreferredCity = preferredCities.isEmpty
+        ? false
+        : preferredCities.any((c) => uniLocation.contains(c.toLowerCase()));
+    final int locationBonus = isPreferredCity ? 8 : 0;
+
+    for (final p in rawPrograms) {
+      int score = MatchScoreCalculator.calculate(
+        studentProfile: studentData,
+        programRequiredGpa: (p['required_gpa'] as num?)?.toDouble() ?? 0.0,
+        programRequiresIelts: p['requires_ielts'] ?? false,
+        programMinIelts: (p['min_ielts_score'] as num?)?.toDouble() ?? 0.0,
+        programAcceptsMoi: p['accepts_moi'] ?? false,
+        programMajor: p['major']?.toString() ?? '',
+        programName: p['program_name']?.toString() ?? '',
+        programLanguage: p['instruction_language']?.toString() ?? 'English',
+        programDegree: p['degree_type']?.toString() ?? '',
+      );
+
+      if (score > 0) {
+        final int tuitionFee = UniversitiesRemoteDataSourceImpl._parseIntStatic(
+          p['tuition_fee_per_year'],
+        );
+        int budgetAdjustment = 0;
+        if (budgetMax != null && tuitionFee > 0) {
+          budgetAdjustment = tuitionFee <= budgetMax ? 5 : -5;
+        }
+
+        score = (score + locationBonus + budgetAdjustment).clamp(0, 100);
+        p['calculated_score'] = score;
+        p['is_recommended'] = score >= 60;
+        validPrograms.add(p);
+        if (score > maxScore) maxScore = score;
+      }
+    }
+
+    if (validPrograms.isNotEmpty) {
+      uni['university_programs'] = validPrograms;
+      uni['calculated_score'] = maxScore;
+      scoredUnis.add(uni);
+    }
+  }
+
+  scoredUnis.sort((a, b) => (b['calculated_score'] as int)
+      .compareTo(a['calculated_score'] as int));
+  return scoredUnis;
 }

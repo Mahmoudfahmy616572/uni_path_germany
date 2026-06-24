@@ -13,6 +13,7 @@ abstract class ApplicationsRepository {
     required String programId,
   });
   Future<bool> checkIfSaved(String universityId, {String? programId});
+  Future<Set<String>> getSavedProgramIds(String userId, String universityId);
 
   // 🎯 دالة رفع الملفات الحقيقية
   Future<String> uploadDocument({

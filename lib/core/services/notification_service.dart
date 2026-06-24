@@ -17,6 +17,8 @@ class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
   static final _localNotifications = FlutterLocalNotificationsPlugin();
   static GoRouter? _router;
+  // ignore: unused_field
+  static RealtimeChannel? _applicationChannel;
 
   static void setRouter(GoRouter router) => _router = router;
 
@@ -28,13 +30,8 @@ class NotificationService {
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('UTC'));
 
-    // 1. طلب الإذن
-    await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    // 1. Initialize FCM (but don't request permission yet — done after onboarding)
+    // Call requestPermission() later after user completes onboarding
 
     // 2. إعداد الإشعارات المحلية
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -81,6 +78,128 @@ class NotificationService {
 
     // 11. جدولة الإشعارات المحلية (تعمل offline)
     await _scheduleLocalDeadlineNotifications();
+
+    // 12. Subscribe to realtime application changes
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser != null) {
+      try {
+        _applicationChannel = await _subscribeToApplicationChanges();
+      } catch (e) {
+        _logger.e('❌ Error subscribing to application changes: $e');
+      }
+    }
+  }
+
+  /// Request notification permission — call after onboarding/registration
+  static Future<bool> requestNotificationPermission() async {
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+      if (granted) {
+        await _saveFCMToken();
+      }
+      return granted;
+    } catch (e) {
+      _logger.e('Failed to request notification permission: $e');
+      return false;
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // SUBSCRIBE TO APPLICATION CHANGES (Realtime)
+  // ──────────────────────────────────────────────
+  static Future<RealtimeChannel> _subscribeToApplicationChanges() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      throw Exception('Cannot subscribe without authenticated user');
+    }
+
+    final channel = Supabase.instance.client.channel('application-changes');
+
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'my_applications',
+      callback: (payload) async {
+        try {
+          final newRecord = payload.newRecord;
+          final oldRecord = payload.oldRecord;
+
+          // Only process changes for the current user
+          if (newRecord['user_id'] != user.id) return;
+
+          final oldPortalStatus = oldRecord['portal_status'] as String?;
+          final newPortalStatus = newRecord['portal_status'] as String?;
+          final oldStatus = oldRecord['status'] as String?;
+          final newStatus = newRecord['status'] as String?;
+
+          // Check if portal_status changed
+          if (oldPortalStatus != null &&
+              newPortalStatus != null &&
+              oldPortalStatus != newPortalStatus) {
+            final appData = await Supabase.instance.client
+                .from('my_applications')
+                .select(
+                    '*, universities(name), university_programs(program_name)')
+                .eq('id', newRecord['id'])
+                .single();
+
+            final universityName =
+                (appData['universities'] as Map?)?['name'] as String? ??
+                    'Unknown';
+            final programName =
+                (appData['university_programs'] as Map?)?['program_name']
+                    as String? ??
+                    'Unknown';
+
+            await notifyPortalStatusChange(
+              oldStatus: oldPortalStatus,
+              newStatus: newPortalStatus,
+              programName: programName,
+              universityName: universityName,
+            );
+          }
+
+          // Check if status changed
+          if (oldStatus != null &&
+              newStatus != null &&
+              oldStatus != newStatus) {
+            final appData = await Supabase.instance.client
+                .from('my_applications')
+                .select(
+                    '*, universities(name), university_programs(program_name)')
+                .eq('id', newRecord['id'])
+                .single();
+
+            final universityName =
+                (appData['universities'] as Map?)?['name'] as String? ??
+                    'Unknown';
+            final programName =
+                (appData['university_programs'] as Map?)?['program_name']
+                    as String? ??
+                    'Unknown';
+
+            await notifyApplicationStatusChange(
+              oldStatus: oldStatus,
+              newStatus: newStatus,
+              programName: programName,
+              universityName: universityName,
+            );
+          }
+        } catch (e) {
+          _logger.e('❌ Error in Realtime subscription callback: $e');
+        }
+      },
+    );
+
+    channel.subscribe();
+    return channel;
   }
 
   // ──────────────────────────────────────────────
@@ -321,6 +440,99 @@ class NotificationService {
   }
 
   // ──────────────────────────────────────────────
+  // SMART NOTIFICATIONS — Personalized Reminders
+  // ──────────────────────────────────────────────
+
+  /// Schedule per-application reminders for missing documents
+  static Future<void> scheduleDocumentReminder({
+    required String applicationId,
+    required String programName,
+    required String universityName,
+    required List<String> missingDocuments,
+  }) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('notifications_enabled, document_reminders')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (profile == null) return;
+      final bool enabled = profile['notifications_enabled'] ?? true;
+      final bool docReminders = profile['document_reminders'] ?? true;
+      if (!enabled || !docReminders) return;
+
+      await _localNotifications.show(
+        applicationId.hashCode,
+        '📄 Missing Documents: $programName',
+        '${missingDocuments.length} document(s) needed for $universityName:\n${missingDocuments.join(', ')}',
+        const NotificationDetails(
+          android: AndroidNotificationDetails('deadline_channel', 'Deadline Reminders',
+              importance: Importance.defaultImportance, priority: Priority.defaultPriority),
+          iOS: DarwinNotificationDetails(),
+        ),
+        payload: 'application_status:needs_documents:$applicationId',
+      );
+    } catch (e) {
+      _logger.e('scheduleDocumentReminder error: $e');
+    }
+  }
+
+  /// Weekly digest of upcoming deadlines
+  static Future<void> sendWeeklyDigest() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('notifications_enabled')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (profile == null) return;
+      if (profile['notifications_enabled'] != true) return;
+
+      final apps = await Supabase.instance.client
+          .from('my_applications')
+          .select('*, universities(name), university_programs(program_name, deadline)')
+          .eq('user_id', user.id)
+          .inFilter('status', ['saved', 'applied']);
+
+      if (apps.isEmpty) return;
+
+      final now = DateTime.now();
+      final List<String> upcoming = [];
+      for (final app in apps) {
+        final uniName = (app['universities'] as Map?)?['name'] as String? ?? '';
+        final progs = (app['universities']['university_programs'] as List?) ?? [];
+        for (final prog in progs) {
+          final deadline = DeadlineParser.parse(prog['deadline'] as String? ?? '');
+          if (deadline != null && deadline.difference(now).inDays <= 14 && deadline.isAfter(now)) {
+            upcoming.add('• ${prog['program_name']} @ $uniName — ${_formatDate(prog['deadline'])}');
+          }
+        }
+      }
+
+      if (upcoming.isNotEmpty) {
+        await _localNotifications.show(
+          DateTime.now().millisecond,
+          '📅 Your Coming Week at a Glance',
+          '${upcoming.length} deadline(s) within 14 days:\n${upcoming.join('\n')}',
+          const NotificationDetails(
+            android: AndroidNotificationDetails('deadline_channel', 'Deadline Reminders',
+                importance: Importance.defaultImportance, priority: Priority.defaultPriority),
+            iOS: DarwinNotificationDetails(),
+          ),
+          payload: 'digest:weekly',
+        );
+      }
+    } catch (e) {
+      _logger.e('sendWeeklyDigest error: $e');
+    }
+  }
+
+  // ──────────────────────────────────────────────
   // PUBLIC: NOTIFY UPCOMING DEADLINE
   // ──────────────────────────────────────────────
   static Future<void> notifyUpcomingDeadline(
@@ -361,7 +573,8 @@ class NotificationService {
       final bool applicationUpdates = profile['application_updates'] ?? true;
 
       if (!notificationsEnabled || !applicationUpdates) return;
-    } catch (_) {
+    } catch (e) {
+      _logger.e('notifyApplicationStatusChange profile fetch error: $e');
       return;
     }
 
@@ -433,7 +646,8 @@ class NotificationService {
       final bool applicationUpdates = profile['application_updates'] ?? true;
 
       if (!notificationsEnabled || !applicationUpdates) return;
-    } catch (_) {
+    } catch (e) {
+      _logger.e('notifyPortalStatusChange profile fetch error: $e');
       return;
     }
 

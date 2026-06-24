@@ -10,13 +10,13 @@ import '../../../core/services/services_locator.dart';
 import '../../../core/utils/custom_snack_bar.dart';
 import '../../../core/widgets/curtain_drop.dart';
 import '../../../core/widgets/shimmer_loading.dart';
-import '../../../domain/entities/university_entity.dart';
 import '../../auth/logout/cubit/logout_cubit.dart';
 import '../../auth/logout/cubit/logout_state.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
 import '../widgets/profile_tool_item.dart';
 import '../widgets/side_navigation_bar.dart';
+import '../../ai/widgets/german_assistant_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
@@ -61,15 +61,15 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ShimmerCard(height: 40, width: 120, borderRadius: 8),
+                        ShimmerCard(height: 40.h, width: 120.w, borderRadius: 8.r),
                         SizedBox(height: 24.h),
-                        ShimmerCard(height: 200, borderRadius: 24),
+                        ShimmerCard(height: 200.h, borderRadius: 24.r),
                         SizedBox(height: 32.h),
-                        ShimmerCard(height: 20, width: 160, borderRadius: 8),
+                        ShimmerCard(height: 20.h, width: 160.w, borderRadius: 8.r),
                         SizedBox(height: 16.h),
                         ...List.generate(3, (i) => Padding(
                           padding: EdgeInsets.only(bottom: 12.h),
-                          child: ShimmerCard(height: 60, borderRadius: 16),
+                          child: ShimmerCard(height: 60.h, borderRadius: 16.r),
                         )),
                       ],
                     ),
@@ -101,9 +101,9 @@ class ProfileScreen extends StatelessWidget {
                             CurtainDrop(
                               index: 2,
                               child: Text(
-                                'Account & Tools',
+                                AppLocalizations.of(context).translate('accountAndTools'),
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 18.sp,
                                   fontWeight: FontWeight.bold,
                                   color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
                                 ),
@@ -116,43 +116,89 @@ class ProfileScreen extends StatelessWidget {
                               child: ProfileToolItem(
                                 icon: Icons.description_outlined,
                                 iconColor: Colors.blue,
-                                title: 'My Documents',
-                                subtitle: 'CV, SOP & Certificates',
-                                onTap: () {
-                                  final userFiles = UniversityEntity(
-                                    id: 'global',
-                                    name: 'Vault',
-                                    matchPercentage: 0,
-                                    logoText: 'V',
-                                    country: 'Germany',
-                                    programs: [],
-                                    hasTranscripts: state.user.gpa,
-                                    hasCv: state.user.budgetRange,
-                                    hasSop: state.user.languagePreference,
-                                    hasBachelorCert: state.user.intake,
-                                  );
-                                  context.push('/documents', extra: userFiles);
-                                },
+                                title: AppLocalizations.of(context).translate('myDocuments'),
+                                subtitle: AppLocalizations.of(context).translate('cvSopCertificates'),
+                                onTap: () => context.push('/smart-documents'),
                               ),
                             ),
 
                             CurtainDrop(
                               index: 4,
                               child: ProfileToolItem(
-                                icon: Icons.email_outlined,
+                                icon: Icons.article_outlined,
                                 iconColor: const Color(0xFF6366F1),
-                                title: 'Email Tracking',
-                                subtitle: 'Auto-detect application status from emails',
-                                onTap: () => context.push('/email-tracking'),
+                                title: AppLocalizations.of(context).translate('documentTemplates'),
+                                subtitle: '',
+                                onTap: () => context.push('/document-templates'),
                               ),
                             ),
                             CurtainDrop(
                               index: 5,
                               child: ProfileToolItem(
+                                icon: Icons.auto_awesome,
+                                iconColor: const Color(0xFF8B5CF6),
+                                title: 'AI University Match',
+                                subtitle: 'Personalized recommendations from AI',
+                                onTap: () => context.push('/uni-match'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 6,
+                              child: ProfileToolItem(
+                                icon: Icons.timeline,
+                                iconColor: const Color(0xFF0EA5E9),
+                                title: 'Application Timeline',
+                                subtitle: 'Track deadlines per university',
+                                onTap: () => context.push('/application-timeline'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 7,
+                              child: ProfileToolItem(
+                                icon: Icons.flight_takeoff,
+                                iconColor: const Color(0xFFF59E0B),
+                                title: 'Visa & Pre-departure',
+                                subtitle: 'Complete checklist with links',
+                                onTap: () => context.push('/visa-guide'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 8,
+                              child: ProfileToolItem(
+                                icon: Icons.emoji_events,
+                                iconColor: const Color(0xFF16A34A),
+                                title: 'Achievements',
+                                subtitle: 'Earn badges as you progress',
+                                onTap: () => context.push('/achievements'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 9,
+                              child: ProfileToolItem(
+                                icon: Icons.translate,
+                                iconColor: const Color(0xFFDC2626),
+                                title: 'German Tutor',
+                                subtitle: 'Practice German with AI',
+                                onTap: () => _showGermanAssistant(context),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 10,
+                              child: ProfileToolItem(
+                                icon: Icons.email_outlined,
+                                iconColor: const Color(0xFF6366F1),
+                                title: AppLocalizations.of(context).translate('emailTracking'),
+                                subtitle: AppLocalizations.of(context).translate('emailTrackingDesc'),
+                                onTap: () => context.push('/email-tracking'),
+                              ),
+                            ),
+                            CurtainDrop(
+                              index: 10,
+                              child: ProfileToolItem(
                                 icon: Icons.settings_outlined,
                                 iconColor: Colors.grey,
                                 title: AppLocalizations.of(context).translate('accountSettings'),
-                                subtitle: 'Update your Profile & Preferences',
+                                subtitle: AppLocalizations.of(context).translate('updateProfilePrefs'),
                                 onTap: () async {
                                   final saved = await context.push<bool>(
                                     '/settings',
@@ -170,22 +216,22 @@ class ProfileScreen extends StatelessWidget {
 
                             if (state.user.role == 'admin')
                               CurtainDrop(
-                                index: 6,
+                                index: 11,
                                 child: ProfileToolItem(
                                   icon: Icons.shield_outlined,
                                   iconColor: const Color(0xFF6366F1),
-                                  title: 'Admin Dashboard',
-                                  subtitle: 'Manage users, universities & more',
+                                  title: AppLocalizations.of(context).translate('adminDashboard'),
+                                  subtitle: AppLocalizations.of(context).translate('adminDashboardDesc'),
                                   onTap: () => context.push('/admin'),
                                 ),
                               ),
                             CurtainDrop(
-                              index: 7,
+                              index: 12,
                               child: ProfileToolItem(
                                 icon: Icons.logout,
                                 iconColor: Colors.red,
                                 title: AppLocalizations.of(context).translate('logout'),
-                                subtitle: 'Sign out of UniPath',
+                                subtitle: AppLocalizations.of(context).translate('signOutOfUnipath'),
                                 onTap: () => _showLogoutConfirmation(context),
                               ),
                             ),
@@ -203,12 +249,12 @@ class ProfileScreen extends StatelessWidget {
                           Icon(Icons.error_outline, size: 64.sp, color: Colors.grey[400]),
                           SizedBox(height: 16.h),
                           Text(
-                            'Could not load profile',
+                            AppLocalizations.of(context).translate('couldNotLoadProfile'),
                             style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600, color: Colors.grey[600]),
                           ),
                           SizedBox(height: 8.h),
                           Text(
-                            'Please make sure you are logged in.',
+                            AppLocalizations.of(context).translate('ensureLoggedIn'),
                             style: TextStyle(fontSize: 14.sp, color: Colors.grey[500]),
                             textAlign: TextAlign.center,
                           ),
@@ -216,7 +262,7 @@ class ProfileScreen extends StatelessWidget {
                           ElevatedButton.icon(
                             onPressed: () => context.read<ProfileCubit>().getUserProfile(),
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Retry'),
+                            label: Text(AppLocalizations.of(context).translate('retry')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF4F46E5),
                               foregroundColor: Colors.white,
@@ -270,8 +316,8 @@ class ProfileScreen extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4F46E5).withValues(alpha: 0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 15.r,
+            offset: Offset(0, 8.r),
           ),
         ],
       ),
@@ -281,7 +327,7 @@ class ProfileScreen extends StatelessWidget {
           CircleAvatar(
             radius: 30.r,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: const Icon(Icons.person, color: Colors.white, size: 30),
+            child: Icon(Icons.person, color: Colors.white, size: 30.sp),
           ),
           SizedBox(height: 16.h),
           Text(
@@ -334,7 +380,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: Colors.white70),
+              style: TextStyle(fontSize: 10.sp, color: Colors.white70),
             ),
           ],
         ),
@@ -347,7 +393,7 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).translate('logout')),
-        content: const Text('Are you sure you want to log out?'),
+        content: Text(AppLocalizations.of(context).translate('confirmLogout')),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         actions: [
@@ -368,4 +414,13 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showGermanAssistant(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const GermanAssistantSheet(),
+  );
 }

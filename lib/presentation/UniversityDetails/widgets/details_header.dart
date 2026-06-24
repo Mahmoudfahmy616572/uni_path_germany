@@ -25,7 +25,9 @@ class DetailsHeader extends StatelessWidget {
         ? firstProgram.degreeType
         : "M.Sc.";
 
-    return Row(
+    return Material(
+        type: MaterialType.transparency,
+        child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 1. حاوية اللوجو - محسّنة مع CachedNetworkImage
@@ -130,6 +132,7 @@ class DetailsHeader extends StatelessWidget {
           },
         ),
       ],
+      ),
     );
   }
 

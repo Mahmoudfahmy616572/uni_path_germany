@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 
 class AdminShell extends StatefulWidget {
@@ -85,24 +86,24 @@ class _AdminShellState extends State<AdminShell> {
           CurtainDrop(
             index: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 20.w),
               alignment: Alignment.centerLeft,
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8.r),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
-                    child: const Icon(Icons.shield_outlined, color: Colors.white, size: 22),
+                    child: Icon(Icons.shield_outlined, color: Colors.white, size: 22.sp),
                   ),
-                  const SizedBox(width: 12),
-                  const Column(
+                  SizedBox(width: 12.w),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('UniPath', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                      Text('Admin', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      Text('UniPath', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.sp)),
+                      Text('Admin', style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
                     ],
                   ),
                 ],
@@ -110,7 +111,7 @@ class _AdminShellState extends State<AdminShell> {
             ),
           ),
           const Divider(color: Colors.white12, height: 1),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           ...navItems.asMap().entries.map((entry) {
             final i = entry.key;
             final item = entry.value;
@@ -131,28 +132,28 @@ class _AdminShellState extends State<AdminShell> {
           CurtainDrop(
             index: 8,
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16.r),
               child: InkWell(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10.r),
                 onTap: () => context.go('/profile'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.arrow_back, color: Colors.white54, size: 18),
-                      SizedBox(width: 8),
-                      Text('My Profile', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                      Icon(Icons.arrow_back, color: Colors.white54, size: 18.sp),
+                      SizedBox(width: 8.w),
+                      Text('My Profile', style: TextStyle(color: Colors.white54, fontSize: 13.sp)),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 8.h),
         ],
       ),
     );
@@ -185,7 +186,7 @@ class _AdminShellState extends State<AdminShell> {
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-        title: Text(navItems[selectedIndex].label, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(navItems[selectedIndex].label, style: TextStyle(color: Colors.white, fontSize: 16.sp)),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.white70),
@@ -216,26 +217,26 @@ class _SidebarTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             decoration: BoxDecoration(
               color: selected ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.r),
             ),
             child: Row(
               children: [
-                Icon(item.icon, color: selected ? Colors.white : Colors.white54, size: 20),
-                const SizedBox(width: 12),
+                Icon(item.icon, color: selected ? Colors.white : Colors.white54, size: 20.sp),
+                SizedBox(width: 12.w),
                 Text(item.label, style: TextStyle(
                   color: selected ? Colors.white : Colors.white54,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                 )),
               ],
             ),

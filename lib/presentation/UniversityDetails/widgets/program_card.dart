@@ -7,12 +7,14 @@
 //     بالـ ProgramScoreBadge الجديد اللي فيه الـ expandable breakdown
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'breack_down_widget.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../core/widgets/webview_screen.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
@@ -84,6 +86,7 @@ class ProgramCard extends StatelessWidget {
                       color: isSaved ? const Color(0xFF4F46E5) : Colors.grey,
                     ),
                     onPressed: () {
+                      HapticFeedback.mediumImpact();
                       context.read<UniversityDetailsCubit>().toggleSaveProgram(
                         universityId: universityId,
                         programId: program.id,
@@ -114,6 +117,38 @@ class ProgramCard extends StatelessWidget {
                     ),
                 ],
               ),
+
+              if (program.programUrl != null && program.programUrl!.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WebViewScreen(
+                            url: program.programUrl!,
+                            title: program.programName,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.open_in_new, size: 15.sp),
+                    label: Text('View Program Website',
+                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF4F46E5),
+                      side: const BorderSide(color: Color(0xFFC7D2FE)),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         );

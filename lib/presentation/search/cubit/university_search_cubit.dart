@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/storage/local_storage_service.dart';
 import '../../../core/utils/match_score_calculator.dart';
 import '../../../data/models/university_model.dart';
 import '../../../domain/entities/program_entity.dart';
@@ -33,6 +36,11 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
   }
 
   UniversitySearchCubit() : super(UniversitySearchInitial());
+
+  Future<void> refresh() async {
+    _cachedUniversities = [];
+    await _fetchData();
+  }
 
   void clearAllFilters() {
     _query = '';
@@ -81,25 +89,30 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception("User not logged in");
 
-      // جلب بيانات الطالب لحساب الـ match scores
       final Map<String, dynamic> profile = (await _supabase
           .from('profiles')
           .select()
           .eq('id', user.id)
           .maybeSingle()) ?? <String, dynamic>{};
 
-      // جلب الجامعات الموجودة في "ألمانيا" فقط
-      final response = await _supabase
-          .from('universities')
-          .select('*, university_programs(*)')
-          .eq('country', 'Germany');
+      // Try loading from Hive cache first
+      final cachedJson = await LocalStorageService.getRawCachedUniversities();
+      List<dynamic> response;
+      if (cachedJson != null) {
+        response = jsonDecode(cachedJson) as List<dynamic>;
+      } else {
+        response = await _supabase
+            .from('universities')
+            .select('*, university_programs(*)')
+            .eq('country', 'Germany');
+        await LocalStorageService.cacheRawUniversities(jsonEncode(response));
+      }
 
-      _cachedUniversities = (response as List).map((json) {
+      _cachedUniversities = (response).map((json) {
         final uni = UniversityModel.fromJson(
-          Map<String, dynamic>.from(json),
+          Map<String, dynamic>.from(json as Map),
         ).toEntity();
 
-        // إعادة حساب matchScore لكل برنامج + matchPercentage للجامعة
         final List<ProgramEntity> recalculatedPrograms = uni.programs.map((p) {
           final int score = MatchScoreCalculator.calculate(
             studentProfile: profile,
@@ -129,6 +142,7 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
             isRecommended: score >= 60,
             intakeType: p.intakeType,
             matchScore: score,
+            programUrl: p.programUrl,
           );
         }).toList();
 

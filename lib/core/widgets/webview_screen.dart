@@ -77,19 +77,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
       appBar: AppBar(
         title: Text(
           widget.title.isNotEmpty ? widget.title : 'Website',
-          style: const TextStyle(fontSize: 16),
+          style: TextStyle(fontSize: 16.sp),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            icon: Icon(Icons.arrow_back_ios, size: 18.sp),
             onPressed: () => _controller.goBack(),
           ),
           IconButton(
-            icon: const Icon(Icons.arrow_forward_ios, size: 18),
+            icon: Icon(Icons.arrow_forward_ios, size: 18.sp),
             onPressed: () => _controller.goForward(),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
+            icon: Icon(Icons.refresh, size: 20.sp),
             onPressed: () => _controller.reload(),
           ),
         ],

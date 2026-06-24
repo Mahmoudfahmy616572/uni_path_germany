@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -25,9 +27,11 @@ class UniversitySearchScreen extends StatefulWidget {
 
 class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
   final TextEditingController _textSearchController = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _textSearchController.dispose();
     super.dispose();
   }
@@ -56,21 +60,47 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
                 child: Column(
                   children: [
-                    ShimmerText(lines: 2, height: 18, spacing: 12),
+                    ShimmerText(lines: 2, height: 18.h, spacing: 12.h),
                     SizedBox(height: 24.h),
-                    ShimmerCard(height: 50, borderRadius: 12),
+                    ShimmerCard(height: 50.h, borderRadius: 12.r),
                     SizedBox(height: 16.h),
-                    ShimmerCard(height: 50, borderRadius: 12),
+                    ShimmerCard(height: 50.h, borderRadius: 12.r),
                     SizedBox(height: 16.h),
-                    ShimmerCard(height: 50, borderRadius: 12),
+                    ShimmerCard(height: 50.h, borderRadius: 12.r),
                     SizedBox(height: 24.h),
-                    ShimmerText(lines: 3, height: 14, spacing: 8),
+                    ShimmerText(lines: 3, height: 14.h, spacing: 8.h),
                     SizedBox(height: 16.h),
                     ...List.generate(3, (i) => Padding(
                       padding: EdgeInsets.only(bottom: 12.h),
-                      child: ShimmerCard(height: 80, borderRadius: 16),
+                      child: ShimmerCard(height: 80.h, borderRadius: 16.r),
                     )),
                   ],
+                ),
+              );
+            }
+
+            if (state is UniversitySearchError) {
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
+                      SizedBox(height: 16.h),
+                      Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                      ),
+                      SizedBox(height: 24.h),
+                      ElevatedButton.icon(
+                        onPressed: () => context.read<UniversitySearchCubit>().updateFilters(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: Text(AppLocalizations.of(context).translate('retry')),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
@@ -83,7 +113,11 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
 
               return Stack(
                 children: [
-                  SingleChildScrollView(
+                  RefreshIndicator(
+                    onRefresh: context.read<UniversitySearchCubit>().refresh,
+                    color: const Color(0xFF6366F1),
+                    child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
                     child: Column(
                       children: [
@@ -118,6 +152,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                       ],
                     ),
                   ),
+                  ),
                   _buildFloatingShowButton(
                     context,
                     totalProgramsCount,
@@ -142,13 +177,18 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
       ),
       child: TextField(
         controller: _textSearchController,
-        onChanged: (val) =>
-            context.read<UniversitySearchCubit>().updateFilters(query: val),
+        onChanged: (val) {
+          _searchDebounce?.cancel();
+          _searchDebounce = Timer(
+            const Duration(milliseconds: 300),
+            () => context.read<UniversitySearchCubit>().updateFilters(query: val),
+          );
+        },
         decoration: InputDecoration(
           hintText: AppLocalizations.of(context).translate('searchForCourses'),
           prefixIcon: Icon(Icons.search, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: EdgeInsets.symmetric(vertical: 14.h),
         ),
       ),
     );
@@ -189,57 +229,116 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
     BuildContext context,
     List<UniversityEntity> results,
   ) {
+    final selectedIds = <String>{};
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        decoration: BoxDecoration(
-          color: context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: 16.h),
-            Text(
-              '${results.length} ${AppLocalizations.of(context).translate('universitiesFound')}',
-              style: TextStyle(fontWeight: FontWeight.bold, color: context.isDark ? AppColors.textMain : null),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: context.isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.all(16.r),
-                itemCount: results.length,
-                itemBuilder: (context, index) {
-                  final uni = results[index];
-                  return Card(
-                    child: ListTile(
-                      tileColor: context.isDark ? AppColors.darkCardBg : Colors.white,
-                      onTap: () =>
-                          context.push('/university_details', extra: uni),
-                      title: Text(
-                        uni.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: 16.h),
+              Text(
+                '${results.length} ${AppLocalizations.of(context).translate('universitiesFound')}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: context.isDark ? AppColors.textMain : null),
+              ),
+              if (selectedIds.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: 8.h),
+                  child: Text(
+                    '${selectedIds.length} selected — tap Compare to view side-by-side',
+                    style: TextStyle(fontSize: 12.sp, color: AppColors.primary),
+                  ),
+                ),
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.all(16.r),
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final uni = results[index];
+                    final isSelected = selectedIds.contains(uni.id);
+                    return Card(
+                      child: ListTile(
+                        tileColor: context.isDark ? AppColors.darkCardBg : Colors.white,
+                        onTap: () =>
+                            context.push('/university_details', extra: uni),
+                        leading: Checkbox(
+                          value: isSelected,
+                          onChanged: (v) {
+                            setSheetState(() {
+                              if (v == true) {
+                                selectedIds.add(uni.id);
+                              } else {
+                                selectedIds.remove(uni.id);
+                              }
+                            });
+                          },
+                          activeColor: const Color(0xFF6366F1),
+                        ),
+                        title: Text(
+                          uni.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '${uni.programs.length} Matching Programs',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedScoreText(
+                              score: uni.matchPercentage,
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (isSelected)
+                              Padding(
+                                padding: EdgeInsets.only(left: 8.w),
+                                child: Icon(Icons.check_circle, color: AppColors.primary, size: 18.sp),
+                              ),
+                          ],
+                        ),
                       ),
-                      subtitle: Text(
-                        '${uni.programs.length} Matching Programs',
-                      ),
-                      trailing: AnimatedScoreText(
-                        score: uni.matchPercentage,
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
+                    );
+                  },
+                ),
+              ),
+              if (selectedIds.length >= 2)
+                Padding(
+                  padding: EdgeInsets.all(16.r),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48.h,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final selected = results.where((u) => selectedIds.contains(u.id)).toList();
+                        Navigator.pop(context);
+                        context.push('/compare', extra: selected);
+                      },
+                      icon: Icon(Icons.compare_arrows, size: 18.sp),
+                      label: Text('Compare ${selectedIds.length} Universities'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

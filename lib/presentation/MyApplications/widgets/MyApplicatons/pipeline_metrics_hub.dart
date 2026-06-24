@@ -1,112 +1,188 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/deadline_parser.dart';
+import '../../../../domain/entities/university_entity.dart';
 
 class PipelineMetricsHub extends StatelessWidget {
-  final int upcomingDeadlines;
-  final int matchAverage;
+  final List<UniversityEntity> applications;
+  final Map<String, int> statusCounts;
 
   const PipelineMetricsHub({
     super.key,
-    required this.upcomingDeadlines,
-    required this.matchAverage,
+    required this.applications,
+    required this.statusCounts,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildMetricCard(context,
-              icon: Icons.calendar_today_outlined,
-              iconColor: const Color(0xFFEF4444),
-              title: 'upcomingDeadlines',
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final upcomingDeadlines = applications
+        .where((uni) => uni.programs.any((p) {
+              if (p.deadline == null || p.deadline!.isEmpty) return false;
+              final days = DeadlineParser.remainingDays(p.deadline!);
+              return days != null && days >= 0 && days <= 30;
+            }))
+        .length;
+
+    final total = applications.length;
+    final appliedCount = (statusCounts['applied'] ?? 0) + (statusCounts['waiting'] ?? 0) + (statusCounts['accepted'] ?? 0);
+    final matchAvg = total > 0
+        ? (applications.fold<int>(0, (sum, u) => sum + u.matchPercentage) / total).round()
+        : 0;
+
+    final statusColors = {
+      'saved': const Color(0xFF94A3B8),
+      'preparing': const Color(0xFFF59E0B),
+      'applied': const Color(0xFF3B82F6),
+      'waiting': const Color(0xFF8B5CF6),
+      'accepted': const Color(0xFF10B981),
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildMetricCard(
+              context,
+              icon: Icons.calendar_today,
+              label: 'Upcoming\nDeadlines',
               value: '$upcomingDeadlines',
-              subtitle: 'inTheNext30Days',
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: _buildMetricCard(context,
-              icon: Icons.folder_open_outlined,
-              iconColor: const Color(0xFF10B981),
-              title: 'yourMatchAverage',
-              value: '$matchAverage%',
-              subtitle: 'goodChance',
-              subtitleColor: const Color(0xFF10B981),
-            ),
-          ),
+              color: upcomingDeadlines > 0 ? Colors.redAccent : AppColors.primary,
+              isDark: isDark,
+              onTap: () => context.push('/deadline-calendar'),
+            )),
+            SizedBox(width: 12.w),
+            Expanded(child: _buildMetricCard(
+              context,
+              icon: Icons.trending_up,
+              label: 'Avg Match',
+              value: '$matchAvg%',
+              color: AppColors.primary,
+              isDark: isDark,
+            )),
+            SizedBox(width: 12.w),
+            Expanded(child: _buildMetricCard(
+              context,
+              icon: Icons.checklist,
+              label: 'Applied',
+              value: '$appliedCount/$total',
+              color: const Color(0xFF10B981),
+              isDark: isDark,
+            )),
+          ],
+        ),
+        SizedBox(height: 16.h),
+        if (total > 0) ...[
+          _buildStatusBar(context, isDark, statusColors),
+          SizedBox(height: 8.h),
+          _buildStatusLegend(context, isDark, statusColors),
         ],
+      ],
+    );
+  }
+
+  Widget _buildMetricCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isDark,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(12.r),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22.sp),
+            SizedBox(height: 8.h),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textMain : const Color(0xFF1E293B),
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMetricCard(BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-    required String subtitle,
-    Color subtitleColor = const Color(0xFF64748B),
-  }) {
-    final loc = AppLocalizations.of(context);
-    return Container(
-      padding: EdgeInsets.all(12.r),
-      decoration: BoxDecoration(
-        color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+  Widget _buildStatusBar(BuildContext context, bool isDark, Map<String, Color> colors) {
+    final totalCount = statusCounts.values.fold<int>(0, (a, b) => a + b);
+    if (totalCount == 0) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6.r),
+      child: SizedBox(
+        height: 8.h,
+        child: Row(
+          children: [
+            for (final entry in ['saved', 'preparing', 'applied', 'waiting', 'accepted'])
+              if ((statusCounts[entry] ?? 0) > 0)
+                Expanded(
+                  flex: statusCounts[entry]!,
+                  child: Container(color: colors[entry]),
+                ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.r),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+    );
+  }
+
+  Widget _buildStatusLegend(BuildContext context, bool isDark, Map<String, Color> colors) {
+    return Wrap(
+      spacing: 12.w,
+      runSpacing: 4.h,
+      children: ['saved', 'preparing', 'applied', 'waiting', 'accepted'].map((key) {
+        final count = statusCounts[key] ?? 0;
+        if (count == 0) return const SizedBox.shrink();
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8.r,
+              height: 8.r,
+              decoration: BoxDecoration(
+                color: colors[key],
+                shape: BoxShape.circle,
+              ),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  loc.translate(title),
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  loc.translate(subtitle),
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: subtitleColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            SizedBox(width: 4.w),
+            Text(
+              '$key ($count)',
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }).toList(),
     );
   }
 }

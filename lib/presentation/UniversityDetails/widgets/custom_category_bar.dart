@@ -20,7 +20,7 @@ class CustomCategoryBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 48,
+      height: 48.h,
       padding: EdgeInsets.all(4.r),
       decoration: BoxDecoration(
         color: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
@@ -43,8 +43,8 @@ class CustomCategoryBar extends StatelessWidget {
                           ? [
                               BoxShadow(
                                 color: context.isDark ? AppColors.darkBorder.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                                blurRadius: 4.r,
+                                offset: Offset(0, 2.r),
                               ),
                             ]
                           : null,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'app_colors.dart';
 
@@ -61,7 +62,7 @@ class AppTheme {
       color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
     ),
@@ -77,7 +78,7 @@ class AppTheme {
       filled: true,
       fillColor: AppColors.inputBackground,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,
       ),
     ),
@@ -121,7 +122,7 @@ class AppTheme {
       color: AppColors.darkCardBg,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
         side: const BorderSide(color: AppColors.darkBorder),
       ),
     ),
@@ -138,7 +139,7 @@ class AppTheme {
       filled: true,
       fillColor: AppColors.darkCardBg,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,
       ),
     ),
@@ -157,10 +158,10 @@ class AppTheme {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.darkSurface,
-      labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+      labelStyle: TextStyle(color: AppColors.textMuted, fontSize: 12.sp),
       side: const BorderSide(color: AppColors.darkBorder),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
       ),
     ),
     textTheme: const TextTheme(

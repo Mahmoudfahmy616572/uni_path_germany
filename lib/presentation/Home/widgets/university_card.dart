@@ -23,7 +23,9 @@ class UniversityCard extends StatelessWidget {
         ? university.programs.first
         : null;
 
-    return InkWell(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
       onTap: () => context.push('/university_details', extra: university),
       child: Container(
         margin: EdgeInsets.only(bottom: 16.h),
@@ -136,7 +138,8 @@ class UniversityCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+      ),
+      );
   }
 
   Widget _buildLogo(BuildContext context) {

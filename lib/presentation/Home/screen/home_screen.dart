@@ -23,6 +23,8 @@ import '../widgets/university_card.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  static ScrollController? scrollController;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -34,8 +36,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    HomeScreen.scrollController = _scrollController;
     _scrollController.addListener(_onScroll);
     _checkProfileCompletionAndShowWelcome();
+  }
+
+  @override
+  void dispose() {
+    HomeScreen.scrollController = null;
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkProfileCompletionAndShowWelcome() async {
@@ -70,12 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   // 🎯 وظيفة اكتشاف الوصول لنهاية الصفحة لطلب المزيد من البيانات
@@ -129,11 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: BlocBuilder<HomeCubit, HomeState>(
           builder: (context, state) {
             if (state is HomeLoading) {
-              return const ShimmerList(
+              return ShimmerList(
                 itemCount: 5,
-                itemHeight: 140,
+                itemHeight: 140.h,
                 borderRadius: 16,
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(24.r),
               );
             }
 
@@ -154,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     CurtainDrop(
                       index: 1,
                       child: Text(
-                        'No internet connection',
+                        AppLocalizations.of(context).translate('noInternetConnection'),
                         style: GoogleFonts.poppins(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w600,
@@ -236,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 index: 1,
                                 child: ShimmerText(
                                   lines: 2,
-                                  height: 20,
+                                  height: 20.h,
                                   width: 200.w,
                                 ),
                               ),
@@ -245,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 index: 2,
                                 child: ShimmerText(
                                   lines: 1,
-                                  height: 16,
+                                  height: 16.h,
                                   width: 150.w,
                                 ),
                               ),
@@ -256,122 +260,120 @@ class _HomeScreenState extends State<HomeScreen> {
                     ));
               }
 
+              final footerCount = (state.isFetchingMore ? 1 : 0) +
+                  (state.hasReachedMax && state.recommendations.isNotEmpty ? 1 : 0);
+              final totalItems = 3 + state.recommendations.length + footerCount;
+
               return RefreshIndicator(
-                // 🎯 سحب من أعلى للتحديث (مثل My Applications)
                 onRefresh: () async {
                   await context
                       .read<HomeCubit>()
                       .calculateAndFetchRecommendations(forceRefresh: true);
                 },
                 color: const Color(0xFF4F46E5),
-                child: SingleChildScrollView(
+                child: ListView.builder(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.all(24.r),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CurtainDrop(
-                        index: 0,
-                        child: Text(
-                          "${AppLocalizations.of(context).translate('matchScore')}, Mahmoud",
-                          style: GoogleFonts.poppins(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.bold,
-                            color: context.isDark ? AppColors.textMain : const Color(0xFF1A202C),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-
-                      CurtainDrop(
-                        index: 1,
-                        child: MatchScoreCard(
-                          score: state.matchScore,
-                          onAiTap: () => _showGenericAiTips(context, state.matchScore),
-                        ),
-                      ),
-                      SizedBox(height: 32.h),
-
-                      CurtainDrop(
-                        index: 2,
-                        child: Text(
-                          AppLocalizations.of(context).translate('recommendedForYou'),
-                          style: GoogleFonts.poppins(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: context.isDark ? AppColors.textMain : const Color(0xFF1A202C),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-
-                      // قائمة الجامعات
-                      CurtainDrop(
-                        index: 3,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: state.recommendations.length,
-                          itemBuilder: (context, index) {
-                            return UniversityCard(
-                              university: state.recommendations[index],
-                            );
-                          },
-                        ),
-                      ),
-
-                      // 🎯 مؤشر تحميل في الأسفل عند جلب صفحة جديدة
-                      if (state.isFetchingMore)
-                        CurtainDrop(
-                          index: 4,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20.h),
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 20.sp,
-                                    height: 20.sp,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Color(0xFF4F46E5),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Text(
-                                    'Loading more...',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                  itemCount: totalItems,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 24.h),
+                        child: CurtainDrop(
+                          index: 0,
+                          child: Text(
+                            "${AppLocalizations.of(context).translate('matchScore')}, Mahmoud",
+                            style: GoogleFonts.poppins(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
+                              color: context.isDark ? AppColors.textMain : const Color(0xFF1A202C),
                             ),
                           ),
                         ),
-
-                      if (state.hasReachedMax &&
-                          state.recommendations.isNotEmpty)
-                        const CurtainDrop(
-                          index: 5,
-                          child: Center(
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 20),
-                              child: Text(
-                                "You've seen all available programs!",
-                                style: TextStyle(color: Colors.grey),
-                              ),
+                      );
+                    }
+                    if (index == 1) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 32.h),
+                        child: CurtainDrop(
+                          index: 1,
+                          child: MatchScoreCard(
+                            score: state.matchScore,
+                            onAiTap: () => _showGenericAiTips(context, state.matchScore),
+                          ),
+                        ),
+                      );
+                    }
+                    if (index == 2) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 16.h),
+                        child: CurtainDrop(
+                          index: 2,
+                          child: Text(
+                            AppLocalizations.of(context).translate('recommendedForYou'),
+                            style: GoogleFonts.poppins(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                              color: context.isDark ? AppColors.textMain : const Color(0xFF1A202C),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      );
+                    }
+
+                    final uniIndex = index - 3;
+                    if (uniIndex < state.recommendations.length) {
+                      return CurtainDrop(
+                        index: (uniIndex + 3).clamp(3, 10),
+                        child: UniversityCard(
+                          university: state.recommendations[uniIndex],
+                        ),
+                      );
+                    }
+
+                    if (state.isFetchingMore) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20.h),
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 20.w,
+                                height: 20.h,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF4F46E5),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Text(
+                                'Loading more...',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14.sp,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Padding(
+                      padding: EdgeInsets.only(top: 20.h),
+                      child: Center(
+                        child: Text(
+                          "You've seen all available programs!",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               );
             }
@@ -399,7 +401,7 @@ class _GenericAiTipsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tips = _getTips();
+    final tips = _getTips(context);
     return Container(
       padding: EdgeInsets.only(top: 12.h),
       decoration: BoxDecoration(
@@ -518,23 +520,24 @@ class _GenericAiTipsSheet extends StatelessWidget {
     );
   }
 
-  List<_AiTip> _getTips() {
+  List<_AiTip> _getTips(BuildContext context) {
+    final t = AppLocalizations.of(context).translate;
     if (score >= 80) {
       return [
         _AiTip(
           icon: Icons.check_circle_outline,
-          title: 'Strong Profile',
-          description: 'Your profile is a great match! Focus on submitting strong documents (CV, SOP, transcripts) for each application.',
+          title: t('strongProfile'),
+          description: t('strongProfileDesc'),
         ),
         _AiTip(
           icon: Icons.description_outlined,
-          title: 'Polish Your Documents',
-          description: 'Use the AI Document Generator on each program page to create tailored CVs and motivation letters that highlight your strengths.',
+          title: t('polishDocuments'),
+          description: t('polishDocumentsDesc'),
         ),
         _AiTip(
           icon: Icons.notifications_outlined,
-          title: 'Track Deadlines',
-          description: 'Enable deadline reminders in Settings to never miss an application window.',
+          title: t('trackDeadlines'),
+          description: t('trackDeadlinesDesc'),
         ),
       ];
     }
@@ -542,18 +545,18 @@ class _GenericAiTipsSheet extends StatelessWidget {
       return [
         _AiTip(
           icon: Icons.grade_outlined,
-          title: 'Boost Your GPA Score',
-          description: 'Consider retaking courses or highlighting relevant project experience in your SOP to compensate.',
+          title: t('boostGpa'),
+          description: t('boostGpaDesc'),
         ),
         _AiTip(
           icon: Icons.translate_outlined,
-          title: 'Language Certificate',
-          description: 'Improving your IELTS score or getting an MOI certificate can add significant points to your match score.',
+          title: t('languageCert'),
+          description: t('languageCertDesc'),
         ),
         _AiTip(
           icon: Icons.school_outlined,
-          title: 'Refine Your Major',
-          description: 'Visit Settings to ensure your target major is as specific as possible for better program matching.',
+          title: t('refineMajor'),
+          description: t('refineMajorDesc'),
         ),
       ];
     }
@@ -561,36 +564,36 @@ class _GenericAiTipsSheet extends StatelessWidget {
       return [
         _AiTip(
           icon: Icons.person_outline,
-          title: 'Complete Your Profile',
-          description: 'Your profile is incomplete. Adding your GPA, IELTS score, and target major will dramatically improve matching.',
+          title: t('completeProfile'),
+          description: t('completeProfileDesc'),
         ),
         _AiTip(
           icon: Icons.translate_outlined,
-          title: 'Get Language Certified',
-          description: 'Most programs require IELTS (6.0+) or MOI. Adding either unlocks 10-15 points in the match score.',
+          title: t('getLanguageCertified'),
+          description: t('getLanguageCertifiedDesc'),
         ),
         _AiTip(
           icon: Icons.calendar_today_outlined,
-          title: 'Pick an Intake',
-          description: 'Setting your target intake helps match with programs that align with your timeline.',
+          title: t('pickIntake'),
+          description: t('pickIntakeDesc'),
         ),
       ];
     }
     return [
       _AiTip(
         icon: Icons.person_outline,
-        title: 'Profile Needed',
-        description: 'Set up your academic profile in Settings — GPA, major, degree level, and language preferences.',
+        title: t('profileNeeded'),
+        description: t('profileNeededDesc'),
       ),
       _AiTip(
         icon: Icons.search_outlined,
-        title: 'Explore Programs',
-        description: 'Use the Search tab to find programs. Save interesting ones to see your match score.',
+        title: t('explorePrograms'),
+        description: t('exploreProgramsDesc'),
       ),
       _AiTip(
         icon: Icons.settings_outlined,
-        title: 'Visit Settings',
-        description: 'Complete all profile fields to unlock personalized AI suggestions for each program.',
+        title: t('visitSettings'),
+        description: t('visitSettingsDesc'),
       ),
     ];
   }

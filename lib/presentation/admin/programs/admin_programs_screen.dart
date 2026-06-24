@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
@@ -136,8 +137,8 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _editDialog(p)),
-                    IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => _delete(p['id']?.toString() ?? '')),
+                    IconButton(icon: Icon(Icons.edit_outlined, size: 20.sp), onPressed: () => _editDialog(p)),
+                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp), onPressed: () => _delete(p['id']?.toString() ?? '')),
                   ],
                 )),
               ])).toList(),
@@ -157,7 +158,7 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon:                     Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -169,8 +170,8 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.playlist_remove_outlined, size: 48, color: Colors.grey[300]),
-                        const SizedBox(height: 8),
+                        Icon(Icons.playlist_remove_outlined, size: 48.sp, color: Colors.grey[300]),
+SizedBox(height: 8.h),
                         Text('No programs yet', style: TextStyle(color: Colors.grey[500])),
                       ],
                     ),
@@ -183,13 +184,13 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                       return RefreshIndicator(
                         onRefresh: _load,
                         child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16.r),
                           itemCount: _programs.length,
                           itemBuilder: (context, i) {
                             final p = _programs[i];
                             final univName = p['universities']?['name']?.toString() ?? '—';
                             return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
+                              margin: EdgeInsets.only(bottom: 8.h),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
@@ -201,11 +202,11 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined, size: 20),
+                                      icon: Icon(Icons.edit_outlined, size: 20.sp),
                                       onPressed: () => _editDialog(p),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                      icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp),
                                       onPressed: () => _delete(p['id']?.toString() ?? ''),
                                     ),
                                   ],
@@ -269,11 +270,11 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   hint: const Text('Select a university', style: TextStyle(color: Color(0xFF94A3B8))),
                   items: _universities.map((u) => DropdownMenuItem(value: u['id']?.toString(), child: Text(u['name']?.toString() ?? '', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
                   onChanged: (v) => setDialogState(() => selectedUnivId = v),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(height: 12),
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Program Name *', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Program Name *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: selectedDegree,
                   decoration: const InputDecoration(labelText: 'Degree *', border: OutlineInputBorder()),
@@ -281,9 +282,9 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   isExpanded: true,
                   items: ['Bachelor', 'Master', 'PhD'].map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
                   onChanged: (v) => setDialogState(() => selectedDegree = v ?? 'Bachelor'),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: selectedDuration,
                   decoration: const InputDecoration(labelText: 'Duration', border: OutlineInputBorder()),
@@ -291,21 +292,21 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   isExpanded: true,
                   items: ['2 years', '3 years', '4 years'].map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
                   onChanged: (v) => setDialogState(() => selectedDuration = v ?? '4 years'),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(height: 12),
-                TextField(controller: langCtrl, decoration: const InputDecoration(labelText: 'Language', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: deadlineCtrl, decoration: const InputDecoration(labelText: 'Deadline', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: majorCtrl, decoration: const InputDecoration(labelText: 'Major', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: requiredGpaCtrl, decoration: const InputDecoration(labelText: 'Required GPA', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: instrLangCtrl, decoration: const InputDecoration(labelText: 'Instruction Language', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
+                TextField(controller: langCtrl, decoration: const InputDecoration(labelText: 'Language', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: deadlineCtrl, decoration: const InputDecoration(labelText: 'Deadline', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: majorCtrl, decoration: const InputDecoration(labelText: 'Major', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: requiredGpaCtrl, decoration: const InputDecoration(labelText: 'Required GPA', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: instrLangCtrl, decoration: const InputDecoration(labelText: 'Instruction Language', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: selectedIntake,
                   decoration: const InputDecoration(labelText: 'Intake Type', border: OutlineInputBorder()),
@@ -313,15 +314,15 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   isExpanded: true,
                   items: ['Winter', 'Summer'].map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
                   onChanged: (v) => setDialogState(() => selectedIntake = v ?? 'Winter'),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
-                const SizedBox(height: 12),
-                TextField(controller: appFeeCtrl, decoration: const InputDecoration(labelText: 'Application Fee', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: tuitionCtrl, decoration: const InputDecoration(labelText: 'Tuition Fee / Year', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: curriculumCtrl, decoration: const InputDecoration(labelText: 'Curriculum', border: OutlineInputBorder()), maxLines: 2, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
+                TextField(controller: appFeeCtrl, decoration: const InputDecoration(labelText: 'Application Fee', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: tuitionCtrl, decoration: const InputDecoration(labelText: 'Tuition Fee / Year', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: curriculumCtrl, decoration: const InputDecoration(labelText: 'Curriculum', border: OutlineInputBorder()), maxLines: 2, style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
                 CheckboxListTile(
                   title: const Text('Requires IELTS'),
                   value: requiresIelts,
@@ -329,9 +330,9 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   contentPadding: EdgeInsets.zero,
                 ),
                 if (requiresIelts) ...[
-                  const SizedBox(height: 8),
-                  TextField(controller: ieltsScoreCtrl, decoration: const InputDecoration(labelText: 'Min IELTS Score', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 8.h),
+                  TextField(controller: ieltsScoreCtrl, decoration: const InputDecoration(labelText: 'Min IELTS Score', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                  SizedBox(height: 12.h),
                 ],
                 CheckboxListTile(
                   title: const Text('Accepts MOI (Medium of Instruction)'),
@@ -339,10 +340,10 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                   onChanged: (v) => setDialogState(() => acceptsMoi = v ?? false),
                   contentPadding: EdgeInsets.zero,
                 ),
-                const SizedBox(height: 12),
-                TextField(controller: dataSourceCtrl, decoration: const InputDecoration(labelText: 'Data Source (e.g. daad_api)', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 12),
-                TextField(controller: linkCtrl, decoration: const InputDecoration(labelText: 'Program Link URL', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
+                SizedBox(height: 12.h),
+                TextField(controller: dataSourceCtrl, decoration: const InputDecoration(labelText: 'Data Source (e.g. daad_api)', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                SizedBox(height: 12.h),
+                TextField(controller: linkCtrl, decoration: const InputDecoration(labelText: 'Program URL (web view)', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               ],
             ),
           ),
@@ -391,7 +392,7 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
         'min_ielts_score': requiresIelts && ieltsScoreCtrl.text.trim().isNotEmpty ? double.tryParse(ieltsScoreCtrl.text.trim()) : null,
         'accepts_moi': acceptsMoi,
         'data_source': dataSourceCtrl.text.trim(),
-        'link': linkCtrl.text.trim(),
+        'program_url': linkCtrl.text.trim(),
       };
       if (existing != null) {
         await Supabase.instance.client.from('university_programs').update(data).eq('id', existing['id']);

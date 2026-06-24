@@ -76,6 +76,11 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
   }
 
   @override
+  Future<Set<String>> getSavedProgramIds(String userId, String universityId) async {
+    return remoteDataSource.getSavedProgramIds(userId, universityId);
+  }
+
+  @override
   Future<void> removeSavedProgram({
     required String universityId,
     required String programId,
@@ -94,8 +99,9 @@ class ApplicationsRepositoryImpl implements ApplicationsRepository {
     void Function(double progress)? onProgress,
   }) async {
     final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
     return await remoteDataSource.uploadDocument(
-      userId: user!.id,
+      userId: user.id,
       universityId: universityId,
       columnName: columnName,
       file: file,

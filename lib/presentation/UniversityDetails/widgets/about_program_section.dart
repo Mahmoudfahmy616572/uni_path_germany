@@ -48,10 +48,10 @@ class AboutProgramSection extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.keyboard_arrow_down,
                   color: Color(0xFF4F46E5),
-                  size: 18,
+                  size: 18.sp,
                 ),
               ],
             ),
@@ -68,7 +68,7 @@ class AboutProgramSection extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text(loc.translate('aboutUniversity')),
         content: SingleChildScrollView(
-          child: Text(desc, style: const TextStyle(fontSize: 14, height: 1.5)),
+          child: Text(desc, style: TextStyle(fontSize: 14.sp, height: 1.5)),
         ),
         actions: [
           TextButton(

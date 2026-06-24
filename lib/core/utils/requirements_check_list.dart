@@ -58,29 +58,30 @@ class RequirementsChecklistList extends StatelessWidget {
             ? state.currentUniversity!
             : university;
 
+        final t = AppLocalizations.of(context).translate;
         final items = [
           _ChecklistItem(
-            title: 'Academic Transcripts',
+            title: t('academicTranscripts'),
             column: 'has_transcripts',
             value: uni.hasTranscripts,
           ),
           _ChecklistItem(
-            title: 'Bachelor Certificate',
+            title: t('bachelorCertificate'),
             column: 'has_bachelor_cert',
             value: uni.hasBachelorCert,
           ),
           _ChecklistItem(
-            title: 'SOP / Motivation Letter',
+            title: t('sopMotivationLetter'),
             column: 'has_sop',
             value: uni.hasSop,
           ),
           _ChecklistItem(
-            title: 'CV / Resume',
+            title: t('cvResume'),
             column: 'has_cv',
             value: uni.hasCv,
           ),
           _ChecklistItem(
-            title: 'Language Certificate (IELTS/TOEFL) — Optional',
+            title: t('languageCertOptional'),
             column: 'has_language_cert',
             value: uni.hasLanguageCert,
           ),
@@ -138,10 +139,10 @@ class RequirementsChecklistList extends StatelessWidget {
                           ),
                         ),
                         if (isUploaded)
-                          const Text(
+                          Text(
                             "Document synced from profile ✅",
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 10.sp,
                               color: Color(0xFF10B981),
                             ),
                           ),
@@ -236,8 +237,8 @@ class RequirementsChecklistList extends StatelessWidget {
   ) async {
     await showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -264,8 +265,9 @@ class RequirementsChecklistList extends StatelessWidget {
                     allowedExtensions: ['pdf'],
                   );
                   if (result != null && result.files.single.path != null && context.mounted) {
-                    final file = result.files.single;
-                    if (file.size > 20 * 1024 * 1024) {
+                    final filePath = result.files.single.path!;
+                    final pickedFile = result.files.single;
+                    if (pickedFile.size > 20 * 1024 * 1024) {
                       if (context.mounted) {
                         CustomSnackBar.show(context, message: AppLocalizations.of(context).translate('fileTooLarge'), isError: true);
                       }
@@ -274,7 +276,7 @@ class RequirementsChecklistList extends StatelessWidget {
                     context.read<UniversityDetailsCubit>().uploadApplicationFile(
                       universityId: uniId,
                       columnName: col,
-                      file: File(file.path!),
+                      file: File(filePath),
                     );
                   }
                 },

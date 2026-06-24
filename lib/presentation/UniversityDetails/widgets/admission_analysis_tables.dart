@@ -74,7 +74,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
           children: [
             // 1. الجزء العلوي: تحليل الـ Profile
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
                 'Your Profile Match',
                 style: TextStyle(
@@ -93,8 +93,8 @@ class AdmissionAnalysisTables extends StatelessWidget {
             _buildMetricRowInline('Language Pref', workExpScore),
 
             // صف الـ Overall المجموع
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.h),
               child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
             ),
             _buildMetricRowInline(
@@ -106,7 +106,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
             SizedBox(height: 24.h),
 
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
                 'Requirements Checklist',
                 style: TextStyle(
@@ -141,7 +141,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 90,
+          width: 90.w,
           child: Text(
             title,
             style: TextStyle(

@@ -93,7 +93,7 @@ class MajorStepWidget extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => cubit.updateField(majorName),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      margin: EdgeInsets.symmetric(vertical: 6.h),
                       padding: EdgeInsets.all(18.r),
                       decoration: BoxDecoration(
                         color: isSelected
@@ -129,8 +129,8 @@ class MajorStepWidget extends StatelessWidget {
                             )
                           else
                             Container(
-                              width: 22,
-                              height: 22,
+                              width: 22.r,
+                              height: 22.r,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(

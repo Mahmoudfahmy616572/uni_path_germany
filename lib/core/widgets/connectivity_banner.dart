@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../localization/app_localizations.dart';
 import '../services/connectivity_service.dart';
 
 class ConnectivityBanner extends StatefulWidget {
@@ -81,7 +82,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Text(
-                          _getStatusText(),
+                          _getStatusText(context),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14.sp,
@@ -92,8 +93,8 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
                       if (_status == ConnectionStatus.slow)
                         TextButton(
                           onPressed: () => ConnectivityService().init(),
-                          child: const Text(
-                            'Retry',
+                          child: Text(
+                            AppLocalizations.of(context).translate('retry'),
                             style: TextStyle(color: Colors.white),
                           ),
                         ),
@@ -132,14 +133,18 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
     }
   }
 
-  String _getStatusText() {
+  String _getStatusText(BuildContext context) {
+    String t(String key) {
+      try { return AppLocalizations.of(context).translate(key); } catch (_) {}
+      return '';
+    }
     switch (_status) {
       case ConnectionStatus.disconnected:
-        return 'No internet connection. Some features may not work.';
+        return t('noInternetConnection');
       case ConnectionStatus.slow:
-        return 'Slow connection. Loading may take longer.';
+        return t('slowConnection');
       case ConnectionStatus.connected:
-        return 'Connection restored';
+        return t('connectionRestored');
       default:
         return '';
     }

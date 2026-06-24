@@ -125,13 +125,13 @@ class SearchDropdownsRow extends StatelessWidget {
 
   Widget _buildDropdownContainer(BuildContext context, {required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.symmetric(horizontal: 8.w),
       decoration: BoxDecoration(
         color: context.isDark ? AppColors.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(10.r),
         border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
       ),
-      height: 40,
+      height: 40.h,
       child: Center(child: child),
     );
   }

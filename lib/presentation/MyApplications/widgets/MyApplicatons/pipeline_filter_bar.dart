@@ -30,11 +30,11 @@ class PipelineFilterBar extends StatelessWidget {
     ];
 
     return Container(
-      height: 56,
+      height: 56.h,
       color: context.isDark ? AppColors.darkCardBg : Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         itemCount: filters.length,
         itemBuilder: (context, index) {
           final filter = filters[index];
@@ -42,7 +42,7 @@ class PipelineFilterBar extends StatelessWidget {
           final count = statusCounts[filter['key']] ?? 0;
 
           return Padding(
-            padding: EdgeInsets.only(right: 8),
+            padding: EdgeInsets.only(right: 8.w),
             child: FilterChip(
               label: Text('${filter['label']} $count'),
               selected: isSelected,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
 
 class SocialAuthButton extends StatelessWidget {
@@ -21,25 +20,29 @@ class SocialAuthButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+    final isDark = context.isDark;
+
+    return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 52.h,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          backgroundColor: context.isDark ? AppColors.darkCardBg : Colors.white,
-          side: BorderSide(color: context.isDark ? AppColors.darkBorder : Colors.grey.shade300),
+          backgroundColor: isDark ? const Color(0xFF151C2F) : Colors.white,
+          side: BorderSide(
+            color: isDark ? Colors.transparent : const Color(0xFFE2E8F0),
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(14.r),
           ),
         ),
         onPressed: onPressed,
-        icon: FaIcon(icon, color: iconColor),
+        icon: FaIcon(icon, color: iconColor, size: 20.sp),
         label: Text(
           text,
           style: TextStyle(
-            color: context.isDark ? AppColors.textMain : AppColors.textDark,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
             fontWeight: FontWeight.w500,
+            fontSize: 15.sp,
           ),
         ),
       ),

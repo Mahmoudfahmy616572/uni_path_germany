@@ -16,6 +16,8 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/gamification_service.dart';
+import '../../../core/services/review_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/utils/match_score_calculator.dart';
 import '../../../domain/entities/program_entity.dart';
@@ -86,6 +88,8 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           universityId: universityId,
           programId: programId,
         );
+        GamificationService.incrementStat('universities_saved');
+        ReviewService.registerPositiveAction();
       }
       final savedIds = Set<String>.from(status.savedProgramIds);
       currentStatus ? savedIds.remove(programId) : savedIds.add(programId);
@@ -189,15 +193,6 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           ),
         );
 
-        // Update global profile flags when uploading from the Vault
-        if (universityId == 'global') {
-          final col = columnName.replaceAll('-url', '');
-          await Supabase.instance.client
-              .from('profiles')
-              .update({col: true})
-              .eq('id', Supabase.instance.client.auth.currentUser!.id);
-        }
-
         await Future.delayed(const Duration(milliseconds: 500));
 
         progressMap.remove(columnName);
@@ -274,20 +269,15 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
           isRecommended: recalculated >= 60,
           intakeType: p.intakeType,
           matchScore: recalculated,
+          programUrl: p.programUrl,
         );
       }).toList();
 
       final status = _getCurrentStatus();
-      final savedProgramIds = <String>{};
-
-      for (final program in _fullProgramsList) {
-        if (program.id.isEmpty) continue;
-        final isSaved = await repository.checkIfSaved(
-          universityId,
-          programId: program.id,
-        );
-        if (isSaved) savedProgramIds.add(program.id);
-      }
+      final savedProgramIds = await repository.getSavedProgramIds(
+        user.id,
+        universityId,
+      );
 
       final updatedUni = status.currentUniversity?.copyWith(
         hasTranscripts: profile['has_transcripts'],
@@ -402,7 +392,9 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
         submittedAt: submittedAt,
         autoTrack: autoTrack,
       );
-    } catch (_) {}  // silently fail; portal tracking is non-critical
+    } catch (e) {
+      log.e('updateApplicationPortal error: $e');
+    }
   }
 
   Future<bool> _urlExists(String url) async {
@@ -410,10 +402,10 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
     try {
       final uri = Uri.parse(url);
       final req = await client.headUrl(uri);
-      req.followRedirects = false;
       final response = await req.close();
-      return response.statusCode == 200;
-    } catch (_) {
+      return response.statusCode >= 200 && response.statusCode < 400;
+    } catch (e) {
+      log.e('_urlExists error for $url: $e');
       return false;
     } finally {
       client.close(force: true);

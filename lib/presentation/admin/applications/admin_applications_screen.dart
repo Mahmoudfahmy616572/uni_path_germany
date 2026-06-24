@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 import '../../../core/widgets/webview_screen.dart';
@@ -126,49 +127,49 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
               TextField(
                 controller: TextEditingController(text: existing['user_id']?.toString() ?? ''),
                 decoration: const InputDecoration(labelText: 'User ID', border: OutlineInputBorder()),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14.sp),
                 readOnly: true,
                 enabled: false,
               ),
-              const SizedBox(height: 12),
-              TextField(controller: universityNameCtrl, decoration: const InputDecoration(labelText: 'University Name', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: programNameCtrl, decoration: const InputDecoration(labelText: 'Program Name', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: universityIdCtrl, decoration: const InputDecoration(labelText: 'University ID', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: programIdCtrl, decoration: const InputDecoration(labelText: 'Program ID', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
+              TextField(controller: universityNameCtrl, decoration: const InputDecoration(labelText: 'University Name', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: programNameCtrl, decoration: const InputDecoration(labelText: 'Program Name', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: universityIdCtrl, decoration: const InputDecoration(labelText: 'University ID', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: programIdCtrl, decoration: const InputDecoration(labelText: 'Program ID', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: status,
                 decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => status = v ?? status,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
-              const SizedBox(height: 12),
-              TextField(controller: portalUrlCtrl, decoration: const InputDecoration(labelText: 'Portal URL', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
+              TextField(controller: portalUrlCtrl, decoration: const InputDecoration(labelText: 'Portal URL', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: portalStatus,
                 decoration: const InputDecoration(labelText: 'Portal Status', border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _portalStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => portalStatus = v ?? portalStatus,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: paymentStatus,
                 decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _paymentStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => paymentStatus = v ?? paymentStatus,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
-              const SizedBox(height: 12),
-              TextField(controller: notesCtrl, decoration: const InputDecoration(labelText: 'Notes', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14), maxLines: 3),
+              SizedBox(height: 12.h),
+              TextField(controller: notesCtrl, decoration: const InputDecoration(labelText: 'Notes', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp), maxLines: 3),
             ],
           ),
         ),
@@ -265,10 +266,10 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _editDialog(a)),
+                    IconButton(icon: Icon(Icons.edit_outlined, size: 20.sp), onPressed: () => _editDialog(a)),
                     if (a['portal_url'] != null && a['portal_url'].toString().isNotEmpty)
-                      IconButton(icon: const Icon(Icons.open_in_new, size: 20), onPressed: () => _openPortal(a['portal_url'].toString())),
-                    IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => _delete(a['id']?.toString() ?? '')),
+                      IconButton(icon: Icon(Icons.open_in_new, size: 20.sp), onPressed: () => _openPortal(a['portal_url'].toString())),
+                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp), onPressed: () => _delete(a['id']?.toString() ?? '')),
                   ],
                 )),
               ])).toList(),
@@ -276,7 +277,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
           ),
           if (_hasMore)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8.h),
               child: _loadingMore
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
@@ -321,34 +322,34 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
 
   Widget _statusBadge(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: _statusColor(status).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(6.r),
       ),
-      child: Text(status, style: TextStyle(fontSize: 11, color: _statusColor(status), fontWeight: FontWeight.w600)),
+      child: Text(status, style: TextStyle(fontSize: 11.sp, color: _statusColor(status), fontWeight: FontWeight.w600)),
     );
   }
 
   Widget _portalBadge(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: _portalStatusColor(status).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(6.r),
       ),
-      child: Text(status, style: TextStyle(fontSize: 11, color: _portalStatusColor(status), fontWeight: FontWeight.w600)),
+      child: Text(status, style: TextStyle(fontSize: 11.sp, color: _portalStatusColor(status), fontWeight: FontWeight.w600)),
     );
   }
 
   Widget _paymentBadge(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: _paymentStatusColor(status).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(6.r),
       ),
-      child: Text(status, style: TextStyle(fontSize: 11, color: _paymentStatusColor(status), fontWeight: FontWeight.w600)),
+      child: Text(status, style: TextStyle(fontSize: 11.sp, color: _paymentStatusColor(status), fontWeight: FontWeight.w600)),
     );
   }
 
@@ -367,7 +368,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -379,8 +380,8 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.assignment_outlined, size: 48, color: Colors.grey[300]),
-                      const SizedBox(height: 8),
+                      Icon(Icons.assignment_outlined, size: 48.sp, color: Colors.grey[300]),
+                      SizedBox(height: 8.h),
                       Text('No applications yet', style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
@@ -393,12 +394,12 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                     return RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16.r),
                         itemCount: _applications.length + (_hasMore ? 1 : 0),
                         itemBuilder: (context, i) {
                           if (i == _applications.length) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              padding: EdgeInsets.symmetric(vertical: 8.h),
                               child: Center(
                                 child: _loadingMore
                                     ? const CircularProgressIndicator()
@@ -413,67 +414,67 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                           final a = _applications[i];
                           final userId = a['user_id']?.toString() ?? '';
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
+                            margin: EdgeInsets.only(bottom: 8.h),
                             child: ExpansionTile(
-                              title: Text(userId.length >= 8 ? userId.substring(0, 8) : userId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                              title: Text(userId.length >= 8 ? userId.substring(0, 8) : userId, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp)),
                               subtitle: Text(a['university_name']?.toString() ?? ''),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                                     decoration: BoxDecoration(
                                       color: _statusColor(a['status']?.toString() ?? '').withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(6.r),
                                     ),
-                                    child: Text(a['status']?.toString() ?? 'saved', style: TextStyle(fontSize: 11, color: _statusColor(a['status']?.toString() ?? ''), fontWeight: FontWeight.w600)),
+                                    child: Text(a['status']?.toString() ?? 'saved', style: TextStyle(fontSize: 11.sp, color: _statusColor(a['status']?.toString() ?? ''), fontWeight: FontWeight.w600)),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 20),
+                                    icon: Icon(Icons.edit_outlined, size: 20.sp),
                                     onPressed: () => _editDialog(a),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                    icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp),
                                     onPressed: () => _delete(a['id']?.toString() ?? ''),
                                   ),
                                 ],
                               ),
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('User: $userId', style: const TextStyle(fontSize: 13)),
-                                      const SizedBox(height: 8),
-                                      Text('Program: ${a['program_name']?.toString() ?? ''}', style: const TextStyle(fontSize: 13)),
-                                      const SizedBox(height: 8),
+                                      Text('User: $userId', style: TextStyle(fontSize: 13.sp)),
+                                      SizedBox(height: 8.h),
+                                      Text('Program: ${a['program_name']?.toString() ?? ''}', style: TextStyle(fontSize: 13.sp)),
+                                      SizedBox(height: 8.h),
                                       Row(
                                         children: [
                                           _portalBadge(a['portal_status']?.toString() ?? 'pending'),
-                                          const SizedBox(width: 8),
+                                          SizedBox(width: 8.w),
                                           _paymentBadge(a['payment_status']?.toString() ?? 'unpaid'),
                                         ],
                                       ),
                                       if (a['portal_url'] != null && a['portal_url'].toString().isNotEmpty) ...[
-                                        const SizedBox(height: 8),
+                                        SizedBox(height: 8.h),
                                         InkWell(
                                           onTap: () => _openPortal(a['portal_url'].toString()),
-                                          child: Text('Portal: ${a['portal_url']}', style: const TextStyle(fontSize: 12, color: Color(0xFF6366F1), decoration: TextDecoration.underline)),
+                                          child: Text('Portal: ${a['portal_url']}', style: TextStyle(fontSize: 12.sp, color: Color(0xFF6366F1), decoration: TextDecoration.underline)),
                                         ),
                                       ],
-                                      const SizedBox(height: 8),
-                                      Text('Notes: ${a['notes']?.toString() ?? '—'}', style: const TextStyle(fontSize: 13)),
-                                      const SizedBox(height: 12),
+                                      SizedBox(height: 8.h),
+                                      Text('Notes: ${a['notes']?.toString() ?? '—'}', style: TextStyle(fontSize: 13.sp)),
+                                      SizedBox(height: 12.h),
                                       DropdownButtonFormField<String>(
                                         initialValue: a['status']?.toString(),
-                                        decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                        decoration: InputDecoration(labelText: 'Status', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h)),
                                         dropdownColor: const Color(0xFF1E293B),
                                         items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                                         onChanged: (v) {
                                           if (v != null) _updateStatus(a['id']?.toString() ?? '', v);
                                         },
-                                        style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                                        style: TextStyle(fontSize: 13.sp, color: Color(0xFF0F172A)),
                                       ),
                                     ],
                                   ),

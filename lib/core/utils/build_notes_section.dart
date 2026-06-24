@@ -64,9 +64,9 @@ class _BuildNotesSectionState extends State<BuildNotesSection> {
               ),
             ),
             _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                ? SizedBox(
+                    width: 20.r,
+                    height: 20.r,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: Color(0xFF4F46E5),

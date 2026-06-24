@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../utils/logger.dart';
 import 'auth_state_enum.dart';
 
 class AuthService {
@@ -24,7 +25,8 @@ class AuthService {
     try {
       final user = client.auth.currentUser;
       return user != null;
-    } catch (_) {
+    } catch (e) {
+      log.e('hasValidSession error: $e');
       return false;
     }
   }
@@ -45,7 +47,8 @@ class AuthService {
           profile['degree_level'].toString().isNotEmpty &&
           profile['intake'] != null &&
           profile['intake'].toString().isNotEmpty;
-    } catch (_) {
+    } catch (e) {
+      log.e('isProfileComplete error: $e');
       return false;
     }
   }

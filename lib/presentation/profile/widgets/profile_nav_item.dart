@@ -26,7 +26,7 @@ class ProfileNavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? activeColor : inactiveColor, size: 26),
+          Icon(icon, color: isActive ? activeColor : inactiveColor, size: 26.sp),
           SizedBox(height: 4.h),
           Text(
             label,

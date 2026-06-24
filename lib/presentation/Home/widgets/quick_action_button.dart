@@ -26,8 +26,8 @@ class QuickActionButton extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                blurRadius: 8.r,
+                offset: Offset(0, 3.r),
               ),
             ],
           ),
@@ -50,8 +50,8 @@ class QuickActionButton extends StatelessWidget {
                 0xFF5A67D8,
               ).withValues(alpha: 0.1), // لون الهالة وقت اللمس
               child: SizedBox(
-                width: 60,
-                height: 60,
+                width: 60.r,
+                height: 60.r,
                 child: Icon(icon, color: const Color(0xFF5A67D8), size: 24),
               ),
             ),

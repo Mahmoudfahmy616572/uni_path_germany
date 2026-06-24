@@ -116,7 +116,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
           IconButton(
             icon: _syncing
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.sync, size: 20),
+                : Icon(Icons.sync, size: 20.sp),
             onPressed: _syncing ? null : _triggerSync,
             tooltip: 'Sync now',
           ),
@@ -124,13 +124,19 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
       ),
       body: CurtainDrop(
         index: 0,
-        child: ListView(
-          padding: EdgeInsets.all(16.r),
-          children: [
-            _buildConnectedAccounts(isDark),
-            SizedBox(height: 24.h),
-            _buildRecentLogs(isDark),
-          ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await _load();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(16.r),
+            children: [
+              _buildConnectedAccounts(isDark),
+              SizedBox(height: 24.h),
+              _buildRecentLogs(isDark),
+            ],
+          ),
         ),
       ),
     );
@@ -149,7 +155,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.mail_outline, size: 18),
+              Icon(Icons.mail_outline, size: 18.sp),
               SizedBox(width: 8.w),
               Text('Connected Accounts', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
             ],
@@ -159,8 +165,16 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             const Center(child: CircularProgressIndicator())
           else if (_connections.isEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              child: Text('No email accounts connected. Connect Gmail or Outlook to auto-detect application status.', style: TextStyle(fontSize: 13.sp, color: Colors.grey)),
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: Column(
+                children: [
+                  Icon(Icons.mail_outline, size: 40.sp, color: Colors.grey[300]),
+                  SizedBox(height: 12.h),
+                  Text('No email accounts connected', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                  SizedBox(height: 4.h),
+                  Text('Connect Gmail or Outlook to auto-detect\napplication status from your inbox.', style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
+                ],
+              ),
             )
           else
             ..._connections.map((c) => _connectionTile(c, isDark)),
@@ -170,7 +184,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _connectEmail('gmail'),
-                  icon: const Icon(Icons.email, size: 16),
+                  icon: Icon(Icons.email, size: 16.sp),
                   label: const Text('Connect Gmail'),
                 ),
               ),
@@ -178,7 +192,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _connectEmail('outlook'),
-                  icon: const Icon(Icons.email, size: 16),
+                  icon: Icon(Icons.email, size: 16.sp),
                   label: const Text('Connect Outlook'),
                 ),
               ),
@@ -194,8 +208,8 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
       margin: EdgeInsets.only(bottom: 8.h),
       child: ListTile(
         leading: Icon(c.provider == 'gmail' ? Icons.email : Icons.email_outlined, color: const Color(0xFF6366F1)),
-        title: Text(c.email, style: const TextStyle(fontSize: 13)),
-        subtitle: Text(c.provider.toUpperCase(), style: TextStyle(fontSize: 11, color: Colors.grey)),
+        title: Text(c.email, style: TextStyle(fontSize: 13.sp)),
+        subtitle: Text(c.provider.toUpperCase(), style: TextStyle(fontSize: 11.sp, color: Colors.grey)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -204,7 +218,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
               onChanged: (v) => _toggleAutoSync(c.id, v),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp),
               onPressed: () => _deleteConnection(c.id),
             ),
           ],
@@ -226,7 +240,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.history, size: 18),
+              Icon(Icons.history, size: 18.sp),
               SizedBox(width: 8.w),
               Text('Recent Detections', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
             ],
@@ -236,8 +250,16 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             const Center(child: CircularProgressIndicator())
           else if (_logs.isEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.h),
-              child: Text('No status changes detected yet. Sync to check for updates.', style: TextStyle(fontSize: 13.sp, color: Colors.grey)),
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: Column(
+                children: [
+                  Icon(Icons.inbox_outlined, size: 40.sp, color: Colors.grey[300]),
+                  SizedBox(height: 12.h),
+                  Text('No status changes yet', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                  SizedBox(height: 4.h),
+                  Text('Sync your email to check for\napplication status updates.', style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
+                ],
+              ),
             )
           else
             ..._logs.map((l) => _logTile(l, isDark)),
@@ -252,11 +274,11 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
       contentPadding: EdgeInsets.zero,
       leading: Icon(
         l.detectedStatus != null ? Icons.check_circle : Icons.email,
-        size: 20,
+        size: 20.sp,
         color: l.applied ? const Color(0xFF10B981) : Colors.grey,
       ),
-      title: Text(l.emailSubject ?? 'Unknown', style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(l.detectedStatus != null ? 'Detected: ${l.detectedStatus}' : 'No status detected', style: TextStyle(fontSize: 11, color: Colors.grey)),
+      title: Text(l.emailSubject ?? 'Unknown', style: TextStyle(fontSize: 13.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(l.detectedStatus != null ? 'Detected: ${l.detectedStatus}' : 'No status detected', style: TextStyle(fontSize: 11.sp, color: Colors.grey)),
     );
   }
 }

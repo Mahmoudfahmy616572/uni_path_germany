@@ -37,8 +37,8 @@ class MatchScoreCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 15.r,
+            offset: Offset(0, 8.r),
           ),
         ],
       ),

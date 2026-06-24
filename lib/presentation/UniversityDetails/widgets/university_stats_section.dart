@@ -80,7 +80,7 @@ class UniversityStatsSection extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(height: 30),
+          Divider(height: 30.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -97,7 +97,7 @@ class UniversityStatsSection extends StatelessWidget {
   Widget _buildStatItem(IconData icon, String value, String label) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF64748B)),
+        Icon(icon, size: 18.sp, color: const Color(0xFF64748B)),
         SizedBox(width: 6.w),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

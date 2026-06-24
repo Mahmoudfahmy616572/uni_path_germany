@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AnimatedScoreText extends StatelessWidget {
   final int score;
@@ -42,8 +43,8 @@ class AnimatedCircularScore extends StatelessWidget {
             child: Transform.rotate(
               angle: pi / 4,
               child: Container(
-                width: 8,
-                height: 8,
+                width: 8.r,
+                height: 8.r,
                 color: Colors.white,
               ),
             ),

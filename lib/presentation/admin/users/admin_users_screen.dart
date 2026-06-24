@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
@@ -145,17 +146,17 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()), style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 12),
+              TextField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
+              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: role,
                 decoration: const InputDecoration(labelText: 'Role', border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: ['user', 'admin'].map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => role = v ?? role,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
             ],
           ),
@@ -234,21 +235,21 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 DataCell(Text(u['email']?.toString() ?? '')),
                 DataCell(u['role'] == 'admin'
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('Admin', style: TextStyle(fontSize: 11, color: Colors.amber)),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6.r)),
+                        child: Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
                       )
                     : const Text('user')),
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: Icon(u['role'] == 'admin' ? Icons.shield : Icons.shield_outlined, color: u['role'] == 'admin' ? Colors.amber : Colors.grey, size: 20),
+                      icon:                       Icon(u['role'] == 'admin' ? Icons.shield : Icons.shield_outlined, color: u['role'] == 'admin' ? Colors.amber : Colors.grey, size: 20.sp),
                       tooltip: u['role'] == 'admin' ? 'Revoke admin' : 'Make admin',
                       onPressed: () => _toggleAdmin(u),
                     ),
-                    IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _editDialog(u)),
-                    IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => _deleteUser(u['id']?.toString() ?? '')),
+                    IconButton(icon: Icon(Icons.edit_outlined, size: 20.sp), onPressed: () => _editDialog(u)),
+                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp), onPressed: () => _deleteUser(u['id']?.toString() ?? '')),
                   ],
                 )),
               ])).toList(),
@@ -256,7 +257,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
           if (_hasMore && _searchCtrl.text.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8.h),
               child: _loadingMore
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
@@ -279,7 +280,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: Column(
@@ -288,22 +289,22 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             index: 2,
             child: Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
                   hintText: 'Search by name or email...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  prefixIcon: Icon(Icons.search, size: 20.sp),
                   suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
+                    icon: Icon(Icons.clear, size: 18.sp),
                     onPressed: () { _searchCtrl.clear(); _filter(''); },
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                 ),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14.sp),
                 onChanged: _filter,
               ),
             ),
@@ -318,8 +319,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.people_outline, size: 48, color: Colors.grey[300]),
-                            const SizedBox(height: 8),
+                            Icon(Icons.people_outline, size: 48.sp, color: Colors.grey[300]),
+                            SizedBox(height: 8.h),
                             Text(_searchCtrl.text.isEmpty ? 'No users yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
                           ],
                         ),
@@ -332,12 +333,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           return RefreshIndicator(
                             onRefresh: _loadUsers,
                             child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                              padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
                               itemCount: _filtered.length + (_hasMore && _searchCtrl.text.isEmpty ? 1 : 0),
                               itemBuilder: (context, i) {
                                 if (i == _filtered.length) {
                                   return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding: EdgeInsets.symmetric(vertical: 8.h),
                                     child: Center(
                                       child: _loadingMore
                                           ? const CircularProgressIndicator()
@@ -351,7 +352,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                 }
                                 final u = _filtered[i];
                                 return Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
+                                    margin: EdgeInsets.only(bottom: 8.h),
                                   child: ListTile(
                                     leading: CircleAvatar(
                                       backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
@@ -367,25 +368,25 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                       children: [
                                         if (u['role'] == 'admin')
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                                            child: const Text('Admin', style: TextStyle(fontSize: 11, color: Colors.amber)),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6.r)),
+                        child: Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
                                           ),
                                         IconButton(
                                           icon: Icon(
                                             u['role'] == 'admin' ? Icons.shield : Icons.shield_outlined,
                                             color: u['role'] == 'admin' ? Colors.amber : Colors.grey,
-                                            size: 20,
+                                            size: 20.sp,
                                           ),
                                           tooltip: u['role'] == 'admin' ? 'Revoke admin' : 'Make admin',
                                           onPressed: () => _toggleAdmin(u),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.edit_outlined, size: 20),
+                                          icon: Icon(Icons.edit_outlined, size: 20.sp),
                                           onPressed: () => _editDialog(u),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                          icon: Icon(Icons.delete_outline, color: Colors.red, size: 20.sp),
                                           onPressed: () => _deleteUser(u['id']?.toString() ?? ''),
                                         ),
                                       ],

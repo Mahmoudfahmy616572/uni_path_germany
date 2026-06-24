@@ -118,7 +118,7 @@ class QuickInfoMetrics extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(4.r),

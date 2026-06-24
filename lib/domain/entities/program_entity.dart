@@ -15,6 +15,7 @@ class ProgramEntity {
   final bool isRecommended;
   final String intakeType;
   final int matchScore;
+  final String? programUrl;
 
   ProgramEntity({
     required this.id,
@@ -33,5 +34,6 @@ class ProgramEntity {
     this.isRecommended = true,
     this.intakeType = 'Winter',
     this.matchScore = 0,
+    this.programUrl,
   });
 }

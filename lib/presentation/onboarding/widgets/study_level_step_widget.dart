@@ -104,7 +104,7 @@ class StudyLevelStepWidget extends StatelessWidget {
                     onTap: () =>
                         cubit.updateStudyLevel(level['title'] as String),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      margin: EdgeInsets.symmetric(vertical: 8.h),
                       padding: EdgeInsets.all(18.r),
                       decoration: BoxDecoration(
                         color: isSelected

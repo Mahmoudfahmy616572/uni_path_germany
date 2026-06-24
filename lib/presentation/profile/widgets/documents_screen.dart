@@ -4,12 +4,14 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/language_provider.dart';
 import '../../../core/services/ai/ai_usage_service.dart';
 import '../../../core/services/ai/gemini_service.dart';
+import '../../../core/services/review_service.dart';
 import '../../../core/services/ai/review_cache_service.dart';
 import '../../../core/services/services_locator.dart';
 import '../../../core/themes/app_colors.dart';
@@ -21,6 +23,28 @@ import '../../UniversityDetails/cubit/university_details_cubit.dart';
 import '../../UniversityDetails/cubit/university_details_state.dart';
 import '../../ai/widgets/ai_document_generator.dart';
 import '../../ai/widgets/ai_document_review_sheet.dart';
+
+String _buildBackground(Map<String, dynamic>? p) {
+  if (p == null) return 'Not provided';
+  final parts = <String>[];
+  if (p['gpa'] != null) parts.add('GPA: ${p['gpa']}');
+  if (p['target_major'] != null) parts.add('Major: ${p['target_major']}');
+  if (p['target_degree'] != null) parts.add('Degree: ${p['target_degree']}');
+  if (p['has_ielts'] == true && p['ielts_score'] != null) {
+    parts.add('IELTS: ${p['ielts_score']}');
+  }
+  if (p['has_toefl'] == true && p['toefl_score'] != null) {
+    parts.add('TOEFL: ${p['toefl_score']}');
+  }
+  if (p['has_moi'] == true && p['moi_language'] != null) {
+    parts.add('MOI: ${p['moi_language']}');
+  }
+  if (p['country'] != null) parts.add('Country: ${p['country']}');
+  if (p['target_country'] != null) {
+    parts.add('Target: ${p['target_country']}');
+  }
+  return parts.isNotEmpty ? parts.join(', ') : 'Not provided';
+}
 
 String? _toUrlOrNull(dynamic value) {
   if (value is String && value.startsWith('http')) return value;
@@ -52,7 +76,6 @@ class DocumentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🎯 السحر هنا: تغليف الشاشة بالكيوبيت المسؤول عن الرفع لضمان عدم حدوث الخطأ الأحمر
     return BlocProvider(
       create: (context) => sl<UniversityDetailsCubit>()
         ..initializeUniversityData(
@@ -60,47 +83,344 @@ class DocumentsScreen extends StatelessWidget {
           programs: [],
           university: userFiles,
         ),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            AppLocalizations.of(context).translate('uploadDocuments'),
-            style: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.bold),
+      child: _AutoReviewWrapper(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(
+              AppLocalizations.of(context).translate('uploadDocuments'),
+              style: const TextStyle(
+                  color: Colors.black, fontWeight: FontWeight.bold),
+            ),
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.black),
           ),
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
-        ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(24.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppLocalizations.of(context).translate('uploadDocuments'),
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context).translate('uploadDescription'),
-                style: const TextStyle(color: Colors.grey),
-              ),
-              SizedBox(height: 24.h),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(24.r),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(context).translate('uploadDocuments'),
+                  style:
+                      TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  AppLocalizations.of(context).translate('uploadDescription'),
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                SizedBox(height: 24.h),
 
-              _AiDocReviewButton(),
-              SizedBox(height: 12.h),
-              _AiGenerateButton(),
-              SizedBox(height: 16.h),
+                _AiDocReviewButton(),
+                SizedBox(height: 12.h),
+                _AiGenerateButton(),
+                SizedBox(height: 16.h),
 
-              // الآن سيجد هذا الويدجيت الـ Cubit فوقه مباشرة ولن يحدث Error
-              RequirementsChecklistList(university: userFiles),
-            ],
+                RequirementsChecklistList(university: userFiles),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+class _AutoReviewWrapper extends StatefulWidget {
+  final Widget child;
+  const _AutoReviewWrapper({required this.child});
+
+  @override
+  State<_AutoReviewWrapper> createState() => _AutoReviewWrapperState();
+}
+
+class _AutoReviewWrapperState extends State<_AutoReviewWrapper> {
+  bool _isAutoReviewing = false;
+
+  String get _langCode => sl<LanguageProvider>().locale.languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<UniversityDetailsCubit, UniversityDetailsState>(
+      listenWhen: (prev, current) =>
+          current is UniversitySaveStatus &&
+          current.fileUploadProgress.values.any((v) => v == 1.0) &&
+          !_isAutoReviewing,
+      listener: (ctx, state) {
+        if (state is! UniversitySaveStatus || _isAutoReviewing) return;
+        final progress = state.fileUploadProgress;
+        final profile = state.studentProfile;
+        if (profile == null) return;
+
+        for (final entry in progress.entries) {
+          if (entry.value == 1.0) {
+            final colName = entry.key;
+            _isAutoReviewing = true;
+            _autoReviewAfterUpdate(ctx, colName, profile);
+            break;
+          }
+        }
+      },
+      child: widget.child,
+    );
+  }
+
+  Future<void> _autoReviewAfterUpdate(
+    BuildContext context,
+    String colName,
+    Map<String, dynamic> profile,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+
+    final cubit = context.read<UniversityDetailsCubit>();
+    final currentState = cubit.state;
+    if (currentState is! UniversitySaveStatus) return;
+
+    final uni = currentState.currentUniversity;
+    if (uni == null) return;
+
+    final url = _toUrlOrNull(_rawDocValue(uni, colName));
+    if (url == null) return;
+
+    _autoReviewSingleDocument(context, colName, url, profile);
+  }
+
+  Future<void> _autoReviewSingleDocument(
+    BuildContext context,
+    String colName,
+    String url,
+    Map<String, dynamic> studentProfile,
+  ) async {
+    final local = AppLocalizations.of(context);
+    final usageService = sl<AiUsageService>();
+    final gemini = sl<GeminiService>();
+    final cacheService = sl<ReviewCacheService>();
+
+    final canUse = await usageService.canUseReview();
+    if (!canUse) {
+      if (mounted) context.push('/premium');
+      return;
+    }
+
+    final docType = _docTypeFromCol(colName);
+    final title = _titleFromCol(colName);
+
+    final cached = await cacheService.getCachedReview(
+      docType: docType,
+      currentUrl: url,
+    );
+    if (cached != null) {
+      if (mounted) setState(() => _isAutoReviewing = false);
+      return;
+    }
+
+    String stepLabel = '';
+    void Function(void Function()) updateSheet = (_) {};
+
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          updateSheet = setSheetState;
+          return _ReviewProgressSheet(stepLabel: stepLabel);
+        },
+      ),
+    );
+
+    try {
+      stepLabel = '${local.translate('downloadLabel')} — $title';
+      updateSheet(() {});
+
+      Response? response;
+      const maxDownloadRetries = 3;
+      for (int attempt = 0; attempt < maxDownloadRetries; attempt++) {
+        try {
+          response = await Dio(
+            BaseOptions(responseType: ResponseType.bytes),
+          ).get(url);
+          break;
+        } on DioException catch (e) {
+          final isTransient = e.type == DioExceptionType.badResponse &&
+              (e.response?.statusCode == 429 ||
+                  e.response?.statusCode == 502 ||
+                  e.response?.statusCode == 503);
+          if (attempt < maxDownloadRetries - 1 && isTransient) {
+            await Future.delayed(Duration(seconds: 2 * (attempt + 1)));
+            continue;
+          }
+          rethrow;
+        }
+      }
+
+      if (response == null || response.statusCode != 200) {
+        throw Exception(local.translate('couldNotDownload'));
+      }
+
+      stepLabel = '${local.translate('analyzeLabel')} — $title';
+      updateSheet(() {});
+
+      final mimeType =
+          response.headers.value('content-type') ?? 'application/pdf';
+      final reviews = await gemini.reviewDocumentWithPdf(
+        studentProfile: studentProfile,
+        programName: 'German University Application',
+        docType: docType,
+        title: title,
+        pdfBytes: Uint8List.fromList(response.data as List<int>),
+        mimeType: mimeType,
+        languageCode: _langCode,
+      );
+
+      if (GeminiService.hasValidFeedback(reviews)) {
+        await usageService.recordUsage();
+      }
+
+      await cacheService.storeReview(
+        docType: docType,
+        url: url,
+        reviews: reviews,
+      );
+
+      final reviewMap = <String, dynamic>{
+        'doc_type': docType,
+        'title': title,
+        'status': 'uploaded',
+        'tips': reviews
+            .map((r) => r['suggestion']?.toString() ?? '')
+            .toList(),
+        'importance': reviews.isNotEmpty
+            ? reviews
+                .map((r) => r['severity']?.toString() ?? 'medium')
+                .fold<String>('medium', (a, b) => b == 'high' ? 'high' : a)
+            : 'medium',
+        '_program_name': 'German University Application',
+      };
+
+      if (mounted) {
+        Navigator.pop(context);
+        _showReviewSheet(context, [reviewMap]);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              local.translate('aiFailed').replaceAll('{error}', e.toString()),
+            ),
+            backgroundColor: const Color(0xFFF59E0B),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+    if (mounted) setState(() => _isAutoReviewing = false);
+  }
+
+  void _showReviewSheet(
+      BuildContext context, List<Map<String, dynamic>> reviews,
+      {String? error}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AiDocumentReviewSheet(
+        reviews: reviews,
+        error: error,
+        onRetry: error != null
+            ? () {
+                Navigator.pop(context);
+                _autoReviewSingleDocument(
+                  context,
+                  'has_transcripts',
+                  '',
+                  {},
+                );
+              }
+            : null,
+        onGenerateDocument: (ctx, docType, programName) {
+          final cubit = context.read<UniversityDetailsCubit>();
+          final s = cubit.state;
+          final studentProfile =
+              s is UniversitySaveStatus ? s.studentProfile : null;
+          Navigator.pop(ctx);
+          _openGenerator(context, docType, programName, studentProfile);
+        },
+      ),
+    );
+  }
+
+  void _openGenerator(BuildContext ctx, String docType, String programName,
+      Map<String, dynamic>? studentProfile) {
+    final colName = docType == 'cv' ? 'has_cv' : 'has_sop';
+    final cubit = context.read<UniversityDetailsCubit>();
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => GenerateSheet(
+        programName: programName.isNotEmpty
+            ? programName
+            : 'German University Application',
+        universityName: '',
+        degreeType: 'Master',
+        major: studentProfile?['target_major']?.toString() ?? '',
+        studentName: studentProfile?['username']?.toString() ?? '',
+        studentBackground: _buildBackground(studentProfile),
+        transcriptsUrl: _toUrlOrNull(studentProfile?['has_transcripts']),
+        bachelorCertUrl: _toUrlOrNull(studentProfile?['has_bachelor_cert']),
+        cvUrl: _toUrlOrNull(studentProfile?['has_cv']),
+        onReplaceFile: (pdfFile, _) {
+          Navigator.pop(ctx);
+          cubit.uploadApplicationFile(
+            universityId: 'global',
+            columnName: colName,
+            file: pdfFile,
+          );
+        },
+      ),
+    );
+  }
+}
+
+String _docTypeFromCol(String col) {
+  switch (col) {
+    case 'has_transcripts':
+      return 'transcripts';
+    case 'has_bachelor_cert':
+      return 'bachelor_cert';
+    case 'has_sop':
+      return 'sop';
+    case 'has_cv':
+      return 'cv';
+    case 'has_language_cert':
+      return 'language_cert';
+    default:
+      return col;
+  }
+}
+
+String _titleFromCol(String col) {
+  switch (col) {
+    case 'has_transcripts':
+      return 'Academic Transcripts';
+    case 'has_bachelor_cert':
+      return 'Bachelor Certificate';
+    case 'has_sop':
+      return 'SOP / Motivation Letter';
+    case 'has_cv':
+      return 'CV / Resume';
+    case 'has_language_cert':
+      return 'Language Certificate';
+    default:
+      return col;
+  }
+}
+
 
 class _AiDocReviewButton extends StatefulWidget {
   @override
@@ -128,22 +448,12 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
   Future<void> _reviewDocuments(BuildContext context) async {
     final local = AppLocalizations.of(context);
-    final canUse = await _usageService.canUseAi();
+    final canUse = await _usageService.canUseReview();
     if (!canUse) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                AppLocalizations.of(context).translate('monthlyLimitReached')),
-            backgroundColor: const Color(0xFFF59E0B),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) context.push('/premium');
       return;
     }
 
-    // التحقق من وجود ملفات مرفوعة
     final uniForCheck = context.read<UniversityDetailsCubit>().state;
     final currentUni = uniForCheck is UniversitySaveStatus
         ? uniForCheck.currentUniversity
@@ -229,7 +539,6 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
         final String? url = _toUrlOrNull(_rawDocValue(uni, col));
         if (url != null) {
-          // Check cache first — if file URL hasn't changed, reuse old review
           final cached = await _cacheService.getCachedReview(
             docType: docType,
             currentUrl: url,
@@ -261,7 +570,6 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
                 '${local.translate('downloadLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
-            // Retry up to 3 times for transient server errors (429, 502, 503)
             Response? response;
             const maxDownloadRetries = 3;
             for (int attempt = 0; attempt < maxDownloadRetries; attempt++) {
@@ -305,7 +613,6 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
                 '${local.translate('analyzeLabel')} ${i + 1}/${docConfigs.length} — $title';
             updateSheet(() {});
 
-            // Delay between docs to avoid hitting Gemini rate limit (429)
             if (i > 0) await Future.delayed(const Duration(seconds: 2));
 
             final mimeType =
@@ -396,6 +703,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
 
       if (validReviewCount > 0) {
         await _usageService.recordUsage();
+        ReviewService.registerPositiveAction();
       }
       await _loadRemaining();
 
@@ -428,11 +736,12 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
               }
             : null,
         onGenerateDocument: (ctx, docType, programName) {
-          final state = ctx.read<UniversityDetailsCubit>().state;
+          final cubit = context.read<UniversityDetailsCubit>();
+          final s = cubit.state;
           final studentProfile =
-              state is UniversitySaveStatus ? state.studentProfile : null;
+              s is UniversitySaveStatus ? s.studentProfile : null;
           Navigator.pop(ctx);
-          _openGenerator(ctx, docType, programName, studentProfile);
+          _openGenerator(context, docType, programName, studentProfile);
         },
       ),
     );
@@ -452,8 +761,10 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         degreeType: 'Master',
         major: studentProfile?['target_major']?.toString() ?? '',
         studentName: studentProfile?['username']?.toString() ?? '',
-        studentBackground:
-            'GPA: ${studentProfile?['gpa'] ?? 'N/A'}, Major: ${studentProfile?['target_major'] ?? 'N/A'}',
+        studentBackground: _buildBackground(studentProfile),
+        transcriptsUrl: _toUrlOrNull(studentProfile?['has_transcripts']),
+        bachelorCertUrl: _toUrlOrNull(studentProfile?['has_bachelor_cert']),
+        cvUrl: _toUrlOrNull(studentProfile?['has_cv']),
       ),
     );
   }
@@ -498,9 +809,6 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// _AiGenerateButton — CV/SOP generation
-// ─────────────────────────────────────────────────────────
 class _AiGenerateButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -521,14 +829,16 @@ class _AiGenerateButton extends StatelessWidget {
               degreeType: 'Master',
               major: profile?['target_major']?.toString() ?? '',
               studentName: profile?['username']?.toString() ?? '',
-              studentBackground:
-                  'GPA: ${profile?['gpa'] ?? 'N/A'}, Major: ${profile?['target_major'] ?? 'N/A'}',
+              studentBackground: _buildBackground(profile),
+              transcriptsUrl: _toUrlOrNull(profile?['has_transcripts']),
+              bachelorCertUrl: _toUrlOrNull(profile?['has_bachelor_cert']),
+              cvUrl: _toUrlOrNull(profile?['has_cv']),
             ),
           );
         },
         icon: const Icon(Icons.auto_awesome, size: 16),
         label: Text(
-          'Generate CV / SOP with AI',
+          AppLocalizations.of(context).translate('generateCvSopAi'),
           style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
@@ -544,9 +854,6 @@ class _AiGenerateButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// _ReviewProgressSheet — animated AI loading indicator
-// ─────────────────────────────────────────────────────────
 class _ReviewProgressSheet extends StatefulWidget {
   final String stepLabel;
   const _ReviewProgressSheet({required this.stepLabel});
@@ -599,8 +906,8 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 80.r,
+              height: 80.r,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -611,8 +918,8 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
                       child: child,
                     ),
                     child: Container(
-                      width: 80,
-                      height: 80,
+                      width: 80.r,
+                      height: 80.r,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const RadialGradient(
@@ -625,8 +932,8 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet>
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2,
+                            blurRadius: 20.r,
+                            spreadRadius: 2.r,
                           ),
                         ],
                       ),

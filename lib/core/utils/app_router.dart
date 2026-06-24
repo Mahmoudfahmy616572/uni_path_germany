@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 
 import '../../core/localization/app_localizations.dart';
 
@@ -10,9 +11,14 @@ import '../../../core/services/auth/go_router_refresh_stream.dart';
 import 'logger.dart';
 import '../../domain/entities/university_entity.dart';
 import '../../presentation/Home/screen/home_screen.dart';
+import '../../presentation/splash/screens/splash_screen.dart';
 import '../../presentation/MyApplications/cubit/my_applications_cubits.dart';
+import '../../presentation/MyApplications/cubit/my_applications_states.dart';
 import '../../presentation/MyApplications/screens/my_applications_screen.dart';
 import '../../presentation/UniversityDetails/screens/university_details_screen.dart';
+import '../../presentation/auth/forgot_password/screen/forgot_password_screen.dart';
+import '../../presentation/auth/reset_password/screen/reset_password_screen.dart';
+import '../../presentation/auth/verify_email/screen/verify_email_screen.dart';
 import '../../presentation/auth/login/cubit/login_cubit.dart';
 import '../../presentation/auth/login/screen/login_screen.dart';
 import '../../presentation/auth/register/cubit/register_cubit.dart';
@@ -33,8 +39,19 @@ import '../../presentation/admin/programs/admin_programs_screen.dart';
 import '../../presentation/admin/applications/admin_applications_screen.dart';
 import '../../presentation/admin/documents/admin_documents_screen.dart';
 import '../../presentation/admin/settings/admin_settings_screen.dart';
+import '../../presentation/premium/screen/paywall_screen.dart';
+import '../../presentation/ai/widgets/document_templates_screen.dart';
+import '../../presentation/applications/screens/deadline_calendar_screen.dart';
+import '../../presentation/comparison/screens/university_comparison_screen.dart';
+import '../../presentation/documents/smart_document_hub_screen.dart';
 import '../../presentation/search/screen/university_search_screen.dart';
+import '../../presentation/policy/policy_viewer_screen.dart';
+import '../../presentation/ai/widgets/uni_match_screen.dart';
+import '../../presentation/applications/widgets/application_timeline_screen.dart';
+import '../../presentation/documents/visa_guide_screen.dart';
+import '../../presentation/profile/gamification_screen.dart';
 import '../services/services_locator.dart';
+import '../utils/policy_content.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -42,7 +59,7 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(de
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/onboarding',
+  initialLocation: '/splash',
   refreshListenable: GoRouterRefreshStream(sl<AuthService>().authStateChanges),
   redirect: (context, state) {
     // Synchronous check for redirect
@@ -55,7 +72,11 @@ final GoRouter appRouter = GoRouter(
     if (!isLoggedIn &&
         currentLocation != '/login' &&
         currentLocation != '/register' &&
-        currentLocation != '/onboarding') {
+        currentLocation != '/forgot-password' &&
+        currentLocation != '/reset-password' &&
+        currentLocation != '/verify-email' &&
+        currentLocation != '/onboarding' &&
+        currentLocation != '/splash') {
       // During OAuth, send deep link back to /register where the listener is
       if (currentLocation == '/' && AuthService.isOAuthInProgress) {
         log.i('OAuth pending — returning to /register');
@@ -68,10 +89,15 @@ final GoRouter appRouter = GoRouter(
         (currentLocation == '/login' ||
             currentLocation == '/register' ||
             currentLocation == '/onboarding' ||
+            currentLocation == '/splash' ||
             currentLocation == '/')) {
       // Don't redirect away from /register during OAuth — the cubit needs to stay alive
       if (currentLocation == '/register' && AuthService.isOAuthInProgress) {
         log.i('OAuth pending — staying on /register');
+        return null;
+      }
+      if (currentLocation == '/splash') {
+        log.i('Staying on /splash');
         return null;
       }
       log.i('REDIRECT -> /home');
@@ -81,6 +107,10 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => BlocProvider(
@@ -102,6 +132,25 @@ final GoRouter appRouter = GoRouter(
         child: RegisterScreen(
           profileData: state.extra as Map<String, dynamic>?,
         ),
+      ),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => BlocProvider.value(
+        value: sl<LoginCubit>(),
+        child: const ForgotPasswordScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) => ResetPasswordScreen(
+        code: state.uri.queryParameters['code'],
+      ),
+    ),
+    GoRoute(
+      path: '/verify-email',
+      builder: (context, state) => VerifyEmailScreen(
+        email: state.uri.queryParameters['email'],
       ),
     ),
 
@@ -136,10 +185,121 @@ final GoRouter appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: '/smart-documents',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const SmartDocumentHubScreen(),
+    ),
+
+    GoRoute(
       path: '/university_details',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) =>
-          UniversityDetailsScreen(university: state.extra as UniversityEntity),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: UniversityDetailsScreen(university: state.extra as UniversityEntity),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.25, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+      ),
+    ),
+
+    GoRoute(
+      path: '/premium',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const PaywallScreen(),
+    ),
+    GoRoute(
+      path: '/privacy',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final locale = AppLocalizations.of(context).locale;
+        return PolicyViewerScreen(
+          title: 'Privacy Policy',
+          content: PolicyContent.getPrivacyPolicy(locale.languageCode),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/terms',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final locale = AppLocalizations.of(context).locale;
+        return PolicyViewerScreen(
+          title: 'Terms of Service',
+          content: PolicyContent.getTermsOfService(locale.languageCode),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/deadline-calendar',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final cubit = sl<MyApplicationsCubit>();
+        final s = cubit.state;
+        if (s is MyApplicationsLoaded) {
+          return DeadlineCalendarScreen(applications: s.allApplications);
+        }
+        return const Scaffold(
+          body: Center(child: Text('No application data loaded')),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/compare',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final universities = state.extra as List<UniversityEntity>? ?? [];
+        return UniversityComparisonScreen(universities: universities);
+      },
+    ),
+
+    GoRoute(
+      path: '/document-templates',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DocumentTemplatesScreen(),
+    ),
+
+    GoRoute(
+      path: '/uni-match',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const UniMatchScreen(),
+    ),
+    GoRoute(
+      path: '/application-timeline',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final cubit = sl<MyApplicationsCubit>();
+        final s = cubit.state;
+        if (s is MyApplicationsLoaded) {
+          return BlocProvider.value(
+            value: cubit,
+            child: ApplicationTimelineScreen(applications: s.allApplications),
+          );
+        }
+        return const Scaffold(
+          body: Center(child: Text('No application data loaded')),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/visa-guide',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const VisaGuideScreen(),
+    ),
+    GoRoute(
+      path: '/achievements',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const GamificationScreen(),
     ),
 
     // ── Admin Dashboard Routes ──
@@ -178,37 +338,8 @@ final GoRouter appRouter = GoRouter(
     ),
 
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => Scaffold(
-        body: navigationShell,
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: navigationShell.currentIndex,
-          selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
-          unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
-          backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-          type: BottomNavigationBarType.fixed,
-          onTap: (index) {
-            if (index == 2) sl<MyApplicationsCubit>().loadApplications();
-            navigationShell.goBranch(index);
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled),
-              label: AppLocalizations.of(context).translate('home'),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: AppLocalizations.of(context).translate('search'),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.description_outlined),
-              label: AppLocalizations.of(context).translate('applications'),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: AppLocalizations.of(context).translate('profile'),
-            ),
-          ],
-        ),
+      builder: (context, state, navigationShell) => _MainShell(
+        navigationShell: navigationShell,
       ),
       branches: [
         StatefulShellBranch(
@@ -292,6 +423,86 @@ class _SettingsRouteHandlerState extends State<_SettingsRouteHandler> {
             body: const Center(child: CircularProgressIndicator()),
           );
         },
+      ),
+    );
+  }
+}
+
+class _MainShell extends StatefulWidget {
+  final StatefulNavigationShell navigationShell;
+  const _MainShell({required this.navigationShell});
+
+  @override
+  State<_MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<_MainShell> {
+  DateTime? _lastBackPress;
+
+  void _onBottomNavTap(int index) {
+    if (index == 2) sl<MyApplicationsCubit>().loadApplications();
+
+    if (index == 0 && index == widget.navigationShell.currentIndex) {
+      HomeScreen.scrollController?.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+
+    widget.navigationShell.goBranch(index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).translate('pressAgainToExit'),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: widget.navigationShell,
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: widget.navigationShell.currentIndex,
+          selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+          backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+          type: BottomNavigationBarType.fixed,
+          onTap: _onBottomNavTap,
+          items: [
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.home_filled),
+              label: AppLocalizations.of(context).translate('home'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.search),
+              label: AppLocalizations.of(context).translate('search'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.description_outlined),
+              label: AppLocalizations.of(context).translate('applications'),
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              label: AppLocalizations.of(context).translate('profile'),
+            ),
+          ],
+        ),
       ),
     );
   }

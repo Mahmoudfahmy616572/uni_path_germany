@@ -140,7 +140,7 @@ class PipelineUniversityCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Divider(height: 32, color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
+              Divider(height: 32.h, color: context.isDark ? AppColors.darkBorder : const Color(0xFFF1F5F9)),
               Row(
                 children: [
                   Expanded(

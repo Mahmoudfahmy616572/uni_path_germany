@@ -5,18 +5,19 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:germany_travel/presentation/auth/login/cubit/login_cubit.dart';
 import 'package:germany_travel/presentation/auth/login/cubit/login_state.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/message_error_handler.dart';
 import '../../../../core/services/auth/auth_service.dart';
+import '../../../../core/services/biometric_service.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../core/storage/local_storage_service.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../../../core/widgets/auth_background.dart';
+import '../../../../core/widgets/auth_illustrations.dart';
 import '../../../../core/widgets/curtain_drop.dart';
 import '../../widgets/custom_auth_field.dart';
 import '../../widgets/loading_button.dart';
@@ -34,16 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // 1. ØªØ¹Ø±ÙŠÙ Ø§Ù„Ù…ÙØªØ§Ø­ Ø§Ù„Ø®Ø§Øµ Ø¨Ø§Ù„Ù€ Form Ù„Ø¹Ù…Ù„ Ø§Ù„Ù€ Validation
   final _formKey = GlobalKey<FormState>();
 
-  // Remember me
   bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+    _tryBiometricLogin();
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -54,6 +54,32 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailOrUsernameController.text = creds.email;
         _passwordController.text = creds.password;
       });
+    }
+  }
+
+  Future<void> _tryBiometricLogin() async {
+    final enabled = await BiometricService.isBiometricEnabled();
+    if (!enabled) return;
+    final available = await BiometricService.isAvailable();
+    if (!available) return;
+    final authed = await BiometricService.authenticate();
+    if (!authed) return;
+    if (!mounted) return;
+    final creds = LocalStorageService.getCredentials();
+    if (creds != null) {
+      _emailOrUsernameController.text = creds.email;
+      _passwordController.text = creds.password;
+      _onLogin();
+    }
+  }
+
+  Future<void> _onLogin() async {
+    if (_formKey.currentState!.validate()) {
+      await _saveCredentials();
+      context.read<LoginCubit>().login(
+        emailOrUsername: _emailOrUsernameController.text.trim(),
+        password: _passwordController.text,
+      );
     }
   }
 
@@ -69,38 +95,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showForgotPasswordDialog(BuildContext context) {
-    final emailController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).translate('resetPassword')),
-        content: CustomAuthField(
-          hint: AppLocalizations.of(context).translate('email'),
-          prefixIcon: Icons.email_outlined,
-          controller: emailController,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context).translate('cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (emailController.text.trim().isNotEmpty) {
-                context.read<LoginCubit>().resetPassword(emailController.text.trim());
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text(AppLocalizations.of(context).translate('send')),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) async {
         if (state is LoginSuccess) {
@@ -121,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
           final profileComplete = await authService.isProfileComplete();
           if (!context.mounted) return;
           if (profileComplete) {
+            NotificationService.requestNotificationPermission();
             context.go('/home');
           } else {
             context.go('/onboarding');
@@ -142,92 +143,51 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          child: AuthBackground(
-            child: Column(
-              children: [
-                CurtainDrop(
+        body: AuthBackground(
+          child: Column(
+            children: [
+              SizedBox(height: 40.h),
+              CurtainDrop(
                 index: 0,
-                child: SizedBox(
-                  height: 280,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          height: 250,
-                          decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(40),
-                              bottomRight: Radius.circular(40),
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: context.isDark ? AppColors.darkCardBg : Colors.white,
-                          borderRadius: BorderRadius.circular(20.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            "TUM",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 40.h),
+                  child: LoginIllustration(),
                 ),
               ),
               CurtainDrop(
                 index: 1,
+                child: Text(
+                  AppLocalizations.of(context).translate('welcomeBack'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+              CurtainDrop(
+                index: 2,
                 child: Padding(
-                  padding: EdgeInsets.all(24.r),
-                  child: Form(
-                    key: _formKey, // 2. Ø±Ø¨Ø· Ø§Ù„Ù€ Form Ø¨Ø§Ù„Ù…ÙØªØ§Ø­
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                      Text(
-                        AppLocalizations.of(context).translate('welcomeBack'),
-                        style: GoogleFonts.poppins(
-                          fontSize: 28.sp,
-                          fontWeight: FontWeight.bold,
-                          color: context.isDark ? AppColors.textMain : AppColors.textDark,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        AppLocalizations.of(context).translate('loginSubtitle'),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14.sp,
-                          color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
-                        ),
-                      ),
-                      SizedBox(height: 30.h),
-
-                      // 3. Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù€ validator Ù„Ø­Ù‚Ù„ Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„/Ø§Ù„ÙŠÙˆØ²Ø± Ù†ÙŠÙ…
+                  padding: EdgeInsets.only(top: 10.h),
+                  child: Text(
+                    AppLocalizations.of(context).translate('loginSubtitle'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: isDark ? const Color(0xFFAAB1C5) : const Color(0xFF64748B),
+                      height: 1.7,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30.h),
+              CurtainDrop(
+                index: 3,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
                       CustomAuthField(
                         hint: AppLocalizations.of(context).translate('emailOrUsername'),
                         prefixIcon: Icons.email_outlined,
@@ -240,8 +200,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-
-                      // 4. Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù€ validator Ù„Ø­Ù‚Ù„ Ø§Ù„Ø¨Ø§Ø³ÙˆØ±Ø¯ ÙˆØªØ´Ø±ÙŠØ¹ Ø§Ù„Ù€ 6 Ø­Ø±ÙˆÙ
                       CustomAuthField(
                         hint: AppLocalizations.of(context).translate('password'),
                         prefixIcon: Icons.lock_outline,
@@ -257,38 +215,84 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => _showForgotPasswordDialog(context),
-                          child: Text(
-                            AppLocalizations.of(context).translate('forgotPassword'),
-                            style: TextStyle(color: context.isDark ? AppColors.primaryPurple : AppColors.primary),
-                          ),
-                        ),
-                      ),
                       SizedBox(height: 10.h),
-
-                      // Remember me checkbox
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (val) => setState(() => _rememberMe = val ?? false),
-                            activeColor: context.isDark ? AppColors.primaryPurple : AppColors.primary,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                                activeColor: const Color(0xFF7C4DFF),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              Text(
+                                AppLocalizations.of(context).translate('rememberMe'),
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFFAAB1C5) : const Color(0xFF64748B),
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            AppLocalizations.of(context).translate('rememberMe'),
-                            style: TextStyle(
-                              color: context.isDark ? AppColors.textMuted : AppColors.textGrey,
-                              fontSize: 14.sp,
+                          GestureDetector(
+                            onTap: () => context.push('/forgot-password'),
+                            child: Text(
+                              AppLocalizations.of(context).translate('forgotPassword'),
+                              style: TextStyle(
+                                color: const Color(0xFF7C4DFF),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.sp,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 10.h),
-
+                      // Biometric login option
+                      if (_rememberMe) ...[
+                        SizedBox(height: 8.h),
+                        FutureBuilder<bool>(
+                          future: BiometricService.isAvailable(),
+                          builder: (context, snapshot) {
+                            if (snapshot.data != true) return const SizedBox.shrink();
+                            return FutureBuilder<bool>(
+                              future: BiometricService.isBiometricEnabled(),
+                              builder: (context, enabledSnapshot) {
+                                return CheckboxListTile(
+                                  value: enabledSnapshot.data ?? false,
+                                  onChanged: (v) async {
+                                    if (v == true) {
+                                      final authed = await BiometricService.authenticate();
+                                      if (authed) {
+                                        await BiometricService.setBiometricEnabled(true);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Biometric login enabled')),
+                                          );
+                                        }
+                                      }
+                                    } else {
+                                      await BiometricService.setBiometricEnabled(false);
+                                    }
+                                    if (context.mounted) setState(() {});
+                                  },
+                                  title: Text(
+                                    'Enable fingerprint / face unlock',
+                                    style: TextStyle(fontSize: 13.sp),
+                                  ),
+                                  dense: true,
+                                  controlAffinity: ListTileControlAffinity.leading,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                      SizedBox(height: 20.h),
                       BlocBuilder<LoginCubit, LoginState>(
                         builder: (context, state) {
                           return LoadingButton(
@@ -296,76 +300,73 @@ class _LoginScreenState extends State<LoginScreen> {
                             isLoading: state is LoginLoading,
                             onPressed: state is LoginLoading
                                 ? null
-                                : () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      await _saveCredentials();
-                                      context.read<LoginCubit>().login(
-                                        emailOrUsername: _emailOrUsernameController.text
-                                            .trim(),
-                                        password: _passwordController.text,
-                                      );
-                                    }
-                                  },
+                                : _onLogin,
                           );
                         },
-                      ),
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Row(
-                          children: [
-                            Expanded(child: Divider()),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.r),
-                              child: Text(
-                                AppLocalizations.of(context).translate('or'),
-                                style: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey),
-                              ),
-                            ),
-                            Expanded(child: Divider()),
-                          ],
-                        ),
-                      ),
-
-                      SocialAuthButton(
-                        text: "Continue with Google",
-                        icon: FontAwesomeIcons.google,
-                        iconColor: Colors.red,
-                        onPressed: () => context.read<LoginCubit>().signInWithOAuth(OAuthProvider.google),
-                      ),
-
-                      SizedBox(height: 20.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context).translate('noAccount'),
-                            style: TextStyle(color: context.isDark ? AppColors.textMuted : AppColors.textGrey),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              context.push('/register');
-                            },
-                            child: Text(
-                              AppLocalizations.of(context).translate('register'),
-                              style: TextStyle(
-                                color: context.isDark ? AppColors.primaryPurple : AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+              SizedBox(height: 24.h),
+              CurtainDrop(
+                index: 4,
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(color: isDark ? const Color(0xFF7A8199) : const Color(0xFF94A3B8))),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.r),
+                      child: Text(
+                        AppLocalizations.of(context).translate('or'),
+                        style: TextStyle(color: isDark ? const Color(0xFF7A8199) : const Color(0xFF94A3B8)),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: isDark ? const Color(0xFF7A8199) : const Color(0xFF94A3B8))),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16.h),
+              CurtainDrop(
+                index: 5,
+                child: SocialAuthButton(
+                  text: "Continue with Google",
+                  icon: FontAwesomeIcons.google,
+                  iconColor: Colors.red,
+                  onPressed: () => context.read<LoginCubit>().signInWithOAuth(OAuthProvider.google),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              CurtainDrop(
+                index: 6,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context).translate('noAccount'),
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFFAAB1C5) : const Color(0xFF64748B),
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.push('/register'),
+                      child: Text(
+                        AppLocalizations.of(context).translate('register'),
+                        style: TextStyle(
+                          color: const Color(0xFF7C4DFF),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 40.h),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

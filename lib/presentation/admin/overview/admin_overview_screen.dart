@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
@@ -49,21 +50,21 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       child: RefreshIndicator(
         onRefresh: _loadStats,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24.r),
           children: [
-            const CurtainDrop(index: 0, child: Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
-            const SizedBox(height: 4),
-            CurtainDrop(index: 1, child: Text('Welcome back, Admin', style: TextStyle(color: Colors.grey[600], fontSize: 14))),
-            const SizedBox(height: 24),
+            CurtainDrop(index: 0, child: Text('Dashboard', style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
+            SizedBox(height: 4.h),
+            CurtainDrop(index: 1, child: Text('Welcome back, Admin', style: TextStyle(color: Colors.grey[600], fontSize: 14.sp))),
+            SizedBox(height: 24.h),
             if (_loading)
-              const CurtainDrop(index: 2, child: Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator())))
+              CurtainDrop(index: 2, child: Padding(padding: EdgeInsets.all(40.r), child: Center(child: CircularProgressIndicator())))
             else ...[
               CurtainDrop(index: 2, child: _buildStatsRow()),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               CurtainDrop(index: 2, child: _buildDaadRow()),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
               CurtainDrop(index: 3, child: _buildQuickActions(context)),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
               CurtainDrop(index: 4, child: _buildRecentActivity()),
             ],
           ],
@@ -116,8 +117,8 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        const SizedBox(height: 16),
+        Text('Quick Actions', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        SizedBox(height: 16.h),
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -135,19 +136,19 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Recent Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-        const SizedBox(height: 16),
+        Text('Recent Activity', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        SizedBox(height: 16.h),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8.r, offset: Offset(0.r, 2.r))],
           ),
           child: _recentUsers.isEmpty
               ? Center(child: Column(children: [
-                  Icon(Icons.hourglass_empty, color: Colors.grey[400], size: 40),
-                  const SizedBox(height: 8),
+                  Icon(Icons.hourglass_empty, color: Colors.grey[400], size: 40.sp),
+                  SizedBox(height: 8.h),
                   Text('No recent activity', style: TextStyle(color: Colors.grey[500])),
                 ]))
               : Column(
@@ -162,28 +163,28 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     final at = user['created_at']?.toString() ?? '';
     final when = at.isNotEmpty ? _timeAgo(DateTime.tryParse(at) ?? DateTime.now()) : '—';
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 16,
+            radius: 16.r,
             backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
             child: Text(
               (user['username']?.toString().substring(0, 1).toUpperCase() ?? '?'),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 13.sp, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user['username']?.toString() ?? 'Unknown', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                Text(user['email']?.toString() ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                Text(user['username']?.toString() ?? 'Unknown', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
+                Text(user['email']?.toString() ?? '', style: TextStyle(fontSize: 12.sp, color: Colors.grey[500])),
               ],
             ),
           ),
-          Text(when, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+          Text(when, style: TextStyle(fontSize: 11.sp, color: Colors.grey[400])),
         ],
       ),
     );
@@ -209,26 +210,26 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8.r, offset: Offset(0.r, 2.r))],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 24),
+            padding: EdgeInsets.all(10.r),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10.r)),
+            child: Icon(icon, color: color, size: 24.sp),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13), overflow: TextOverflow.ellipsis),
+                Text(value, style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13.sp), overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -249,13 +250,13 @@ class _ActionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: 18.sp),
       label: Text(label),
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         foregroundColor: const Color(0xFF1E293B),
         side: BorderSide(color: const Color(0xFFE2E8F0)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
       ),
     );
   }

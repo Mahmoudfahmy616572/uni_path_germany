@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../utils/logger.dart';
 import '../auth/auth_service.dart';
+import '../premium_service.dart';
 
 class AiUsageService {
   final AuthService _authService;
+  final PremiumService _premiumService;
 
-  AiUsageService(this._authService);
+  AiUsageService(this._authService, this._premiumService);
 
   Future<bool> get _isAdmin async {
     if (_authService.cachedIsAdmin) return true;
@@ -23,7 +26,8 @@ class AiUsageService {
       final isAdmin = data?['role'] == 'admin';
       if (isAdmin) _authService.cachedIsAdmin = true;
       return isAdmin;
-    } catch (_) {
+    } catch (e) {
+      log.e('_isAdmin check error: $e');
       return false;
     }
   }
@@ -38,8 +42,16 @@ class AiUsageService {
 
   int _currentMonthKey() => DateTime.now().year * 100 + DateTime.now().month;
 
-  Future<bool> canUseAi() async {
+  /// For CV/SOP generation — premium required from first use
+  Future<bool> canUseGenerator() async {
     if (await _isAdmin) return true;
+    return _premiumService.isPremium();
+  }
+
+  /// For document review — 10 free uses per month, then pay
+  Future<bool> canUseReview() async {
+    if (await _isAdmin) return true;
+    if (await _premiumService.isPremium()) return true;
 
     final prefs = await SharedPreferences.getInstance();
     final uid = _userId();

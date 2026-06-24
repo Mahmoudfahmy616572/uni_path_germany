@@ -18,6 +18,7 @@ abstract class ApplicationsRemoteDataSource {
     required String programId,
   });
   Future<bool> checkIfSaved(String universityId, {String? programId});
+  Future<Set<String>> getSavedProgramIds(String userId, String universityId);
   Future<String> uploadDocument({
     required String userId,
     required String universityId,
@@ -167,6 +168,16 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     if (programId != null) query = query.eq('program_id', programId);
     final response = await query.maybeSingle();
     return response != null;
+  }
+
+  @override
+  Future<Set<String>> getSavedProgramIds(String userId, String universityId) async {
+    final response = await client
+        .from('my_applications')
+        .select('program_id')
+        .eq('user_id', userId)
+        .eq('university_id', universityId);
+    return response.map((r) => r['program_id'] as String).toSet();
   }
 
   @override

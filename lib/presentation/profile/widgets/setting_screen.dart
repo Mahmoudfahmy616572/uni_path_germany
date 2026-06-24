@@ -471,10 +471,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 _buildLanguageToggle(),
 
-                // ── Section: Danger Zone ────────────────────────
+                // ── Section: Legal ────────────────────────────
                 SizedBox(height: 20.h),
                 CurtainDrop(
                   index: 6,
+                  child: _buildSectionLabel('Legal'),
+                ),
+                SizedBox(height: 10.h),
+                _buildLegalLink(Icons.privacy_tip_outlined, 'Privacy Policy', '/privacy'),
+                _buildLegalLink(Icons.description_outlined, 'Terms of Service', '/terms'),
+                SizedBox(height: 20.h),
+
+                // ── Section: Danger Zone ────────────────────────
+                SizedBox(height: 20.h),
+                CurtainDrop(
+                  index: 7,
                   child: _buildSectionLabel('Danger Zone'),
                 ),
                 SizedBox(height: 10.h),
@@ -502,14 +513,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 elevation: 8,
                 icon: isLoading
                     ? SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 20.r,
+                        height: 20.r,
                         child: CircularProgressIndicator(
                           color: context.isDark ? AppColors.darkCardBg : Colors.white,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(Icons.save, size: 20),
+                    : Icon(Icons.save, size: 20.sp),
                 label: Text(
                   isLoading ? 'Saving...' : 'Save Changes',
                   style: TextStyle(
@@ -668,7 +679,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         live >= 1.0 ? Colors.green : AppColors.primary,
                       ),
-                      minHeight: 8,
+                      minHeight: 8.h,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -880,8 +891,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               GestureDetector(
                 onTap: () => setState(() => _hasStudiedUniversity = !_hasStudiedUniversity),
                 child: Container(
-                  width: 50,
-                  height: 28,
+                  width: 50.w,
+                  height: 28.h,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14.r),
                     color: _hasStudiedUniversity ? AppColors.primary : context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
@@ -892,8 +903,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(3.r),
                       child: Container(
-                        width: 22,
-                        height: 22,
+                        width: 22.r,
+                        height: 22.r,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -1321,6 +1332,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLegalLink(IconData icon, String title, String route) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 10.h),
+      decoration: BoxDecoration(
+        color: context.isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        leading: Icon(icon, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+        title: Text(title, style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
+        trailing: Icon(Icons.chevron_right, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
+        onTap: () => context.push(route),
       ),
     );
   }

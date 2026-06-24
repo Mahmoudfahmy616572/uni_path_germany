@@ -315,6 +315,161 @@ ${_lang(languageCode)}Return ONLY the JSON array, no markdown, no code fences.
   }
 
   // ─────────────────────────────────────────────────────
+  //  Uni Match 2.0 — AI University Recommendations
+  // ─────────────────────────────────────────────────────
+  static String universityRecommendations(Map<String, dynamic> profile) {
+    return '''
+You are a German university admissions consultant. Based on the student's profile below, recommend the TOP 5-7 German universities and specific programs that would be the best fit.
+
+Student Profile:
+- GPA: ${profile['gpa'] ?? 'Not set'} / ${profile['max_gpa'] ?? '4.0'}
+- Target Major: ${profile['target_major'] ?? 'Not set'}
+- Degree Level: ${profile['degree_level'] ?? 'Not set'}
+- IELTS: ${profile['has_ielts'] == true ? '${profile['ielts_score']} (has IELTS)' : 'No IELTS'}
+- TOEFL: ${profile['has_toefl'] == true ? '${profile['toefl_score']} (has TOEFL)' : 'No TOEFL'}
+- MOI: ${profile['has_moi'] == true ? 'Has MOI' : 'No MOI'}
+- Language Preference: ${profile['language_preference'] ?? 'Not set'}
+- Target Intake: ${profile['intake'] ?? 'Not set'}
+- German Level: ${profile['german_level'] ?? 'Not set'}
+- Budget Range: ${profile['budget_range'] ?? 'Not set'}
+- Preferred Cities: ${(profile['preferred_cities'] as List? ?? []).join(', ')}
+
+For each recommendation, include:
+1. University name and location
+2. Specific program name and degree
+3. Why this is a good match
+4. Estimated match score percentage
+5. Key admission requirements
+6. Application deadline
+
+Format as JSON array:
+[
+  {
+    "university": "string",
+    "location": "string",
+    "program": "string",
+    "degree": "string",
+    "reason": "string",
+    "matchScore": number (0-100),
+    "requirements": "string",
+    "deadline": "string"
+  }
+]
+
+CRITICAL: Be realistic. Only recommend programs where the student's GPA and language scores reasonably meet the requirements. Return ONLY the JSON array, no markdown, no code fences.
+''';
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  AI German Language Assistant
+  // ─────────────────────────────────────────────────────
+  static String germanPractice(String message) {
+    return '''
+You are a German language tutor helping a student practice for their university application and student life in Germany.
+
+The student wrote: "$message"
+
+Rules:
+1. First respond in German (natural, appropriate level)
+2. Then provide the English translation
+3. Then give brief feedback on their German (grammar, vocabulary, style)
+4. Finally, ask a follow-up question in German to keep the conversation going
+5. Be encouraging and supportive
+6. Use formal "Sie" unless the student uses "du"
+
+Keep each response concise — max 3 sentences per section.
+''';
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  University Chat (Ask UniPass AI)
+  // ─────────────────────────────────────────────────────
+  static String universityChatSystemPrompt(Map<String, dynamic> uni,
+      {Map<String, dynamic>? userProfile}) {
+    final programs = uni['programs'] as List<dynamic>? ?? [];
+    final buf = StringBuffer();
+    buf.writeln('You are UniPass AI, a specialized assistant for students applying to German universities.');
+    buf.writeln('You can ONLY answer questions about "${uni['name']}".');
+    buf.writeln('If the user asks about any other university or topic outside this scope, politely redirect.');
+    buf.writeln();
+    buf.writeln('University Profile:');
+    buf.writeln('- Name: ${uni['name']}');
+    buf.writeln('- Location: ${uni['location'] ?? "N/A"}');
+    buf.writeln('- Ranking: ${uni['rankings'] ?? "N/A"}');
+    buf.writeln('- Match Score: ${uni['matchPercentage']}%');
+    buf.writeln('- Website: ${uni['websiteUrl'] ?? "N/A"}');
+    buf.writeln('- Description: ${uni['description'] ?? "N/A"}');
+    buf.writeln();
+    buf.writeln('Available Programs (${programs.length}):');
+    for (final p in programs) {
+      final pm = p as Map<String, dynamic>;
+      buf.writeln('  - ${pm['programName'] ?? "N/A"}');
+      buf.writeln('    Major: ${pm['major'] ?? "N/A"} | Degree: ${pm['degreeType'] ?? "N/A"}');
+      buf.writeln('    GPA Required: ${pm['requiredGpa'] ?? "N/A"}');
+      buf.writeln('    Language: ${pm['instructionLanguage'] ?? "N/A"}');
+      buf.writeln('    IELTS: ${pm['requiresIelts'] == true ? "Yes (min: ${pm['minIeltsScore']})" : "No"}');
+      buf.writeln('    Accepts MOI: ${pm['acceptsMoi'] == true ? "Yes" : "No"}');
+      buf.writeln('    Deadline: ${pm['deadline'] ?? "N/A"} | Intake: ${pm['intakeType'] ?? "N/A"}');
+      buf.writeln('    Tuition: \$${pm['tuitionFeePerYear'] ?? 0}/yr | Fee: \$${pm['applicationFee'] ?? 0}');
+      buf.writeln('    Match: ${pm['matchScore'] ?? 0}% | Recommended: ${pm['isRecommended'] == true ? "Yes" : "No"}');
+    }
+
+    if (userProfile != null) {
+      buf.writeln();
+      buf.writeln('Student Profile from Account:');
+      buf.writeln('- GPA: ${userProfile['gpa'] ?? "Not set"} / ${userProfile['max_gpa'] ?? "4.0"}');
+      buf.writeln('- Target Major: ${userProfile['target_major'] ?? "Not set"}');
+      buf.writeln('- Degree Level: ${userProfile['degree_level'] ?? "Not set"}');
+      buf.writeln('- IELTS: ${userProfile['has_ielts'] == true ? "${userProfile['ielts_score']}" : "No IELTS"}');
+      buf.writeln('- TOEFL: ${userProfile['has_toefl'] == true ? "${userProfile['toefl_score']}" : "No TOEFL"}');
+      buf.writeln('- MOI: ${userProfile['has_moi'] == true ? "Yes" : "No"}');
+      buf.writeln('- Language Preference: ${userProfile['language_preference'] ?? "Not set"}');
+      buf.writeln('- Target Intake: ${userProfile['intake'] ?? "Not set"}');
+      buf.writeln('- Nationality: ${userProfile['nationality'] ?? "Not set"}');
+      buf.writeln();
+      buf.writeln('Uploaded Documents:');
+      final hasTranscripts = userProfile['has_transcripts'] != null &&
+          (userProfile['has_transcripts'] is bool
+              ? userProfile['has_transcripts'] == true
+              : (userProfile['has_transcripts'] as String?)?.isNotEmpty == true);
+      final hasBachelor = userProfile['has_bachelor_cert'] != null &&
+          (userProfile['has_bachelor_cert'] is bool
+              ? userProfile['has_bachelor_cert'] == true
+              : (userProfile['has_bachelor_cert'] as String?)?.isNotEmpty == true);
+      final hasSop = userProfile['has_sop'] != null &&
+          (userProfile['has_sop'] is bool
+              ? userProfile['has_sop'] == true
+              : (userProfile['has_sop'] as String?)?.isNotEmpty == true);
+      final hasCv = userProfile['has_cv'] != null &&
+          (userProfile['has_cv'] is bool
+              ? userProfile['has_cv'] == true
+              : (userProfile['has_cv'] as String?)?.isNotEmpty == true);
+      final hasLangCert = userProfile['has_language_cert'] != null &&
+          (userProfile['has_language_cert'] is bool
+              ? userProfile['has_language_cert'] == true
+              : (userProfile['has_language_cert'] as String?)?.isNotEmpty == true);
+      buf.writeln('- Transcripts: ${hasTranscripts ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- Bachelor Certificate: ${hasBachelor ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- CV/Resume: ${hasCv ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- SOP/Motivation Letter: ${hasSop ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- Language Certificate: ${hasLangCert ? "Uploaded" : "Not uploaded"}');
+    }
+
+    buf.writeln();
+    buf.writeln('CRITICAL RULES — You MUST follow these exactly:');
+    buf.writeln('1. NEVER say you lack information about the user\'s qualifications. You have the student profile and document status above — USE IT.');
+    buf.writeln('2. If the user asks about their suitability for a program, analyze their GPA, language scores, and uploaded documents against the program requirements and give a direct answer.');
+    buf.writeln('3. If the user has NOT uploaded documents (transcripts, bachelor cert, etc.) and asks about qualification-related questions, say: "You haven\'t uploaded your [documents] yet. You can upload them in your profile, or tell me your qualifications directly and I\'ll help you assess your fit."');
+    buf.writeln('4. If the user provides their qualifications directly in the chat (e.g., "My GPA is 3.5"), treat that as authoritative and use it alongside their profile data.');
+    buf.writeln('5. Answer ONLY about "${uni["name"]}". Redirect if off-topic.');
+    buf.writeln('6. Be concise, practical, and accurate.');
+    buf.writeln('7. Suggest specific programs from the list when relevant.');
+    buf.writeln('8. Do NOT make up data — only use what is provided above.');
+    buf.writeln('9. Use a helpful, encouraging tone.');
+    return buf.toString();
+  }
+
+  // ─────────────────────────────────────────────────────
   //  Document Generation (legacy)
   // ─────────────────────────────────────────────────────
   static String documentGeneration({
@@ -350,7 +505,7 @@ ${_lang(languageCode)}''';
     String languageCode = 'en',
   }) {
     return '''
-You are a German university admissions consultant. Generate a professional **CV (Lebenslauf)** for a German master's application.
+You are a German university admissions consultant. Generate a professional CV (Lebenslauf) for a German master's application.
 
 Student: $studentName
 Background: $studentBackground
@@ -359,17 +514,28 @@ Target Degree: $targetDegree
 Major: $major
 
 Rules:
-- Format as a German-style tabular CV (Lebenslauf) in reverse chronological order
-- Include sections: Personal Data, Education, Work Experience, Skills, Languages, Interests
-- For GPA: always include the scale (e.g., "3.1 / 4.0")
-- Use clear markdown formatting (headers, bold, lists)
+- Format as a German-style CV (Lebenslauf) in reverse chronological order
+- Include ALL sections: Personal Data, Education, Work Experience, Skills, Languages, Interests, Certifications, Projects
+- For GPA: always include the grading scale (e.g., "3.1 / 4.0")
+- EDUCATION: For each degree, include university name, degree title, field of study, GPA, key coursework (list 5-8 relevant courses), honors, graduation date
+- WORK EXPERIENCE: For each role, include company, title, dates, and 3-5 detailed bullet points describing responsibilities, achievements, technologies used
+- SKILLS: List technical skills, tools, programming languages, laboratory techniques — be specific
+- LANGUAGES: Include all languages with proficiency level (use CEFR: A1-C2)
+- PROJECTS: Describe academic or personal projects with purpose, technologies, outcomes
+- Each section should have SUBSTANTIVE content — not just 1 line per entry
+- Use PLAIN TEXT only. NO markdown formatting (no asterisks, no dashes --- or ***, no bullet symbols, no hashtags, no tables).
+- HYPERLINKS: For any URL, use the format [Display Text](https://actual.url). Example: [GitHub](https://github.com/username) or [LinkedIn](https://linkedin.com/in/username). Do NOT write raw URLs.
+- For each platform link (GitHub, LinkedIn, portfolio), write the platform name as the display text: [GitHub](url), [LinkedIn](url), [Portfolio](url)
+- For project links, use the project name as display text: [Project Name](url)
+- Sections to include: Skills, Education, Top Projects, Experience
+- Separate sections with blank lines. Use simple sentences and line breaks for structure.
 - Tailor content specifically for $programName at $universityName
-- Keep to 1-2 pages worth of content
-- Be professional and precise — German universities value clarity
+- Minimum 1 full page, target 1.5-2 pages of rich content
+- Be professional and precise — German universities value clarity and detail
 - DO NOT include any future dates or ongoing projects without end dates
 - Ensure all dates are realistic and consistent
 
-${_lang(languageCode)}Return ONLY the CV content as markdown, no extra commentary.
+${_lang(languageCode)}Return ONLY the CV content as plain text with hyperlinks, no extra commentary.
 ''';
   }
 
@@ -387,7 +553,7 @@ ${_lang(languageCode)}Return ONLY the CV content as markdown, no extra commentar
     String languageCode = 'en',
   }) {
     return '''
-You are a German university admissions consultant. Generate a compelling **Motivation Letter (SOP)** for a German university application.
+You are a German university admissions consultant. Generate a compelling Motivation Letter (SOP) for a German university application.
 
 Student: $studentName
 Background: $studentBackground
@@ -398,19 +564,21 @@ Program Highlights: $programHighlights
 
 Rules:
 - Format as a formal business letter
-- Structure: Introduction → Academic Background → Why This Program → Why Germany → Career Goals → Conclusion
-- Explain why the student chose Germany and THIS specific university — be specific (name professors, modules, labs)
+- Structure: Introduction, Academic Background, Why This Program, Why Germany, Career Goals, Conclusion
+- Explain why the student chose Germany and THIS specific university
 - Connect the student's background to the program's strengths
-- Include concrete examples from the student's experience (projects, research, work)
-- Avoid generic statements like "I am passionate" — demonstrate through examples
-- Keep to 400-600 words
+- Include concrete examples from the student's experience (projects, research, work, internships)
+- Avoid generic statements — demonstrate through specific examples
+- Keep to 500-700 words, richly detailed
 - Professional but personal tone
-- Use clear markdown formatting
+- Use PLAIN TEXT only. NO markdown formatting (no asterisks, no dashes --- or ***, no bullet symbols, no hashtags, no tables).
+- HYPERLINKS: For any URL, use the format [Display Text](https://actual.url).
+- Separate paragraphs with blank lines only.
 
 Program Highlights to emphasize:
 $programHighlights
 
-${_lang(languageCode)}Return ONLY the letter as markdown, no extra commentary.
+${_lang(languageCode)}Return ONLY the letter as plain text with hyperlinks, no extra commentary.
 ''';
   }
 }

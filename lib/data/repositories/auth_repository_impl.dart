@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/auth/auth_service.dart';
 import '../../core/services/services_locator.dart';
+import '../../core/utils/logger.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
@@ -27,8 +28,8 @@ class AuthRepositoryImpl implements AuthRepository {
         final profile = await remoteDataSource.getCurrentUserProfile(user.id);
         final userEntity = UserModel.fromJson(profile);
         sl<AuthService>().cachedIsAdmin = userEntity.role == 'admin';
-      } catch (_) {
-        // profile might not exist yet; default is non-admin
+      } catch (e) {
+        log.e('Failed to cache admin status after login: $e');
       }
     }
   }

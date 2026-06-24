@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:realtime_client/realtime_client.dart';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
 
@@ -76,31 +77,31 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('User: ${user['username']?.toString() ?? ''}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
+              Text('User: ${user['username']?.toString() ?? ''}', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12.h),
               CheckboxListTile(
-                title: const Text('Transcripts', style: TextStyle(fontSize: 14)),
+                title: Text('Transcripts', style: TextStyle(fontSize: 14.sp)),
                 value: hasTranscripts,
                 onChanged: (v) => hasTranscripts = v ?? hasTranscripts,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: const Text('CV', style: TextStyle(fontSize: 14)),
+                title: Text('CV', style: TextStyle(fontSize: 14.sp)),
                 value: hasCv,
                 onChanged: (v) => hasCv = v ?? hasCv,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: const Text('SOP', style: TextStyle(fontSize: 14)),
+                title: Text('SOP', style: TextStyle(fontSize: 14.sp)),
                 value: hasSop,
                 onChanged: (v) => hasSop = v ?? hasSop,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: const Text('Bachelor Cert', style: TextStyle(fontSize: 14)),
+                title: Text('Bachelor Cert', style: TextStyle(fontSize: 14.sp)),
                 value: hasBachelorCert,
                 onChanged: (v) => hasBachelorCert = v ?? hasBachelorCert,
                 controlAffinity: ListTileControlAffinity.leading,
@@ -186,7 +187,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: const Icon(Icons.download, size: 20), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -198,8 +199,8 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.folder_open_outlined, size: 48, color: Colors.grey[300]),
-                      const SizedBox(height: 8),
+                      Icon(Icons.folder_open_outlined, size: 48.sp, color: Colors.grey[300]),
+                      SizedBox(height: 8.h),
                       Text('No documents uploaded yet', style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
@@ -212,7 +213,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                     return RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16.r),
                         itemCount: _users.length,
                         itemBuilder: (context, i) {
                           final u = _users[i];
@@ -226,7 +227,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                           if (!hasDocs) return const SizedBox.shrink();
 
                           return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
+                            margin: EdgeInsets.only(bottom: 8.h),
                             child: ExpansionTile(
                               leading: CircleAvatar(
                                 backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
@@ -235,18 +236,18 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                               title: Text(u['username']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: Text('${docs.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).length} document(s) uploaded'),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 20),
+                                icon: Icon(Icons.edit_outlined, size: 20.sp),
                                 onPressed: () => _editDialog(u),
                               ),
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
                                   child: Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: docs.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).map((e) => Chip(
-                                      avatar: Icon(Icons.check_circle, color: const Color(0xFF10B981), size: 18),
-                                      label: Text(e.key, style: const TextStyle(fontSize: 12)),
+                                      avatar: Icon(Icons.check_circle, color: const Color(0xFF10B981), size: 18.sp),
+                                      label: Text(e.key, style: TextStyle(fontSize: 12.sp)),
                                       backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
                                     )).toList(),
                                   ),

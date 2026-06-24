@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../core/services/premium_service.dart';
 import '../../../core/services/services_locator.dart';
 import '../../../core/utils/build_notes_section.dart';
 import '../../../core/utils/quick_info_metrics.dart';
+import '../../../core/widgets/webview_screen.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../../domain/repositories/applications_repository.dart';
@@ -21,6 +22,7 @@ import '../widgets/custom_category_bar.dart';
 import '../widgets/details_header.dart';
 import '../widgets/premium_match_progress_bar.dart';
 import '../widgets/program_card.dart';
+import '../widgets/uni_pass_ai_sheet.dart';
 import '../widgets/university_image_carousel.dart';
 
 class UniversityDetailsScreen extends StatefulWidget {
@@ -35,6 +37,15 @@ class UniversityDetailsScreen extends StatefulWidget {
 
 class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
   int _currentSelectionIndex = 0;
+  bool _isPremium = false;
+  late final List<String> _images;
+
+  @override
+  void initState() {
+    super.initState();
+    _images = _buildImageList();
+    _checkPremium();
+  }
 
   List<String> _tabs(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -46,30 +57,36 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
     ];
   }
 
+  List<String> _buildImageList() {
+    bool isSvg(String url) =>
+        url.endsWith('.svg') || url.contains('.svg?') || url.contains('.svg/');
+    final list = <String>[];
+    if (widget.university.imageUrl != null &&
+        widget.university.imageUrl!.isNotEmpty &&
+        !isSvg(widget.university.imageUrl!)) {
+      list.add(widget.university.imageUrl!);
+    }
+    if (widget.university.logoUrl != null &&
+        widget.university.logoUrl!.isNotEmpty &&
+        !list.contains(widget.university.logoUrl!) &&
+        !isSvg(widget.university.logoUrl!)) {
+      list.add(widget.university.logoUrl!);
+    }
+    if (list.isEmpty) {
+      list.add(
+        'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800',
+      );
+    }
+    return list;
+  }
+
+  Future<void> _checkPremium() async {
+    final premium = await sl<PremiumService>().isPremium();
+    if (mounted) setState(() => _isPremium = premium);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<String> images = () {
-      bool isSvg(String url) =>
-          url.endsWith('.svg') || url.contains('.svg?') || url.contains('.svg/');
-      final list = <String>[];
-      if (widget.university.imageUrl != null &&
-          widget.university.imageUrl!.isNotEmpty &&
-          !isSvg(widget.university.imageUrl!)) {
-        list.add(widget.university.imageUrl!);
-      }
-      if (widget.university.logoUrl != null &&
-          widget.university.logoUrl!.isNotEmpty &&
-          !list.contains(widget.university.logoUrl!) &&
-          !isSvg(widget.university.logoUrl!)) {
-        list.add(widget.university.logoUrl!);
-      }
-      if (list.isEmpty) {
-        list.add(
-          'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800',
-        );
-      }
-      return list;
-    }();
     return BlocProvider(
       create: (context) => UniversityDetailsCubit(sl<ApplicationsRepository>())
         ..initializeUniversityData(
@@ -96,13 +113,16 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                       color: context.isDark ? AppColors.textMain : const Color(0xFF0F172A),
                       size: 20.r,
                     ),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      final nav = Navigator.of(context);
+                      if (nav.canPop()) nav.pop();
+                    },
                   ),
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
                 background: UniversityImageCarousel(
-                  images: images,
+                  images: _images,
                   university: widget.university,
                 ),
               ),
@@ -140,7 +160,10 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                   // المحتوى الديناميكي بناءً على التبويب المختار
                   CurtainDrop(
                     index: 3,
-                    child: _buildTabContent(),
+                    child: RepaintBoundary(
+                      key: ValueKey('tab_$_currentSelectionIndex'),
+                      child: _buildTabContent(),
+                    ),
                   ),
                   SizedBox(height: 40.h),
                 ]),
@@ -150,7 +173,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
         ),
         bottomNavigationBar: CurtainDrop(
           index: 4,
-          child: _buildBottomActionBar(),
+          child: RepaintBoundary(child: _buildBottomActionBar()),
         ),
       ),
     );
@@ -230,6 +253,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
           children: [
             PremiumMatchProgressBar(
               totalScore: widget.university.matchPercentage,
+              isPremium: _isPremium,
             ),
             SizedBox(height: 24.h),
             AdmissionAnalysisTables(university: widget.university),
@@ -279,7 +303,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
             Expanded(
               child: Text(
                 AppLocalizations.of(context).translate('filterAiRecommended'),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -302,7 +326,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => showUniPassAiSheet(context, widget.university),
                 icon: const Icon(Icons.auto_awesome, color: Colors.white),
                 label: Text(
                   AppLocalizations.of(context).translate('askUniPathAi'),
@@ -313,7 +337,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4F46E5),
-                  minimumSize: Size(56.h, 56.h),
+                  minimumSize: Size.fromHeight(56.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
@@ -321,22 +345,34 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                 ),
               ),
             ),
-            SizedBox(width: 12.w),
-            Container(
-              height: 56.h,
-              width: 56.w,
-              decoration: BoxDecoration(
-                color: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.share_outlined,
-                  color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+            if (widget.university.websiteUrl != null && widget.university.websiteUrl!.isNotEmpty) ...[
+              SizedBox(width: 12.w),
+              Container(
+                height: 56.h,
+                width: 56.w,
+                decoration: BoxDecoration(
+                  color: context.isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
-                onPressed: () {},
+                child: IconButton(
+                  icon: Icon(
+                    Icons.language,
+                    color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WebViewScreen(
+                          url: widget.university.websiteUrl!,
+                          title: widget.university.name,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

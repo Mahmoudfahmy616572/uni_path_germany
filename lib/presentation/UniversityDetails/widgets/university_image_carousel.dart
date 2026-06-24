@@ -25,7 +25,7 @@ class UniversityImageCarousel extends StatelessWidget {
 
     return CarouselSlider(
       options: CarouselOptions(
-        height: 300,
+        height: 300.h,
         viewportFraction: 1.0,
         autoPlay: images.length > 1,
       ),
@@ -34,10 +34,10 @@ class UniversityImageCarousel extends StatelessWidget {
           imageUrl: image, // ✅ مصلح: استخدم image مش university.logoUrl
           fit: BoxFit.cover,
           width: double.infinity,
-          placeholder: (context, url) => const Center(
+          placeholder: (context, url) => Center(
             child: SizedBox(
-              width: 20,
-              height: 20,
+              width: 20.r,
+              height: 20.r,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
@@ -57,7 +57,7 @@ class UniversityImageCarousel extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_outlined, size: 50, color: Colors.grey[400]),
+          Icon(Icons.image_outlined, size: 50.sp, color: Colors.grey[400]),
           SizedBox(height: 10.h),
           Text(
             'Image not available',

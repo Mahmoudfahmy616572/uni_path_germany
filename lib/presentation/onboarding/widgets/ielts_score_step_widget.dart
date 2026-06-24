@@ -50,8 +50,8 @@ class IeltsScoreStepWidget extends StatelessWidget {
             index: 2,
             child: Center(
               child: Container(
-                width: 140,
-                height: 140,
+                width: 140.r,
+                height: 140.r,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -62,7 +62,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
                     state.ieltsScore.toStringAsFixed(1),
                     style: TextStyle(
                       color: AppColors.primary,
-                      fontSize: 48,
+                      fontSize: 48.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -77,7 +77,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: AppColors.primary,
                 inactiveTrackColor: context.inputBgColor,
-                trackHeight: 8.0,
+                trackHeight: 8.h,
                 thumbColor: AppColors.primary,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14.0),
                 overlayColor: AppColors.primary.withValues(alpha: 0.2),
@@ -101,7 +101,7 @@ class IeltsScoreStepWidget extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

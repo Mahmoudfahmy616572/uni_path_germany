@@ -6,6 +6,7 @@ import 'package:germany_travel/domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
+import 'uni_pass_ai_sheet.dart';
 
 class StickyBottomBar extends StatelessWidget {
   final UniversityEntity university;
@@ -22,7 +23,7 @@ class StickyBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(
@@ -33,7 +34,7 @@ class StickyBottomBar extends StatelessWidget {
           BoxShadow(
             color: Color(0xFF0F172A).withValues(alpha: 0.04),
             blurRadius: 10.r,
-            offset: const Offset(0, -4),
+            offset: Offset(0, -4.r),
           ),
         ],
       ),
@@ -54,9 +55,7 @@ class StickyBottomBar extends StatelessWidget {
                   color: Color(0xFF4F46E5),
                   size: 26.sp,
                 ),
-                onPressed: () {
-                  // Ø¶ÙŠÙ Ø§Ù„Ø£ÙƒØ´Ù† Ø¨ØªØ§Ø¹ Ø§Ù„Ù€ AI Ù‡Ù†Ø§
-                },
+                onPressed: () => showUniPassAiSheet(context, university),
               ),
             ),
             SizedBox(width: 16.w), // Ø§Ù„Ù…Ø³Ø§ÙØ© Ø¨ÙŠÙ† Ø§Ù„Ø²Ø±Ø§Ø±ÙŠÙ†

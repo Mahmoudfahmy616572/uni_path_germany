@@ -1,6 +1,25 @@
 /// Static templates for missing documents.
 /// Replaces Gemini API calls for missing docs — saves usage and gives reliable advice.
 class MissingDocTemplates {
+  /// Returns a single template for a specific doc type (1 map, not all 5).
+  static Map<String, dynamic> suggestionForDocType(
+      String docType, Map<String, dynamic> studentProfile) {
+    switch (docType) {
+      case 'transcripts':
+        return _transcripts();
+      case 'bachelor_cert':
+        return _bachelorCert();
+      case 'sop':
+        return _sop(studentProfile);
+      case 'cv':
+        return _cv();
+      case 'language_cert':
+        return _languageCert(studentProfile);
+      default:
+        return {'doc_type': docType, 'status': 'missing', 'title': 'Document', 'tips': []};
+    }
+  }
+
   static List<Map<String, dynamic>> getSuggestions(
       Map<String, dynamic> studentProfile) {
     final hasIelts = studentProfile['has_ielts'] == true;

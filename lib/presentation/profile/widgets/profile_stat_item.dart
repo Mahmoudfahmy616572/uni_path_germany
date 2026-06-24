@@ -10,8 +10,8 @@ class ProfileStatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 95,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      width: 95.w,
+      padding: EdgeInsets.symmetric(vertical: 12.h),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16.r),

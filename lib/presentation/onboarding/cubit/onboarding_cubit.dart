@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/notification_service.dart';
 import 'onboarding_states.dart';
 
 class OnboardingCubit extends Cubit<OnboardingState> {
@@ -127,6 +128,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             })
             .eq('id', user.id);
       }
+      // Request notification permission after first-time profile completion
+      NotificationService.requestNotificationPermission();
       emit(OnboardingSuccess());
     } catch (e) {
       emit(currentState.copyWith(isLoading: false, errorMessage: e.toString()));

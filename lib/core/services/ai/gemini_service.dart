@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../../../domain/entities/university_entity.dart';
 import 'ai_prompts.dart';
 
 class GeminiService {
@@ -28,22 +30,31 @@ class GeminiService {
 
   Future<String> _callGemini(String prompt,
       {double temperature = 0.4, int maxOutputTokens = 8192}) async {
-    if (_useServer) {
-      final response = await _dio.post('$_serverUrl/api/ai/chat',
-          data: {
-            'prompt': prompt,
-            'temperature': temperature,
-            'maxOutputTokens': maxOutputTokens,
-          });
-      return response.data['text'] as String? ?? '';
-    }
+    return _retryOnRateLimit(() async {
+      if (_useServer) {
+        try {
+          final response = await _dio.post('$_serverUrl/api/ai/chat',
+              data: {
+                'prompt': prompt,
+                'temperature': temperature,
+                'maxOutputTokens': maxOutputTokens,
+              });
+          return response.data['text'] as String? ?? '';
+        } on DioException catch (e) {
+          final code = e.response?.statusCode ?? 0;
+          if ((code == 429 || code == 503) && (_apiKey != null && _apiKey.isNotEmpty)) {
+            // fall through to direct Gemini API
+          } else {
+            rethrow;
+          }
+        }
+      }
 
-    if (_apiKey == null || _apiKey.isEmpty) {
-      throw Exception(
-          'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
-    }
+      if (_apiKey == null || _apiKey.isEmpty) {
+        throw Exception(
+            'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
+      }
 
-    return await _retryOnRateLimit(() async {
       final response = await _dio.post(
         '$_baseUrl:generateContent?key=$_apiKey',
         data: {
@@ -63,25 +74,49 @@ class GeminiService {
 
   Future<String> _callGeminiWithPdf(
       String prompt, Uint8List pdfBytes, String mimeType) async {
-    if (_useServer) {
-      final formData = FormData.fromMap({
-        'prompt': prompt,
-        'file': MultipartFile.fromBytes(pdfBytes,
-            filename: 'document.pdf',
-            contentType: DioMediaType.parse(mimeType)),
-      });
-      final response = await _dio.post('$_serverUrl/api/ai/chat-with-pdf',
-          data: formData);
-      return response.data['text'] as String? ?? '';
-    }
+    return _callGeminiWithMultiplePdfs(prompt, [
+      {'bytes': pdfBytes, 'mimeType': mimeType, 'filename': 'document.pdf'},
+    ]);
+  }
 
-    if (_apiKey == null || _apiKey.isEmpty) {
-      throw Exception(
-          'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
-    }
+  /// Send a prompt alongside one or more PDF files to Gemini.
+  Future<String> _callGeminiWithMultiplePdfs(
+    String prompt,
+    List<Map<String, dynamic>> files,
+  ) async {
+    return _retryOnRateLimit(() async {
+      if (_useServer) {
+        try {
+          final formData = FormData.fromMap({'prompt': prompt});
+          for (int i = 0; i < files.length; i++) {
+            formData.files.add(MapEntry(
+              'file$i',
+              MultipartFile.fromBytes(
+                files[i]['bytes'] as Uint8List,
+                filename: files[i]['filename'] as String? ?? 'document_$i.pdf',
+                contentType:
+                    DioMediaType.parse(files[i]['mimeType'] as String? ?? 'application/pdf'),
+              ),
+            ));
+          }
+          final response =
+              await _dio.post('$_serverUrl/api/ai/chat-with-pdf', data: formData);
+          return response.data['text'] as String? ?? '';
+        } on DioException catch (e) {
+          final code = e.response?.statusCode ?? 0;
+          if ((code == 429 || code == 503) && (_apiKey != null && _apiKey.isNotEmpty)) {
+            // fall through to direct Gemini API
+          } else {
+            rethrow;
+          }
+        }
+      }
 
-    final base64Data = base64Encode(pdfBytes);
-    return await _retryOnRateLimit(() async {
+      if (_apiKey == null || _apiKey.isEmpty) {
+        throw Exception(
+            'No GEMINI_API_KEY or SERVER_URL set. Configure one in .env');
+      }
+
       final response = await _dio.post(
         '$_baseUrl:generateContent?key=$_apiKey',
         data: {
@@ -89,12 +124,13 @@ class GeminiService {
             {
               'parts': [
                 {'text': prompt},
-                {
-                  'inlineData': {
-                    'mimeType': mimeType,
-                    'data': base64Data,
-                  }
-                }
+                ...files.map((f) => {
+                      'inlineData': {
+                        'mimeType':
+                            f['mimeType'] as String? ?? 'application/pdf',
+                        'data': base64Encode(f['bytes'] as Uint8List),
+                      }
+                    }),
               ]
             }
           ],
@@ -105,23 +141,41 @@ class GeminiService {
     });
   }
 
-  /// Retry on 429 (Rate Limit) with exponential backoff up to 3 attempts
+  /// Retry on 429 (Rate Limit) with exponential backoff up to 5 attempts
   Future<T> _retryOnRateLimit<T>(Future<T> Function() fn) async {
-    const maxRetries = 3;
+    const maxRetries = 5;
     for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
         return await fn();
       } on DioException catch (e) {
         if (attempt < maxRetries - 1 &&
             e.type == DioExceptionType.badResponse &&
-            e.response?.statusCode == 429) {
-          await Future.delayed(Duration(seconds: 5 * (attempt + 1)));
+            (e.response?.statusCode == 429 || e.response?.statusCode == 503)) {
+          final delay = Duration(seconds: 5 * (1 << attempt) + Random().nextInt(6));
+          await Future.delayed(delay);
           continue;
         }
         rethrow;
       }
     }
     throw Exception('Rate limit retry exhausted');
+  }
+
+  Future<List<Map<String, dynamic>>> getUniversityRecommendations({
+    required Map<String, dynamic> studentProfile,
+  }) async {
+    final prompt = AiPrompts.universityRecommendations(studentProfile);
+    final text = await _callGemini(prompt, temperature: 0.4);
+    final result = _parseJsonResponse(text);
+    if (result.isEmpty && text != '[]') {
+      throw Exception('Recommendation parse failed');
+    }
+    return result;
+  }
+
+  Future<String> germanPractice(String message) async {
+    final prompt = AiPrompts.germanPractice(message);
+    return _callGemini(prompt, temperature: 0.5);
   }
 
   Future<List<Map<String, dynamic>>> getImprovementSuggestions({
@@ -247,8 +301,11 @@ class GeminiService {
     required String studentBackground,
     required String targetDegree,
     String languageCode = 'en',
+    Uint8List? transcriptPdf,
+    Uint8List? bachelorCertPdf,
+    Uint8List? existingCvPdf,
   }) async {
-    final prompt = AiPrompts.cvGeneration(
+    String prompt = AiPrompts.cvGeneration(
       programName: programName,
       universityName: universityName,
       major: major,
@@ -257,7 +314,113 @@ class GeminiService {
       targetDegree: targetDegree,
       languageCode: languageCode,
     );
+
+    final files = <Map<String, dynamic>>[];
+    bool hasDocs = false;
+    if (transcriptPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'CV'); hasDocs = true; }
+      files.add({
+        'bytes': transcriptPdf, 'mimeType': 'application/pdf', 'filename': 'transcript.pdf'
+      });
+    }
+    if (bachelorCertPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'CV'); hasDocs = true; }
+      files.add({
+        'bytes': bachelorCertPdf, 'mimeType': 'application/pdf', 'filename': 'bachelor_cert.pdf'
+      });
+    }
+    if (existingCvPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'CV'); hasDocs = true; }
+      files.add({
+        'bytes': existingCvPdf, 'mimeType': 'application/pdf', 'filename': 'existing_cv.pdf'
+      });
+    }
+
+    if (files.isNotEmpty) {
+      return await _callGeminiWithMultiplePdfs(prompt, files);
+    }
     return await _callGemini(prompt);
+  }
+
+  /// Prepend instructions telling Gemini to extract data from attached PDFs
+  /// then generate a rich, detailed document.
+  String _prependDocExtraction(String originalPrompt, String docType) {
+    return '''
+IMPORTANT INSTRUCTION — Student documents are attached as PDFs.
+
+Read ALL attached documents carefully and extract comprehensive data about the student:
+- Academic Transcript: GPA, grading scale, university name, degree/major, all course names and grades, credit hours, graduation date, any honors
+- Bachelor Certificate: full legal name, degree title, university, graduation date
+- Existing CV (if attached): work experience with dates and employers, skills, projects, certifications, languages, achievements, and ALL links (GitHub, LinkedIn, portfolio, project URLs, social media)
+
+Priority order when information overlaps: Academic Transcript (most reliable) > Bachelor Certificate > Existing CV > Background text below.
+
+Then generate a RICH, DETAILED $docType. Requirements:
+- Base everything on the extracted document data — this is your primary source
+- EXPAND on the data you find: describe course content, elaborate on work responsibilities and achievements, add context to projects
+- Create a comprehensive 1-2 page document with substantive content in every section
+- For each work experience entry, include 2-4 bullet points describing responsibilities and achievements
+- For education, describe relevant coursework, projects, and academic achievements
+- Include all skills, languages, and certifications found in the documents
+- When citing GPA, always include the grading scale from the transcript
+- If the existing CV contains a phone/email/address, use those; otherwise omit
+- CRITICAL — Extract and preserve ALL links/URLs from the existing CV (GitHub profile, LinkedIn profile, project repositories, portfolio website, social media, etc.). Include them under the relevant sections (e.g., under Projects add the project repo link, under Personal Data add GitHub and LinkedIn URLs). These links are essential for credibility.
+- HYPERLINKS: Format every link as [Display Text](https://actual.url). Example: [GitHub](https://github.com/username) or [LinkedIn](https://linkedin.com/in/username). Do NOT write raw URLs.
+- Use PLAIN TEXT only. NO markdown formatting (no asterisks, no dashes --- or ***, no bullet symbols, no hashtags, no tables).
+- Separate sections with blank lines. Use simple sentences and line breaks for structure.
+- Do NOT include any future dates or ongoing projects without end dates
+
+$originalPrompt''';
+  }
+
+  Future<String> askUniversityChat({
+    required UniversityEntity university,
+    required String message,
+    required List<Map<String, String>> history,
+    Map<String, dynamic>? userProfile,
+    String languageCode = 'en',
+  }) async {
+    final uniMap = {
+      'name': university.name,
+      'location': university.location,
+      'rankings': university.rankings,
+      'matchPercentage': university.matchPercentage,
+      'websiteUrl': university.websiteUrl,
+      'description': university.description,
+      'programs': university.programs.map((p) => {
+        'programName': p.programName,
+        'major': p.major,
+        'degreeType': p.degreeType,
+        'requiredGpa': p.requiredGpa,
+        'instructionLanguage': p.instructionLanguage,
+        'requiresIelts': p.requiresIelts,
+        'minIeltsScore': p.minIeltsScore,
+        'acceptsMoi': p.acceptsMoi,
+        'deadline': p.deadline,
+        'intakeType': p.intakeType,
+        'tuitionFeePerYear': p.tuitionFeePerYear,
+        'applicationFee': p.applicationFee,
+        'matchScore': p.matchScore,
+        'isRecommended': p.isRecommended,
+      }).toList(),
+    };
+
+    final system = AiPrompts.universityChatSystemPrompt(uniMap, userProfile: userProfile);
+    final lang = languageCode == 'ar'
+        ? '\nIMPORTANT: The user is speaking Arabic. Respond in Arabic. Use formal, respectful Arabic suitable for academic guidance.'
+        : '';
+
+    final buffer = StringBuffer();
+    buffer.writeln(system);
+    buffer.writeln(lang);
+    buffer.writeln('\nConversation:');
+    for (final msg in history) {
+      buffer.writeln('${msg['role']}: ${msg['text']}');
+    }
+    buffer.writeln('user: $message');
+    buffer.writeln('\nAssistant:');
+
+    return _callGemini(buffer.toString(), temperature: 0.3);
   }
 
   Future<String> generateSop({
@@ -269,8 +432,11 @@ class GeminiService {
     required String studentBackground,
     required String programHighlights,
     String languageCode = 'en',
+    Uint8List? transcriptPdf,
+    Uint8List? bachelorCertPdf,
+    Uint8List? existingCvPdf,
   }) async {
-    final prompt = AiPrompts.sopGeneration(
+    String prompt = AiPrompts.sopGeneration(
       programName: programName,
       universityName: universityName,
       degreeType: degreeType,
@@ -280,6 +446,31 @@ class GeminiService {
       programHighlights: programHighlights,
       languageCode: languageCode,
     );
+
+    final files = <Map<String, dynamic>>[];
+    bool hasDocs = false;
+    if (transcriptPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'Motivation Letter / SOP'); hasDocs = true; }
+      files.add({
+        'bytes': transcriptPdf, 'mimeType': 'application/pdf', 'filename': 'transcript.pdf'
+      });
+    }
+    if (bachelorCertPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'Motivation Letter / SOP'); hasDocs = true; }
+      files.add({
+        'bytes': bachelorCertPdf, 'mimeType': 'application/pdf', 'filename': 'bachelor_cert.pdf'
+      });
+    }
+    if (existingCvPdf != null) {
+      if (!hasDocs) { prompt = _prependDocExtraction(prompt, 'Motivation Letter / SOP'); hasDocs = true; }
+      files.add({
+        'bytes': existingCvPdf, 'mimeType': 'application/pdf', 'filename': 'existing_cv.pdf'
+      });
+    }
+
+    if (files.isNotEmpty) {
+      return await _callGeminiWithMultiplePdfs(prompt, files);
+    }
     return await _callGemini(prompt);
   }
 

@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+import '../../utils/logger.dart';
+
 /// Caches AI review results locally using Hive so re-reviewing unchanged
 /// files doesn't call the Gemini API again.
 ///
@@ -40,7 +42,8 @@ class ReviewCacheService {
       final reviews = entry['reviews'];
       if (reviews is! List) return null;
       return reviews.map((e) => Map<String, dynamic>.from(e)).toList();
-    } catch (_) {
+    } catch (e) {
+      log.e('getCachedReview error: $e');
       return null;
     }
   }
