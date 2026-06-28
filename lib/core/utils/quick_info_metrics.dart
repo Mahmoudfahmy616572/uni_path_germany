@@ -67,8 +67,8 @@ class QuickInfoMetrics extends StatelessWidget {
           tuitionFee <= 0 ? loc.translate('freeProgram') : loc.translate('perYear'),
           tuitionFee <= 0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
           tuitionFee <= 0
-              ? context.isDark ? AppColors.badgeGreen.withOpacity(0.15) : const Color(0xFFDCFCE7)
-              : context.isDark ? AppColors.badgeAmber.withOpacity(0.15) : const Color(0xFFFEF3C7),
+              ? context.isDark ? AppColors.badgeGreen.withValues(alpha: 0.15) : const Color(0xFFDCFCE7)
+              : context.isDark ? AppColors.badgeAmber.withValues(alpha: 0.15) : const Color(0xFFFEF3C7),
         )),
       ],
     );

@@ -38,12 +38,37 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _rememberMe = false;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+  bool _biometricLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
-    _tryBiometricLogin();
+    _initBiometric();
+  }
+
+  Future<void> _initBiometric() async {
+    try {
+      final available = await BiometricService.isAvailable();
+      if (!mounted) return;
+      _biometricLoading = false;
+      if (available) {
+        _biometricAvailable = true;
+        _biometricEnabled = await BiometricService.isBiometricEnabled();
+        if (!mounted) return;
+        setState(() {});
+        await _tryBiometricLogin();
+      } else {
+        setState(() {});
+      }
+    } catch (_) {
+      if (mounted) {
+        _biometricLoading = false;
+        setState(() {});
+      }
+    }
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -62,14 +87,40 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!enabled) return;
     final available = await BiometricService.isAvailable();
     if (!available) return;
-    final authed = await BiometricService.authenticate();
-    if (!authed) return;
+    final result = await BiometricService.authenticate();
+    if (!result.success) return;
     if (!mounted) return;
     final creds = LocalStorageService.getCredentials();
     if (creds != null) {
       _emailOrUsernameController.text = creds.email;
       _passwordController.text = creds.password;
       _onLogin();
+    }
+  }
+
+  Future<void> _onBiometricToggle(bool? v) async {
+    final scaffold = ScaffoldMessenger.of(context);
+    final loc = AppLocalizations.of(context);
+    final ctx = context;
+    if (v == true) {
+      final result = await BiometricService.authenticate();
+      if (!result.success) {
+        if (ctx.mounted) {
+          final msg = result.errorMessage ?? 'Biometric authentication failed';
+          scaffold.showSnackBar(SnackBar(content: Text(msg)));
+        }
+        return;
+      }
+      await BiometricService.setBiometricEnabled(true);
+      if (!mounted) return;
+      setState(() => _biometricEnabled = true);
+      scaffold.showSnackBar(
+        SnackBar(content: Text(loc.translate('biometricLoginEnabled'))),
+      );
+    } else {
+      await BiometricService.setBiometricEnabled(false);
+      if (!mounted) return;
+      setState(() => _biometricEnabled = false);
     }
   }
 
@@ -253,43 +304,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       // Biometric login option
-                      if (_rememberMe) ...[
+                      if (_rememberMe && _biometricAvailable) ...[
                         SizedBox(height: 8.h),
-                        FutureBuilder<bool>(
-                          future: BiometricService.isAvailable(),
-                          builder: (context, snapshot) {
-                            if (snapshot.data != true) return const SizedBox.shrink();
-                            return FutureBuilder<bool>(
-                              future: BiometricService.isBiometricEnabled(),
-                              builder: (context, enabledSnapshot) {
-                                return CheckboxListTile(
-                                  value: enabledSnapshot.data ?? false,
-                                  onChanged: (v) async {
-                                    if (v == true) {
-                                      final authed = await BiometricService.authenticate();
-                                      if (authed) {
-                                        await BiometricService.setBiometricEnabled(true);
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Biometric login enabled')),
-                                          );
-                                        }
-                                      }
-                                    } else {
-                                      await BiometricService.setBiometricEnabled(false);
-                                    }
-                                    if (context.mounted) setState(() {});
-                                  },
-                                  title: Text(
-                                    'Enable fingerprint / face unlock',
-                                    style: TextStyle(fontSize: 13.sp),
-                                  ),
-                                  dense: true,
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                );
-                              },
-                            );
-                          },
+                        CheckboxListTile(
+                          value: _biometricEnabled,
+                          onChanged: _biometricLoading ? null : _onBiometricToggle,
+                          title: Text(
+                            AppLocalizations.of(context).translate('enableBiometric'),
+                            style: TextStyle(fontSize: 13.sp),
+                          ),
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
                         ),
                       ],
                       SizedBox(height: 20.h),
@@ -329,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
               CurtainDrop(
                 index: 5,
                 child: SocialAuthButton(
-                  text: "Continue with Google",
+                  text: AppLocalizations.of(context).translate('continueWithGoogle'),
                   icon: FontAwesomeIcons.google,
                   iconColor: Colors.red,
                   onPressed: () => context.read<LoginCubit>().signInWithOAuth(OAuthProvider.google),

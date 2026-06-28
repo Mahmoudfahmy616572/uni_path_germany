@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminProgramsScreen extends StatefulWidget {
   const AdminProgramsScreen({super.key});
@@ -34,8 +35,8 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final univs = await Supabase.instance.client.from('universities').select('id, name').order('name');
-      final progs = await Supabase.instance.client.from('university_programs').select('*, universities(name)').order('program_name');
+      final univs = await Supabase.instance.client.from('universities').select('id, name').order('name').timeout(const Duration(seconds: 10));
+      final progs = await Supabase.instance.client.from('university_programs').select('*, universities(name)').order('program_name').timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _universities = List<Map<String, dynamic>>.from(univs);
@@ -45,7 +46,7 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -65,21 +66,21 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Program'),
-        content: const Text('Are you sure?'),
+        title: Text(AppLocalizations.of(context).translate('deleteAccount')),
+        content: Text(AppLocalizations.of(context).translate('deleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('yesDelete'), style: TextStyle(color: Colors.red))),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await Supabase.instance.client.from('university_programs').delete().eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Program deleted'), backgroundColor: Color(0xFF10B981)));
+      await Supabase.instance.client.from('university_programs').delete().eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('programDeleted')), backgroundColor: Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -116,15 +117,15 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Program Name')),
-                DataColumn(label: Text('University')),
-                DataColumn(label: Text('Degree')),
-                DataColumn(label: Text('Major')),
-                DataColumn(label: Text('Duration')),
-                DataColumn(label: Text('Intake')),
-                DataColumn(label: Text('Language')),
-                DataColumn(label: Text('Actions')),
+              columns: [
+                DataColumn(label: Text(AppLocalizations.of(context).translate('programName'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('universityName'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('degree'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('major'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('duration'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('intake'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('language'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('actions'))),
               ],
               rows: _programs.map((p) => DataRow(cells: [
                 DataCell(Text(p['program_name']?.toString() ?? '')),
@@ -154,11 +155,11 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: CurtainDrop(index: 0, child: const Text('Programs')),
+        title: CurtainDrop(index: 0, child: Text(AppLocalizations.of(context).translate('adminPrograms'))),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon:                     Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: AppLocalizations.of(context).translate('exportCsv'), onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -172,7 +173,7 @@ class _AdminProgramsScreenState extends State<AdminProgramsScreen> {
                       children: [
                         Icon(Icons.playlist_remove_outlined, size: 48.sp, color: Colors.grey[300]),
 SizedBox(height: 8.h),
-                        Text('No programs yet', style: TextStyle(color: Colors.grey[500])),
+                        Text(AppLocalizations.of(context).translate('noPrograms'), style: TextStyle(color: Colors.grey[500])),
                       ],
                     ),
                   )
@@ -224,7 +225,7 @@ SizedBox(height: 8.h),
         child: FloatingActionButton.extended(
         onPressed: () => _editDialog(null),
         icon: const Icon(Icons.add),
-        label: const Text('Add Program'),
+        label: Text(AppLocalizations.of(context).translate('addProgram')),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
       ),
@@ -257,27 +258,27 @@ SizedBox(height: 8.h),
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(existing != null ? 'Edit Program' : 'Add Program'),
+          title: Text(existing != null ? AppLocalizations.of(context).translate('editProgram') : AppLocalizations.of(context).translate('addProgram')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: selectedUnivId,
-                  decoration: const InputDecoration(labelText: 'University *', border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('universityName') + ' *', border: OutlineInputBorder()),
                   dropdownColor: Colors.white,
                   isExpanded: true,
-                  hint: const Text('Select a university', style: TextStyle(color: Color(0xFF94A3B8))),
+                  hint: Text(AppLocalizations.of(context).translate('selectUniversity'), style: TextStyle(color: Color(0xFF94A3B8))),
                   items: _universities.map((u) => DropdownMenuItem(value: u['id']?.toString(), child: Text(u['name']?.toString() ?? '', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
                   onChanged: (v) => setDialogState(() => selectedUnivId = v),
                   style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
                 SizedBox(height: 12.h),
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Program Name *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: nameCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('programName') + ' *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: selectedDegree,
-                  decoration: const InputDecoration(labelText: 'Degree *', border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('degree') + ' *', border: OutlineInputBorder()),
                   dropdownColor: Colors.white,
                   isExpanded: true,
                   items: ['Bachelor', 'Master', 'PhD'].map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
@@ -295,21 +296,21 @@ SizedBox(height: 8.h),
                   style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
                 SizedBox(height: 12.h),
-                TextField(controller: langCtrl, decoration: const InputDecoration(labelText: 'Language', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: langCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('language'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: deadlineCtrl, decoration: const InputDecoration(labelText: 'Deadline', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: deadlineCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('deadline'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()), maxLines: 3, style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: descCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('description'), border: OutlineInputBorder()), maxLines: 3, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: majorCtrl, decoration: const InputDecoration(labelText: 'Major', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: majorCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('major'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: requiredGpaCtrl, decoration: const InputDecoration(labelText: 'Required GPA', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: requiredGpaCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('requiredGpa'), border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: instrLangCtrl, decoration: const InputDecoration(labelText: 'Instruction Language', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: instrLangCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('languageOfInstruction'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: selectedIntake,
-                  decoration: const InputDecoration(labelText: 'Intake Type', border: OutlineInputBorder()),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('intake'), border: OutlineInputBorder()),
                   dropdownColor: Colors.white,
                   isExpanded: true,
                   items: ['Winter', 'Summer'].map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(color: Color(0xFF0F172A))))).toList(),
@@ -317,14 +318,14 @@ SizedBox(height: 8.h),
                   style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
                 ),
                 SizedBox(height: 12.h),
-                TextField(controller: appFeeCtrl, decoration: const InputDecoration(labelText: 'Application Fee', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: appFeeCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('applicationFee'), border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: tuitionCtrl, decoration: const InputDecoration(labelText: 'Tuition Fee / Year', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: tuitionCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('tuitionFee'), border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: curriculumCtrl, decoration: const InputDecoration(labelText: 'Curriculum', border: OutlineInputBorder()), maxLines: 2, style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: curriculumCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('curriculum'), border: OutlineInputBorder()), maxLines: 2, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
                 CheckboxListTile(
-                  title: const Text('Requires IELTS'),
+                  title: Text(AppLocalizations.of(context).translate('ieltsRequired')),
                   value: requiresIelts,
                   onChanged: (v) => setDialogState(() => requiresIelts = v ?? false),
                   contentPadding: EdgeInsets.zero,
@@ -335,21 +336,21 @@ SizedBox(height: 8.h),
                   SizedBox(height: 12.h),
                 ],
                 CheckboxListTile(
-                  title: const Text('Accepts MOI (Medium of Instruction)'),
+                  title: Text(AppLocalizations.of(context).translate('moiAccepted')),
                   value: acceptsMoi,
                   onChanged: (v) => setDialogState(() => acceptsMoi = v ?? false),
                   contentPadding: EdgeInsets.zero,
                 ),
                 SizedBox(height: 12.h),
-                TextField(controller: dataSourceCtrl, decoration: const InputDecoration(labelText: 'Data Source (e.g. daad_api)', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: dataSourceCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('dataSource'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
-                TextField(controller: linkCtrl, decoration: const InputDecoration(labelText: 'Program URL (web view)', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+                TextField(controller: linkCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('programUrl'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('save'))),
           ],
         ),
       ),
@@ -395,14 +396,14 @@ SizedBox(height: 8.h),
         'program_url': linkCtrl.text.trim(),
       };
       if (existing != null) {
-        await Supabase.instance.client.from('university_programs').update(data).eq('id', existing['id']);
+        await Supabase.instance.client.from('university_programs').update(data).eq('id', existing['id']).timeout(const Duration(seconds: 10));
       } else {
-        await Supabase.instance.client.from('university_programs').insert(data);
+        await Supabase.instance.client.from('university_programs').insert(data).timeout(const Duration(seconds: 10));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(existing != null ? 'Program updated' : 'Program added'), backgroundColor: const Color(0xFF10B981)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('programUpdated')), backgroundColor: const Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 }

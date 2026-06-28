@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/deadline_parser.dart';
 import '../../../../domain/entities/university_entity.dart';
@@ -50,7 +51,7 @@ class PipelineMetricsHub extends StatelessWidget {
             Expanded(child: _buildMetricCard(
               context,
               icon: Icons.calendar_today,
-              label: 'Upcoming\nDeadlines',
+              label: AppLocalizations.of(context).translate('upcomingDeadlinesShort'),
               value: '$upcomingDeadlines',
               color: upcomingDeadlines > 0 ? Colors.redAccent : AppColors.primary,
               isDark: isDark,
@@ -60,7 +61,7 @@ class PipelineMetricsHub extends StatelessWidget {
             Expanded(child: _buildMetricCard(
               context,
               icon: Icons.trending_up,
-              label: 'Avg Match',
+              label: AppLocalizations.of(context).translate('avgMatch'),
               value: '$matchAvg%',
               color: AppColors.primary,
               isDark: isDark,
@@ -69,7 +70,7 @@ class PipelineMetricsHub extends StatelessWidget {
             Expanded(child: _buildMetricCard(
               context,
               icon: Icons.checklist,
-              label: 'Applied',
+              label: AppLocalizations.of(context).translate('appliedShort'),
               value: '$appliedCount/$total',
               color: const Color(0xFF10B981),
               isDark: isDark,
@@ -174,7 +175,7 @@ class PipelineMetricsHub extends StatelessWidget {
             ),
             SizedBox(width: 4.w),
             Text(
-              '$key ($count)',
+              '${AppLocalizations.of(context).translate(key)} ($count)',
               style: TextStyle(
                 fontSize: 10.sp,
                 color: isDark ? AppColors.textMuted : const Color(0xFF64748B),

@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/storage/local_storage_service.dart';
 import '../../../core/utils/match_score_calculator.dart';
+import '../../../data/models/program_model.dart';
 import '../../../data/models/university_model.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
@@ -12,7 +10,9 @@ import 'university_search_state.dart';
 
 class UniversitySearchCubit extends Cubit<UniversitySearchState> {
   final SupabaseClient _supabase = Supabase.instance.client;
-  List<UniversityEntity> _cachedUniversities = [];
+
+  List<String> _availableDegrees = [];
+  List<String> _availableMajors = [];
 
   String _query = '';
   String _intake = 'All';
@@ -20,26 +20,25 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
   String _major = 'All';
   bool _requiresIelts = false;
   bool _acceptsMoi = false;
-  double _maxTuition = 20000.0;
+  double _maxTuition = 0;
   String _language = 'All';
   String _location = 'All';
 
-  List<String> get availableLocations {
-    final locs = _cachedUniversities
-        .map((u) => u.location)
-        .where((l) => l != null && l.isNotEmpty)
-        .cast<String>()
-        .toSet()
-        .toList();
-    locs.sort();
-    return locs;
-  }
-
   UniversitySearchCubit() : super(UniversitySearchInitial());
 
+  List<String> get availableDegrees => List.unmodifiable(_availableDegrees);
+  List<String> get availableMajors => List.unmodifiable(_availableMajors);
+
+  List<String> _lastLocations = [];
+
+  List<String> get availableLocations => List.unmodifiable(_lastLocations);
+
   Future<void> refresh() async {
-    _cachedUniversities = [];
-    await _fetchData();
+    emit(UniversitySearchLoading());
+    _availableDegrees = [];
+    _availableMajors = [];
+    await _fetchDegreesAndMajors();
+    await _fetchFilteredData();
   }
 
   void clearAllFilters() {
@@ -49,13 +48,13 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
     _major = 'All';
     _requiresIelts = false;
     _acceptsMoi = false;
-    _maxTuition = 20000.0;
+    _maxTuition = 0;
     _language = 'All';
     _location = 'All';
-    _applyFilters();
+    _fetchFilteredData();
   }
 
-  void updateFilters({
+  Future<void> updateFilters({
     String? query,
     String? intake,
     String? degree,
@@ -76,171 +75,199 @@ class UniversitySearchCubit extends Cubit<UniversitySearchState> {
     if (language != null) _language = language;
     if (location != null) _location = location;
 
-    if (_cachedUniversities.isEmpty) {
-      await _fetchData();
-    } else {
-      _applyFilters();
+    if (_availableDegrees.isEmpty || _availableMajors.isEmpty) {
+      await _fetchDegreesAndMajors();
+    }
+    await _fetchFilteredData();
+  }
+
+  Future<void> _fetchDegreesAndMajors() async {
+    try {
+      final degreeResult = await _supabase
+          .from('university_programs')
+          .select('degree_type')
+          .limit(1000)
+          .timeout(const Duration(seconds: 10));
+      _availableDegrees = degreeResult
+          .map<String>((r) => r['degree_type'] as String? ?? '')
+          .where((d) => d.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+
+      final majorResult = await _supabase
+          .from('university_programs')
+          .select('major')
+          .limit(1000)
+          .timeout(const Duration(seconds: 10));
+      _availableMajors = majorResult
+          .map<String>((r) => r['major'] as String? ?? '')
+          .where((m) => m.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+    } catch (_) {
+      _availableDegrees = ['Bachelor', 'Master', 'PhD'];
+      _availableMajors = ['Computer Science', 'Medicine', 'Engineering'];
     }
   }
 
-  Future<void> _fetchData() async {
-    emit(UniversitySearchLoading());
+  Future<void> _fetchFilteredData() async {
+    bool isInitialOrError = state is UniversitySearchInitial || state is UniversitySearchError;
+    if (isInitialOrError) {
+      emit(UniversitySearchLoading());
+    }
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception("User not logged in");
 
       final Map<String, dynamic> profile = (await _supabase
           .from('profiles')
-          .select()
+          .select('degree_level, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, target_major, language_preference, gpa, max_gpa, academic_average, high_school_score, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_german_cert_doc')
           .eq('id', user.id)
-          .maybeSingle()) ?? <String, dynamic>{};
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10))) ?? <String, dynamic>{};
 
-      // Try loading from Hive cache first
-      final cachedJson = await LocalStorageService.getRawCachedUniversities();
-      List<dynamic> response;
-      if (cachedJson != null) {
-        response = jsonDecode(cachedJson) as List<dynamic>;
-      } else {
-        response = await _supabase
-            .from('universities')
-            .select('*, university_programs(*)')
-            .eq('country', 'Germany');
-        await LocalStorageService.cacheRawUniversities(jsonEncode(response));
+      var query = _supabase
+          .from('university_programs')
+          .select('*, university:university_id(*)');
+
+      if (_query.isNotEmpty) {
+        query = query.ilike('university.name', '%$_query%');
+      }
+      if (_degree != 'All') {
+        query = query.eq('degree_type', _degree);
+      }
+      if (_major != 'All') {
+        query = query.ilike('major', '%$_major%');
+      }
+      if (_intake == 'Winter Semester') {
+        query = query.or('intake_type.eq.Winter,intake_type.eq.Both');
+      } else if (_intake == 'Summer Semester') {
+        query = query.or('intake_type.eq.Summer,intake_type.eq.Both');
+      }
+      if (_language != 'All') {
+        query = query.eq('instruction_language', _language);
+      }
+      if (_requiresIelts) {
+        query = query.eq('requires_ielts', true);
+      }
+      if (_acceptsMoi) {
+        query = query.eq('accepts_moi', true);
+      }
+      if (_maxTuition > 0) {
+        query = query.lte('tuition_fee_per_year', _maxTuition);
       }
 
-      _cachedUniversities = (response).map((json) {
-        final uni = UniversityModel.fromJson(
-          Map<String, dynamic>.from(json as Map),
-        ).toEntity();
+      final response = await query.limit(200).timeout(const Duration(seconds: 10));
 
-        final List<ProgramEntity> recalculatedPrograms = uni.programs.map((p) {
-          final int score = MatchScoreCalculator.calculate(
-            studentProfile: profile,
-            programRequiredGpa: p.requiredGpa,
-            programRequiresIelts: p.requiresIelts,
-            programMinIelts: p.minIeltsScore,
-            programAcceptsMoi: p.acceptsMoi,
-            programMajor: p.major,
-            programName: p.programName,
-            programLanguage: p.instructionLanguage,
-            programDegree: p.degreeType,
-          );
-          return ProgramEntity(
-            id: p.id,
-            programName: p.programName,
-            major: p.major,
-            requiredGpa: p.requiredGpa,
-            requiresIelts: p.requiresIelts,
-            minIeltsScore: p.minIeltsScore,
-            acceptsMoi: p.acceptsMoi,
-            instructionLanguage: p.instructionLanguage,
-            degreeType: p.degreeType,
-            deadline: p.deadline,
-            applicationFee: p.applicationFee,
-            tuitionFeePerYear: p.tuitionFeePerYear,
-            curriculum: p.curriculum,
-            isRecommended: score >= 60,
-            intakeType: p.intakeType,
-            matchScore: score,
-            programUrl: p.programUrl,
-          );
+      final Map<String, UniversityEntity> uniMap = {};
+      for (final row in response) {
+        final programData = Map<String, dynamic>.from(row as Map);
+        final uniData = programData['university'] as Map<String, dynamic>?;
+        if (uniData == null) continue;
+        if (uniData['country'] != 'Germany') continue;
+
+        final uniId = uniData['id'].toString();
+        if (!uniMap.containsKey(uniId)) {
+          uniMap[uniId] = UniversityModel.fromJson(uniData).toEntity();
+        }
+
+        final p = ProgramModel.fromJson(programData).toEntity();
+        final score = MatchScoreCalculator.calculate(
+          studentProfile: profile,
+          programRequiredGpa: p.requiredGpa,
+          programRequiresIelts: p.requiresIelts,
+          programMinIelts: p.minIeltsScore,
+          programAcceptsMoi: p.acceptsMoi,
+          programMajor: p.major,
+          programName: p.programName,
+          programLanguage: p.instructionLanguage,
+          programDegree: p.degreeType,
+        );
+
+        final updatedProgram = ProgramEntity(
+          id: p.id,
+          programName: p.programName,
+          major: p.major,
+          requiredGpa: p.requiredGpa,
+          requiresIelts: p.requiresIelts,
+          minIeltsScore: p.minIeltsScore,
+          acceptsMoi: p.acceptsMoi,
+          instructionLanguage: p.instructionLanguage,
+          degreeType: p.degreeType,
+          deadline: p.deadline,
+          applicationFee: p.applicationFee,
+          tuitionFeePerYear: p.tuitionFeePerYear,
+          curriculum: p.curriculum,
+          isRecommended: score >= 60,
+          intakeType: p.intakeType,
+          matchScore: score,
+          programUrl: p.programUrl,
+        );
+
+        final uni = uniMap[uniId]!;
+        uniMap[uniId] = uni.copyWith(
+          programs: [...uni.programs, updatedProgram],
+        );
+      }
+
+      var universities = uniMap.values.toList();
+
+      if (_location != 'All') {
+        universities = universities.where((u) {
+          final loc = u.location ?? '';
+          return loc.toLowerCase().contains(_location.toLowerCase());
         }).toList();
+      }
 
-        final int maxScore = recalculatedPrograms.isEmpty
+      for (int i = 0; i < universities.length; i++) {
+        final u = universities[i];
+        final maxScore = u.programs.isEmpty
             ? 0
-            : recalculatedPrograms.map((p) => p.matchScore).reduce(
+            : u.programs.map((p) => p.matchScore).reduce(
                   (a, b) => a > b ? a : b,
                 );
-
-        return uni.copyWith(
-          programs: recalculatedPrograms,
+        universities[i] = u.copyWith(
           matchPercentage: maxScore,
+          matchedProgramsCount: u.programs.where((p) => p.isRecommended).length,
         );
-      }).toList();
+      }
 
-      _applyFilters();
+      _lastLocations = universities
+          .map((u) => u.location ?? '')
+          .where((l) => l.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+
+      emit(
+        UniversitySearchLoaded(
+          allResults: universities,
+          filteredResults: universities,
+          selectedIntake: _intake,
+          selectedDegree: _degree,
+          selectedMajor: _major,
+          requiresIelts: _requiresIelts,
+          acceptsMoi: _acceptsMoi,
+          maxTuition: _maxTuition,
+          selectedLanguage: _language,
+          selectedLocation: _location,
+          availableDegrees: _availableDegrees,
+          availableMajors: _availableMajors,
+        ),
+      );
     } catch (e) {
       emit(UniversitySearchError(e.toString()));
     }
   }
 
-  void _applyFilters() {
-    final filtered = _cachedUniversities
-        .map((uni) {
-          final matchedPrograms = uni.programs.where((p) {
-            final matchesDegree = _degree == 'All' || _normalizeDegree(p.degreeType) == _degree.toLowerCase();
-            final matchesMajor =
-                _major == 'All' ||
-                p.major.contains(_major) ||
-                p.programName.contains(_major);
-            final matchesIelts = !_requiresIelts || p.requiresIelts == true;
-            final matchesTuition = p.tuitionFeePerYear <= _maxTuition;
-            final matchesLang =
-                _language == 'All' || p.instructionLanguage == _language;
-
-            // 🎯 فلترة الفصل الدراسي (Intake)
-            bool matchesIntake = false;
-            if (_intake == 'All' || _intake == 'Both Semesters') {
-              matchesIntake = true;
-            } else {
-              // إذا كان البرنامج "Both" يظهر للجميع، وإلا يجب التطابق
-              matchesIntake =
-                  p.intakeType == 'Both' || _intake.contains(p.intakeType);
-            }
-
-            return matchesDegree &&
-                matchesMajor &&
-                matchesIelts &&
-                matchesTuition &&
-                matchesLang &&
-                matchesIntake;
-          }).toList();
-
-          final matchesLocation = _location == 'All' ||
-              (uni.location?.toLowerCase().contains(_location.toLowerCase()) ?? false);
-          if (matchedPrograms.isNotEmpty &&
-              (_query.isEmpty ||
-                  uni.name.toLowerCase().contains(_query.toLowerCase())) &&
-              matchesLocation) {
-            return uni.copyWith(programs: matchedPrograms);
-          }
-          return null;
-        })
-        .whereType<UniversityEntity>()
-        .toList();
-
-    emit(
-      UniversitySearchLoaded(
-        allResults: _cachedUniversities,
-        filteredResults: filtered,
-        selectedIntake: _intake,
-        selectedDegree: _degree,
-        selectedMajor: _major,
-        requiresIelts: _requiresIelts,
-        acceptsMoi: _acceptsMoi,
-        maxTuition: _maxTuition,
-        selectedLanguage: _language,
-        selectedLocation: _location,
-      ),
-    );
-  }
-
   bool isProgramMatchingFilters(dynamic program) {
-    // دالة مساعدة لشاشة الـ UI
     final matchesIntake =
         _intake == 'All' ||
         _intake == 'Both Semesters' ||
         program.intakeType == 'Both' ||
         _intake.contains(program.intakeType);
     return matchesIntake && (program.tuitionFeePerYear <= _maxTuition);
-  }
-
-  // تطبيع الـ degree للمقارنة (مطابق لـ MatchScoreCalculator._normalizeDegree)
-  String _normalizeDegree(String degree) {
-    final d = degree.toLowerCase();
-    if (d.contains('bachelor')) return 'bachelor';
-    if (d.contains('master')) return 'master';
-    if (d.contains('doctor') || d.contains('phd')) return 'doctorate';
-    return '';
   }
 }

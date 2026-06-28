@@ -20,9 +20,10 @@ class PipelineUniversityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final program = app.programs.isNotEmpty ? app.programs.first : null;
-    final String programName = program?.programName ?? "General Track";
-    final String degreeType = program?.degreeType ?? "Master";
-    final String deadline = program?.deadline ?? "No Deadline";
+    final t = AppLocalizations.of(context).translate;
+    final String programName = program?.programName ?? t('generalTrack');
+    final String degreeType = program?.degreeType ?? t('master');
+    final String deadline = program?.deadline ?? t('noDeadlineFallback');
 
     // 🎯 تصليح الحسبة هنا: نعد المستندات اللي قيمتها عبارة عن رابط (تبدأ بـ http)
     int docsCount =

@@ -272,7 +272,7 @@ class _GpaStepWidgetState extends State<GpaStepWidget> {
         padding: EdgeInsets.symmetric(vertical: 16.r),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withOpacity(0.08)
+              ? AppColors.primary.withValues(alpha: 0.08)
               : context.inputBgColor,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(

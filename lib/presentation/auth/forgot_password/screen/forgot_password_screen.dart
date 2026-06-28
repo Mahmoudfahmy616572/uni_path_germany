@@ -64,7 +64,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               CurtainDrop(
                 index: 1,
                 child: Text(
-                  "Forgot Password?",
+                  AppLocalizations.of(context).translate('forgotPassword'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 32.sp,
@@ -78,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Padding(
                   padding: EdgeInsets.only(top: 10.h),
                   child: Text(
-                    "No worries. Enter your email and we'll send you\na password reset link.",
+                    AppLocalizations.of(context).translate('forgotPasswordSubtitle'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.sp,
@@ -102,7 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         autofocus: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return "Please enter your email";
+                            return AppLocalizations.of(context).translate('enterEmailAddress');
                           }
                           return null;
                         },
@@ -111,7 +111,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       BlocBuilder<LoginCubit, LoginState>(
                         builder: (context, state) {
                           return LoadingButton(
-                            text: "Send Reset Link →",
+                            text: AppLocalizations.of(context).translate('sendResetLink'),
                             isLoading: state is LoginLoading,
                             onPressed: state is LoginLoading
                                 ? null
@@ -136,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Remember your password? ",
+                      AppLocalizations.of(context).translate('rememberYourPassword'),
                       style: TextStyle(
                         color: isDark ? const Color(0xFFAAB1C5) : const Color(0xFF64748B),
                         fontSize: 14.sp,
@@ -145,7 +145,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     GestureDetector(
                       onTap: () => context.pop(),
                       child: Text(
-                        "Login",
+                        AppLocalizations.of(context).translate('login'),
                         style: TextStyle(
                           color: const Color(0xFF7C4DFF),
                           fontWeight: FontWeight.w600,

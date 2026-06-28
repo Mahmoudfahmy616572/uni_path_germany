@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../domain/entities/university_entity.dart';
 
@@ -66,7 +67,7 @@ class _DeadlineCalendarScreenState extends State<DeadlineCalendarScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Deadline Calendar'),
+        title: Text(AppLocalizations.of(context).translate('deadlineCalendar')),
       ),
       body: Column(
         children: [
@@ -125,8 +126,8 @@ class _DeadlineCalendarScreenState extends State<DeadlineCalendarScreen> {
                   SizedBox(height: 12.h),
                   Text(
                     _selectedDay != null
-                        ? 'No deadlines on this day'
-                        : 'Select a date to see deadlines',
+                        ? AppLocalizations.of(context).translate('deadlineCalendarEmpty')
+                        : AppLocalizations.of(context).translate('selectDateToSeeDeadlines'),
                     style: TextStyle(fontSize: 14.sp, color: Colors.grey[500]),
                   ),
                 ],

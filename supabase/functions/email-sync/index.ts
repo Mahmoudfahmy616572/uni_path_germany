@@ -22,34 +22,40 @@ interface ClassifiedEmail {
   detected_payment: string | null;
 }
 
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  { auth: { persistSession: false } },
+);
+
 serve(async (req: Request) => {
   const corsCheck = handleCors(req);
   if (corsCheck) return corsCheck;
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } },
-    );
+    const url = new URL(req.url);
+    const action = url.searchParams.get('action');
+    const code = url.searchParams.get('code');
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401, headers: corsHeaders });
+    // ── OAuth callback from Google/Microsoft ──
+    if (code) {
+      return handleOAuthCallback(url);
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+    // ── OAuth authorize redirect ──
+    if (action === 'authorize') {
+      return handleOAuthAuthorize(url);
     }
 
-    const body = await req.json().catch(() => ({}));
-
-    if (body.action === 'token-exchange') {
-      return handleTokenExchange(req, supabase, user.id, body);
+    // ── POST actions (existing token-exchange + sync) ──
+    if (req.method === 'POST') {
+      return handlePostRequest(req);
     }
 
-    return handleSync(supabase, user.id);
+    return new Response(JSON.stringify({ error: 'Invalid request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }), {
       status: 500,
@@ -58,11 +64,210 @@ serve(async (req: Request) => {
   }
 });
 
+// ── OAuth AUTHORIZE ───────────────────────────────────────────
+
+function handleOAuthAuthorize(url: URL): Response {
+  const provider = url.searchParams.get('provider');
+  const userId = url.searchParams.get('user_id');
+  const clientState = url.searchParams.get('client_state') || '';
+
+  if (!provider || !userId) {
+    return new Response(JSON.stringify({ error: 'Missing provider or user_id' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // req.url is an internal URL (e.g. http://localhost/email-sync).
+  // Use SUPABASE_URL env var to build the public redirect URI.
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const redirectUri = `${supabaseUrl}/functions/v1/email-sync`;
+
+  if (provider === 'gmail') {
+    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
+    if (!clientId) {
+      return new Response(JSON.stringify({ error: 'Gmail OAuth not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly email',
+      access_type: 'offline',
+      prompt: 'consent',
+      state: `gmail:${userId}:${clientState}`,
+    });
+    return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`, 302);
+  }
+
+  if (provider === 'outlook') {
+    const clientId = Deno.env.get('OUTLOOK_CLIENT_ID');
+    if (!clientId) {
+      return new Response(JSON.stringify({ error: 'Outlook OAuth not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'Mail.Read User.Read offline_access',
+      state: `outlook:${userId}:${clientState}`,
+    });
+    return Response.redirect(`https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`, 302);
+  }
+
+  return new Response(JSON.stringify({ error: 'Unknown provider' }), {
+    status: 400,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// ── OAuth CALLBACK ────────────────────────────────────────────
+
+async function handleOAuthCallback(url: URL): Promise<Response> {
+  const code = url.searchParams.get('code')!;
+  const state = url.searchParams.get('state') || '';
+  const parts = state.split(':');
+  const provider = parts[0] || 'gmail';
+  const userId = parts[1];
+  const clientState = parts.slice(2).join(':');
+
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'Missing user in state' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const redirectUri = `${supabaseUrl}/functions/v1/email-sync`;
+
+  let tokenEndpoint: string;
+  let clientIdKey: string;
+  let clientSecretKey: string;
+  let userInfoUrl: string;
+
+  if (provider === 'gmail') {
+    tokenEndpoint = 'https://oauth2.googleapis.com/token';
+    clientIdKey = 'GMAIL_CLIENT_ID';
+    clientSecretKey = 'GMAIL_CLIENT_SECRET';
+    userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  } else if (provider === 'outlook') {
+    tokenEndpoint = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+    clientIdKey = 'OUTLOOK_CLIENT_ID';
+    clientSecretKey = 'OUTLOOK_CLIENT_SECRET';
+    userInfoUrl = 'https://graph.microsoft.com/v1.0/me';
+  } else {
+    // fallback to gmail defaults
+    tokenEndpoint = 'https://oauth2.googleapis.com/token';
+    clientIdKey = 'GMAIL_CLIENT_ID';
+    clientSecretKey = 'GMAIL_CLIENT_SECRET';
+    userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  }
+
+  const clientId = Deno.env.get(clientIdKey);
+  const clientSecret = Deno.env.get(clientSecretKey);
+  if (!clientId || !clientSecret) {
+    return new Response(JSON.stringify({ error: `${provider} OAuth credentials not configured on server` }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Exchange code for tokens
+  const params = new URLSearchParams({
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri,
+    grant_type: 'authorization_code',
+  });
+
+  const tokenRes = await fetch(tokenEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params,
+  });
+
+  if (!tokenRes.ok) {
+    const errText = await tokenRes.text();
+    return new Response(JSON.stringify({ error: `Token exchange failed: ${errText}` }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const tokens = await tokenRes.json();
+  const accessToken: string = tokens.access_token;
+  const refreshToken: string | null = tokens.refresh_token ?? null;
+  const expiresIn: number = tokens.expires_in ?? 3600;
+  const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+  // Get user email from provider
+  const userInfoRes = await fetch(userInfoUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  let email = '';
+  if (userInfoRes.ok) {
+    const userInfo = await userInfoRes.json();
+    email = userInfo.email || userInfo.userPrincipalName || '';
+  }
+
+  // Save to email_connections
+  const { error: upsertError } = await supabase.from('email_connections').upsert({
+    user_id: userId,
+    provider,
+    email,
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    token_expires_at: tokenExpiresAt,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,provider' });
+
+  if (upsertError) {
+    return new Response(JSON.stringify({ error: upsertError.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Redirect back to the app via deep link
+  const appRedirectParts = [`com.unipath.app://email_callback?success=true&provider=${provider}`];
+  if (clientState) appRedirectParts.push(`state=${clientState}`);
+  return Response.redirect(appRedirectParts.join('&'), 302);
+}
+
+// ── POST HANDLER ──────────────────────────────────────────────
+
+async function handlePostRequest(req: Request): Promise<Response> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401, headers: corsHeaders });
+  }
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+  }
+
+  const body = await req.json().catch(() => ({}));
+
+  if (body.action === 'token-exchange') {
+    return handleTokenExchange(req, user.id, body);
+  }
+
+  return handleSync(user.id);
+}
+
 // ── TOKEN EXCHANGE ──────────────────────────────────────────────
 
 async function handleTokenExchange(
   _req: Request,
-  supabase: ReturnType<typeof createClient>,
   userId: string,
   body: Record<string, unknown>,
 ): Promise<Response> {
@@ -137,7 +342,6 @@ async function handleTokenExchange(
   const expiresIn: number = tokens.expires_in ?? 3600;
   const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-  // Get user email from provider
   const userInfoRes = await fetch(userInfoUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -147,7 +351,6 @@ async function handleTokenExchange(
     email = userInfo.email || userInfo.userPrincipalName || '';
   }
 
-  // Save to email_connections
   const { error: upsertError } = await supabase.from('email_connections').upsert({
     user_id: userId,
     provider,
@@ -172,10 +375,7 @@ async function handleTokenExchange(
 
 // ── SYNC ────────────────────────────────────────────────────────
 
-async function handleSync(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-): Promise<Response> {
+async function handleSync(userId: string): Promise<Response> {
   const { data: connections, error: connError } = await supabase
     .from('email_connections')
     .select('*')
@@ -194,7 +394,6 @@ async function handleSync(
     });
   }
 
-  // Get user's applications for matching
   const { data: applications } = await supabase
     .from('my_applications')
     .select('id, name, portal_status, payment_status, auto_track')
@@ -205,7 +404,7 @@ async function handleSync(
   for (const conn of connections as unknown as EmailConnection[]) {
     if (!conn.auto_sync) continue;
 
-    const accessToken = await ensureValidToken(supabase, conn);
+    const accessToken = await ensureValidToken(conn);
     if (!accessToken) {
       results.push({ provider: conn.provider, emails_fetched: 0, classified: 0, applied: 0 });
       continue;
@@ -247,7 +446,6 @@ async function handleSync(
       }
     }
 
-    // Update last_sync_at
     await supabase.from('email_connections').update({
       last_sync_at: new Date().toISOString(),
     }).eq('id', conn.id);
@@ -267,10 +465,7 @@ async function handleSync(
 
 // ── TOKEN REFRESH ───────────────────────────────────────────────
 
-async function ensureValidToken(
-  supabase: ReturnType<typeof createClient>,
-  conn: EmailConnection,
-): Promise<string | null> {
+async function ensureValidToken(conn: EmailConnection): Promise<string | null> {
   if (!conn.access_token) return null;
 
   const expiresAt = conn.token_expires_at ? new Date(conn.token_expires_at).getTime() : 0;

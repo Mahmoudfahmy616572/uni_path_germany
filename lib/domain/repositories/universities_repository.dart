@@ -15,6 +15,9 @@ abstract class UniversitiesRepository {
     required String intake,
     required String languagePreference,
     required String degreeLevel,
+    bool hasGermanCert = false,
+    String? germanCertType,
+    String? germanCertLevel,
   });
 
   // 🎯 جلب الجامعات مع دعم الصفحات (Pagination)

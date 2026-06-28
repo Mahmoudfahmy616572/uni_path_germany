@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/ai/gemini_service.dart';
 import '../../../core/services/services_locator.dart';
 import '../../../core/themes/app_colors.dart';
@@ -108,12 +109,12 @@ class _GermanAssistantSheetState extends State<GermanAssistantSheet> {
                     child: const Icon(Icons.translate, color: Color(0xFF4F46E5), size: 20),
                   ),
                   SizedBox(width: 12.w),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('German Tutor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('Practice your German', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text(AppLocalizations.of(context).translate('germanTutor'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(AppLocalizations.of(context).translate('practiceGerman'), style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -147,7 +148,7 @@ class _GermanAssistantSheetState extends State<GermanAssistantSheet> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Write in German...',
+                        hintText: AppLocalizations.of(context).translate('writeInGerman'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                         filled: true,

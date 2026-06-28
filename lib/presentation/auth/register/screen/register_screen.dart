@@ -241,7 +241,7 @@ class RegisterScreen extends StatelessWidget {
               CurtainDrop(
                 index: 9,
                 child: SocialAuthButton(
-                  text: "Continue with Google",
+                  text: AppLocalizations.of(context).translate('continueWithGoogle'),
                   icon: FontAwesomeIcons.google,
                   iconColor: Colors.red,
                   onPressed: () => context.read<RegisterCubit>().signInWithOAuth(
@@ -308,6 +308,9 @@ class RegisterScreen extends StatelessWidget {
         languagePreference:
             profileData?['languagePreference'] ?? 'English',
         degreeLevel: profileData?['degreeLevel'],
+        hasGermanCert: profileData?['hasGermanCert'],
+        germanCertType: profileData?['germanCertType'],
+        germanCertLevel: profileData?['germanCertLevel'],
       );
     }
   }

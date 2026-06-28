@@ -8,7 +8,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/services/services_locator.dart' as di;
 import 'package:germany_travel/firebase_options.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/services/gamification_service.dart';
@@ -35,62 +34,81 @@ class _NoOverscrollBehavior extends ScrollBehavior {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Device language detection
-  final prefs = await SharedPreferences.getInstance();
-  final savedLocale = prefs.getString('app_locale');
-  if (savedLocale == null) {
-    final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
-    await prefs.setString(
-      'app_locale',
-      deviceLocale.languageCode == 'ar' ? 'ar' : 'en',
-    );
-  }
-
   // Load .env file
   await dotenv.load();
 
-  // Initialize Hive for local storage
+  // Initialize Hive for local storage (fast — local IO only)
   await Hive.initFlutter();
   await LocalStorageService.init();
 
-  // Gamification
-  await GamificationService.init();
-
-  await Supabase.initialize(
-    url: const String.fromEnvironment(
-      'SUPABASE_URL',
-      defaultValue: 'https://marrlrggovghhnmhtbgs.supabase.co',
-    ),
-    publishableKey: const String.fromEnvironment(
-      'SUPABASE_ANON_KEY',
-      defaultValue: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe',
-    ),
-    debug: kDebugMode,
-  );
-  // Firebase init
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Crashlytics — non-fatal errors in production, disabled in debug
-  if (kDebugMode) {
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
-  } else {
-    FlutterError.onError = (details) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-    };
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
+  // Supabase — wrapped in timeout in case of slow network
+  try {
+    await Supabase.initialize(
+      url: const String.fromEnvironment(
+        'SUPABASE_URL',
+        defaultValue: 'https://marrlrggovghhnmhtbgs.supabase.co',
+      ),
+      publishableKey: const String.fromEnvironment(
+        'SUPABASE_ANON_KEY',
+        defaultValue: 'sb_publishable_72tk7ONyzJF9ZZAfVzX3Vw_woJVkEBe',
+      ),
+      debug: kDebugMode,
+    ).timeout(const Duration(seconds: 10));
+  } catch (_) {
+    // Supabase init timed out — SplashScreen will retry
   }
 
-  // Service Locator first (so AuthService & others are ready)
+  // Gamification (local — SharedPreferences)
+  try {
+    await GamificationService.init().timeout(const Duration(seconds: 5));
+  } catch (_) {
+    // Non-critical
+  }
+
+  // Service Locator (synchronous — just registering lazy singletons)
   await di.init();
-  // Notifications & Connectivity
-  await NotificationService.init();
-  NotificationService.setRouter(appRouter);
-  await ConnectivityService().init();
+
+  // Show Flutter UI immediately — heavy init runs in background
   runApp(const MyApp());
+
+  // ── Deferred init (non-blocking) ──
+  _initDeferred();
+}
+
+Future<void> _initDeferred() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 15));
+
+    // Crashlytics — non-fatal errors in production, disabled in debug
+    if (kDebugMode) {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+    } else {
+      FlutterError.onError = (details) {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+    }
+  } catch (_) {
+    // Firebase init failed — app works without it for now
+  }
+
+  try {
+    await NotificationService.init().timeout(const Duration(seconds: 10));
+    NotificationService.setRouter(appRouter);
+  } catch (_) {
+    // Notifications not critical for first launch
+  }
+
+  try {
+    await ConnectivityService().init().timeout(const Duration(seconds: 5));
+  } catch (_) {
+    // Will reconnect when connectivity changes
+  }
 }
 
 class MyApp extends StatefulWidget {

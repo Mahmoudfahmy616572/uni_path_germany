@@ -5,6 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/storage/local_storage_service.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -78,11 +81,29 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    final session = Supabase.instance.client.auth.currentSession;
+
+    // Retry waiting for Supabase if it hasn't initialized yet
+    Session? session;
+    for (int i = 0; i < 10; i++) {
+      try {
+        session = Supabase.instance.client.auth.currentSession;
+        break;
+      } catch (_) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+      }
+    }
+
     if (session != null) {
-      context.go('/home');
+      if (mounted) context.go('/home');
     } else {
-      context.go('/onboarding');
+      final onboardingComplete = await LocalStorageService.isOnboardingComplete();
+      if (!mounted) return;
+      if (onboardingComplete) {
+        context.go('/login');
+      } else {
+        context.go('/onboarding');
+      }
     }
   }
 
@@ -98,6 +119,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -109,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
               SizedBox(height: 24.h),
               _buildAppName(theme),
               SizedBox(height: 48.h),
-              _buildLoadingText(theme),
+              _buildLoadingText(theme, t),
               SizedBox(height: 32.h),
               _buildDots(theme),
             ],
@@ -120,14 +142,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildLogo(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Image.asset(
-      'assets/logo/unipass_icon.png',
+      isDark ? 'assets/logo/main logo dark.png' : 'assets/logo/main Logo light.png',
       width: 0.3.sw,
       fit: BoxFit.contain,
     );
   }
 
   Widget _buildAppName(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -141,7 +165,7 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               TextSpan(
                 text: 'Uni',
-                style: TextStyle(color: const Color(0xFF0F172A)),
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
               ),
               TextSpan(
                 text: 'Pass',
@@ -164,11 +188,13 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildLoadingText(ThemeData theme) {
+  Widget _buildLoadingText(ThemeData theme, AppLocalizations t) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
       child: Text(
-        _loadingTexts[_currentTextIndex],
+        _currentTextIndex == 0
+            ? t.translate('findingUniversities')
+            : _loadingTexts[_currentTextIndex],
         key: ValueKey(_currentTextIndex),
         style: TextStyle(
           fontSize: 14.sp,

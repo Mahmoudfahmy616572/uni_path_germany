@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -24,9 +25,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   Future<void> _load() async {
     try {
       final results = await Future.wait([
-        Supabase.instance.client.from('profiles').select('id'),
-        Supabase.instance.client.from('universities').select('id'),
-        Supabase.instance.client.from('my_applications').select('id'),
+        Supabase.instance.client.from('profiles').select('id').timeout(const Duration(seconds: 10)),
+        Supabase.instance.client.from('universities').select('id').timeout(const Duration(seconds: 10)),
+        Supabase.instance.client.from('my_applications').select('id').timeout(const Duration(seconds: 10)),
       ]);
       if (!mounted) return;
       setState(() {
@@ -42,42 +43,42 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context).translate('adminSettings')),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: ListView(
         padding: EdgeInsets.all(24.r),
         children: [
-          Text('Admin Settings', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Text(AppLocalizations.of(context).translate('adminSettings'), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
           SizedBox(height: 16.h),
           _card(
             children: [
-              Text('App Configuration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              Text(AppLocalizations.of(context).translate('appConfig'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
               SizedBox(height: 16.h),
-              _infoRow('App Name', 'UniPath'),
-              _infoRow('Version', '1.0.0'),
-              _infoRow('Supabase Project', 'marrlrggovghhnmhtbgs'),
-              _infoRow('Environment', 'Production'),
+              _infoRow(AppLocalizations.of(context).translate('appName'), 'UniPath'),
+              _infoRow(AppLocalizations.of(context).translate('version'), '1.0.0'),
+              _infoRow(AppLocalizations.of(context).translate('supabaseProject'), 'marrlrggovghhnmhtbgs'),
+              _infoRow(AppLocalizations.of(context).translate('environment'), 'Production'),
             ],
           ),
           SizedBox(height: 16.h),
           _card(
             children: [
-              Text('Database Overview', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              Text(AppLocalizations.of(context).translate('databaseOverview'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
               SizedBox(height: 16.h),
-              _infoRow('Total Users', _userCount.toString()),
-              _infoRow('Total Universities', _univCount.toString()),
-              _infoRow('Total Applications', _appCount.toString()),
+              _infoRow(AppLocalizations.of(context).translate('totalUsers'), _userCount.toString()),
+              _infoRow(AppLocalizations.of(context).translate('totalUniversities'), _univCount.toString()),
+              _infoRow(AppLocalizations.of(context).translate('totalApplications'), _appCount.toString()),
             ],
           ),
           SizedBox(height: 16.h),
           _card(
             children: [
-              Text('Quick Info', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
+              Text(AppLocalizations.of(context).translate('quickInfo'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15.sp)),
               SizedBox(height: 16.h),
               Text(
-                'This admin panel manages all data in the UniPath Supabase database. Changes made here are reflected immediately.',
+                AppLocalizations.of(context).translate('adminDescription'),
                 style: TextStyle(color: Colors.grey[600], fontSize: 13.sp, height: 1.5),
               ),
             ],

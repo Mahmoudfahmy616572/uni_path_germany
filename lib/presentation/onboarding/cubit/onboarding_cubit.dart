@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/notification_service.dart';
+import '../../../core/storage/local_storage_service.dart';
 import 'onboarding_states.dart';
 
 class OnboardingCubit extends Cubit<OnboardingState> {
@@ -28,6 +29,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         moiConfirmed: false,
         hasMoi: false,
         noneOfTheAbove: false,
+        hasGermanCert: false,
+        germanCertType: '',
+        germanCertLevel: '',
         gpa: 0.0,
         gpaScale: '4.0',
         academicAverage: null,
@@ -49,6 +53,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       testType: testType,
       token: '', // clear token when test type changes
       hasIELTS: testType == 'ielts',
+      hasGermanCert: testType == 'german',
       hasMoi: testType == 'moi',
       noneOfTheAbove: testType == 'none',
       ieltsScore: testType == 'ielts' ? 6.0 : 0.0,
@@ -70,6 +75,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   void updateNoneOfTheAbove(bool value) =>
       emit(_state.copyWith(noneOfTheAbove: value));
+
+  void updateGermanCert({required bool hasCert, String type = '', String level = ''}) =>
+      emit(_state.copyWith(hasGermanCert: hasCert, germanCertType: type, germanCertLevel: level));
 
   void updateGpa({double? gpa, String? scale}) => emit(
     _state.copyWith(gpa: gpa ?? _state.gpa, gpaScale: scale ?? _state.gpaScale),
@@ -119,6 +127,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
               'has_moi': currentState.testType == 'moi',
               'moi_confirmed': currentState.moiConfirmed,
               'token': currentState.token.isEmpty ? null : currentState.token,
+              'has_german_cert': currentState.hasGermanCert,
+              'german_cert_type': currentState.germanCertType.isEmpty ? null : currentState.germanCertType,
+              'german_cert_level': currentState.germanCertLevel.isEmpty ? null : currentState.germanCertLevel,
               'none_of_the_above': currentState.noneOfTheAbove,
               'gpa': currentState.gpa,
               'academic_average': currentState.hasStudiedUniversity ? currentState.academicAverage : null,
@@ -126,9 +137,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
               'budget_range': currentState.tuitionBudget,
               'goals': currentState.studentGoals,
             })
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .timeout(const Duration(seconds: 10));
       }
       // Request notification permission after first-time profile completion
+      await LocalStorageService.markOnboardingComplete();
       NotificationService.requestNotificationPermission();
       emit(OnboardingSuccess());
     } catch (e) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+
 class DescriptionSection extends StatelessWidget {
   final String? description;
   const DescriptionSection({super.key, this.description});
@@ -11,7 +13,7 @@ class DescriptionSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'About Program',
+          AppLocalizations.of(context).translate('aboutProgram'),
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.bold,
@@ -29,7 +31,7 @@ class DescriptionSection extends StatelessWidget {
           ),
           child: Text(
             description ??
-                "No description available for this university program.",
+                AppLocalizations.of(context).translate('noDescriptionAvailable'),
             style: TextStyle(
               fontSize: 13.sp,
               color: Color(0xFF334155),

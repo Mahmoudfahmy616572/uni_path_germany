@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/ai/ai_usage_service.dart';
 import '../../../core/services/ai/gemini_service.dart';
 import '../../../core/services/services_locator.dart';
@@ -12,6 +13,12 @@ class _ChatMessage {
   final bool isUser;
   final String text;
   _ChatMessage({required this.isUser, required this.text});
+}
+
+class _QuickChip {
+  final String emoji;
+  final String label;
+  const _QuickChip(this.emoji, this.label);
 }
 
 class UniPassAiSheet extends StatefulWidget {
@@ -33,12 +40,15 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
   bool _showChips = true;
   Map<String, dynamic>? _userProfile;
 
-  static const _quickChips = [
-    ('📋', 'Admission Requirements'),
-    ('📅', 'Deadline & Intake'),
-    ('📄', 'Required Documents'),
-    ('🎯', 'Improve Match Score'),
-  ];
+  static List<_QuickChip> _buildQuickChips(BuildContext context) {
+    final t = AppLocalizations.of(context).translate;
+    return [
+      _QuickChip('📋', t('chipAdmissionReq')),
+      _QuickChip('📅', t('chipDeadlineIntake')),
+      _QuickChip('📄', t('chipRequiredDocs')),
+      _QuickChip('🎯', t('chipImproveMatch')),
+    ];
+  }
 
   @override
   void initState() {
@@ -58,9 +68,10 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
       if (userId == null) return;
       final data = await Supabase.instance.client
           .from('profiles')
-          .select()
+          .select('gpa, max_gpa, target_major, degree_level, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, has_german_cert, german_cert_type, german_cert_level, language_preference, intake, nationality, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_language_cert, has_german_cert_doc')
           .eq('id', userId)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
       if (mounted) setState(() => _userProfile = data);
     } catch (_) {}
   }
@@ -70,12 +81,19 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
     return arabic.hasMatch(text);
   }
 
+  void _trimMessages() {
+    if (_messages.length > 30) {
+      _messages.removeRange(0, _messages.length - 30);
+    }
+  }
+
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty || _isLoading) return;
     if (_remainingUses <= 0) return;
 
     setState(() {
       _messages.add(_ChatMessage(isUser: true, text: text.trim()));
+      _trimMessages();
       _isLoading = true;
       _showChips = false;
     });
@@ -99,6 +117,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
       if (mounted) {
         setState(() {
           _messages.add(_ChatMessage(isUser: false, text: reply));
+          _trimMessages();
           _isLoading = false;
         });
         _scrollToBottom();
@@ -110,8 +129,9 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
         setState(() {
           _messages.add(_ChatMessage(
             isUser: false,
-            text: 'Sorry, I encountered an error. Please try again.',
+            text: AppLocalizations.of(context).translate('aiErrorTryAgain'),
           ));
+          _trimMessages();
           _isLoading = false;
         });
         _scrollToBottom();
@@ -190,7 +210,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'UniPass AI',
+                  AppLocalizations.of(context).translate('uniPassAi'),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16.sp,
@@ -198,7 +218,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
                   ),
                 ),
                 Text(
-                  '${widget.university.name} • $_remainingUses uses left',
+                  AppLocalizations.of(context).translate('usesLeft').replaceAll('{name}', widget.university.name).replaceAll('{count}', '$_remainingUses'),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: isDark ? AppColors.textMuted : const Color(0xFF64748B),
@@ -228,7 +248,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
               Icon(Icons.lock_outline, size: 48.sp, color: const Color(0xFF94A3B8)),
               SizedBox(height: 16.h),
               Text(
-                'You\'ve used all your free AI queries this month.',
+                AppLocalizations.of(context).translate('aiQueriesUsed'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.sp,
@@ -237,7 +257,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
               ),
               SizedBox(height: 8.h),
               Text(
-                'Upgrade to Premium for unlimited access.',
+                AppLocalizations.of(context).translate('upgradePremium'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,
@@ -276,7 +296,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Hi! I\'m UniPass AI',
+            AppLocalizations.of(context).translate('hiImUniPassAi'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16.sp,
@@ -285,8 +305,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'I can help you with everything about ${widget.university.name}. '
-            'Ask me about admission requirements, deadlines, documents, or how to improve your match score!',
+            AppLocalizations.of(context).translate('aiWelcomeMsg').replaceAll('{name}', widget.university.name),
             style: TextStyle(
               fontSize: 13.sp,
               color: isDark ? AppColors.textMuted : const Color(0xFF475569),
@@ -299,16 +318,17 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
   }
 
   Widget _buildChips() {
+    final chips = _buildQuickChips(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),
       child: Wrap(
         spacing: 8.w,
         runSpacing: 8.h,
-        children: _quickChips.map((c) {
+        children: chips.map((c) {
           return ActionChip(
-            avatar: Text(c.$1, style: const TextStyle(fontSize: 16)),
+            avatar: Text(c.emoji, style: TextStyle(fontSize: 16.sp)),
             label: Text(
-              c.$2,
+              c.label,
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
@@ -320,7 +340,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20.r),
             ),
-            onPressed: () => _sendMessage(c.$2),
+            onPressed: () => _sendMessage(c.label),
           );
         }).toList(),
       ),
@@ -419,7 +439,7 @@ class _UniPassAiSheetState extends State<UniPassAiSheet> {
                   _controller.clear();
                 },
                 decoration: InputDecoration(
-                  hintText: 'Ask about ${widget.university.name}...',
+                  hintText: AppLocalizations.of(context).translate('askAboutUni').replaceAll('{name}', widget.university.name),
                   hintStyle: TextStyle(
                     fontSize: 14.sp,
                     color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8),

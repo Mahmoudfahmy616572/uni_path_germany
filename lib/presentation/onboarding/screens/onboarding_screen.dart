@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/language_provider.dart';
-import '../../../core/providers/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/auth/auth_service.dart';
@@ -22,6 +21,7 @@ import '../widgets/goals_step_widget.dart';
 import '../widgets/gpa_step_widget.dart';
 import '../widgets/ielts_score_step_widget.dart';
 import '../widgets/ielts_step_widget.dart';
+import '../widgets/german_cert_step_widget.dart';
 import '../widgets/intake_step_widget.dart';
 import '../widgets/language_step_widget.dart';
 import '../widgets/major_step_widget.dart';
@@ -37,7 +37,7 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
-  final int _totalSteps = 11;
+  final int _totalSteps = 12;
 
   @override
   void initState() {
@@ -102,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       icon: Icon(
                         Icons.arrow_back_ios_new,
                         color: isDark ? AppColors.textMain : AppColors.textDark,
-                        size: 20,
+                        size: 20.sp,
                       ),
                       onPressed: () {
                         final step = state.currentStep;
@@ -140,19 +140,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             fontSize: 14.sp,
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          isDark ? Icons.light_mode : Icons.dark_mode,
-                          color:
-                              isDark ? AppColors.textMain : AppColors.textDark,
-                        ),
-                        onPressed: () {
-                          final tp = di.sl<ThemeProvider>();
-                          tp.setThemeMode(
-                            tp.isDark ? ThemeMode.light : ThemeMode.dark,
-                          );
-                        },
                       ),
                     ]
                   : null,
@@ -196,6 +183,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           MajorStepWidget(cubit: cubit, state: state),
                           LanguageStepWidget(cubit: cubit, state: state),
                           IeltsStepWidget(cubit: cubit, state: state),
+                          GermanCertStepWidget(cubit: cubit, state: state),
                           IeltsScoreStepWidget(cubit: cubit, state: state),
                           MoiConfirmationStepWidget(
                             cubit: cubit,
@@ -275,30 +263,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     final step = state.currentStep;
 
-    if (step == 5 && state.testType == 'moi') {
-      _pageController.jumpToPage(7);
+    if (step == 5) {
+      if (state.testType == 'moi') {
+        _pageController.jumpToPage(8);
+        return;
+      }
+      if (state.testType == 'none') {
+        _pageController.jumpToPage(9);
+        return;
+      }
+      if (state.testType == 'ielts' || state.testType == 'toefl') {
+        _pageController.jumpToPage(7);
+        return;
+      }
+      // german → normal next to step 6
+    }
+    if (step == 6 && state.testType == 'german') {
+      _pageController.jumpToPage(9);
       return;
     }
-    if (step == 5 && state.testType == 'none') {
-      _pageController.jumpToPage(8);
-      return;
-    }
-    if (step == 5 && state.testType != 'ielts' && state.testType != 'toefl') {
-      _pageController.jumpToPage(7);
-      return;
-    }
-    if (step == 6) {
-      _pageController.jumpToPage(8);
-      return;
-    }
-    if (step == 7) {
-      _pageController.jumpToPage(8);
+    if (step == 7 || step == 8) {
+      _pageController.jumpToPage(9);
       return;
     }
 
     // If Bachelor & hasn't studied university → skip academic average
-    if (step == 8 && !_isGraduateLevel(state.studyLevel) && !state.hasStudiedUniversity) {
-      _pageController.jumpToPage(9);
+    if (step == 9 && !_isGraduateLevel(state.studyLevel) && !state.hasStudiedUniversity) {
+      _pageController.jumpToPage(10);
       return;
     }
 
@@ -318,6 +309,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'moiConfirmed': state.moiConfirmed,
         'token': state.token,
         'hasNone': state.testType == 'none',
+        'hasGermanCert': state.hasGermanCert,
+        'germanCertType': state.germanCertType,
+        'germanCertLevel': state.germanCertLevel,
         'gpa': state.gpa,
         'gpaScale': state.gpaScale,
         'academicAverage': state.hasStudiedUniversity ? state.academicAverage : null,
@@ -358,20 +352,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (state.testType.isEmpty) return t('valTestType');
         break;
       case 6:
+        if (state.testType == 'german' && (state.germanCertType.isEmpty || state.germanCertLevel.isEmpty)) {
+          return 'Please select a certificate type and level';
+        }
+        break;
+      case 7:
         if ((state.testType == 'ielts' || state.testType == 'toefl') && state.ieltsScore <= 0) {
           return t('valScore');
         }
         break;
-      case 7:
+      case 8:
         if (!state.moiConfirmed) return t('valMoiConfirm');
         break;
-      case 8:
+      case 9:
         if (_isGraduateLevel(state.studyLevel)) {
           if (state.gpa <= 0) return t('valGpa');
           if (state.gpaScale.isEmpty) return t('valGpaScale');
         }
         break;
-      case 9:
+      case 10:
         if (state.tuitionBudget.isEmpty) return t('valBudget');
         break;
     }

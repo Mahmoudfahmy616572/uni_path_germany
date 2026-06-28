@@ -55,7 +55,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
       if (!mounted) return;
       await _openPaymentWebView(info['iframe_id']!, info['payment_token']!);
     } catch (e) {
-      String msg = 'Payment error';
+      if (!mounted) return;
+      String msg = AppLocalizations.of(context).translate('paymentError');
       if (e is DioException && e.response?.data is Map) {
         msg = (e.response!.data as Map)['error']?.toString() ?? msg;
       } else {
@@ -146,7 +147,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     for (int i = 0; i < 15; i++) {
       await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
       final isPremium = await _premiumService.isPremium();
+      if (!mounted) return;
       if (isPremium && mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(

@@ -21,6 +21,9 @@ class OnboardingDataState extends OnboardingState {
   final String token;
   final bool hasMoi;
   final bool noneOfTheAbove;
+  final bool hasGermanCert;
+  final String germanCertType;
+  final String germanCertLevel;
   final double gpa;
   final String gpaScale;
   final double? academicAverage;
@@ -44,6 +47,9 @@ class OnboardingDataState extends OnboardingState {
     this.token = '',
     this.hasMoi = false,
     this.noneOfTheAbove = false,
+    this.hasGermanCert = false,
+    this.germanCertType = '',
+    this.germanCertLevel = '',
     this.gpa = 0.0,
     this.gpaScale = '4.0',
     this.academicAverage,
@@ -68,6 +74,9 @@ class OnboardingDataState extends OnboardingState {
     String? token,
     bool? hasMoi,
     bool? noneOfTheAbove,
+    bool? hasGermanCert,
+    String? germanCertType,
+    String? germanCertLevel,
     double? gpa,
     String? gpaScale,
     double? academicAverage,
@@ -91,6 +100,9 @@ class OnboardingDataState extends OnboardingState {
       token: token ?? this.token,
       hasMoi: hasMoi ?? this.hasMoi,
       noneOfTheAbove: noneOfTheAbove ?? this.noneOfTheAbove,
+      hasGermanCert: hasGermanCert ?? this.hasGermanCert,
+      germanCertType: germanCertType ?? this.germanCertType,
+      germanCertLevel: germanCertLevel ?? this.germanCertLevel,
       gpa: gpa ?? this.gpa,
       gpaScale: gpaScale ?? this.gpaScale,
       academicAverage: academicAverage ?? this.academicAverage,
@@ -117,6 +129,9 @@ class OnboardingDataState extends OnboardingState {
     token,
     hasMoi,
     noneOfTheAbove,
+    hasGermanCert,
+    germanCertType,
+    germanCertLevel,
     gpa,
     gpaScale,
     academicAverage,

@@ -12,9 +12,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'breack_down_widget.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
-import '../../../core/widgets/webview_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../cubit/university_details_cubit.dart';
 import '../cubit/university_details_state.dart';
@@ -67,7 +68,9 @@ class ProgramCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                            color: context.isDark
+                                ? AppColors.textMain
+                                : const Color(0xFF0F172A),
                           ),
                         ),
                         SizedBox(height: 6.h),
@@ -123,19 +126,9 @@ class ProgramCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WebViewScreen(
-                            url: program.programUrl!,
-                            title: program.programName,
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => launchUrl(Uri.parse(program.programUrl!)),
                     icon: Icon(Icons.open_in_new, size: 15.sp),
-                    label: Text('View Program Website',
+                    label: Text(AppLocalizations.of(context).translate('viewProgramWebsite'),
                       style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
                     ),
                     style: OutlinedButton.styleFrom(

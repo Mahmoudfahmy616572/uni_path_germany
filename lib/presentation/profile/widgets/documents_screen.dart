@@ -24,26 +24,27 @@ import '../../UniversityDetails/cubit/university_details_state.dart';
 import '../../ai/widgets/ai_document_generator.dart';
 import '../../ai/widgets/ai_document_review_sheet.dart';
 
-String _buildBackground(Map<String, dynamic>? p) {
-  if (p == null) return 'Not provided';
+String _buildBackground(Map<String, dynamic>? p, BuildContext context) {
+  final loc = AppLocalizations.of(context);
+  if (p == null) return loc.translate('notProvided');
   final parts = <String>[];
-  if (p['gpa'] != null) parts.add('GPA: ${p['gpa']}');
-  if (p['target_major'] != null) parts.add('Major: ${p['target_major']}');
-  if (p['target_degree'] != null) parts.add('Degree: ${p['target_degree']}');
+  if (p['gpa'] != null) parts.add('${loc.translate('gpaLabel')}${p['gpa']}');
+  if (p['target_major'] != null) parts.add('${loc.translate('majorLabel')}${p['target_major']}');
+  if (p['target_degree'] != null) parts.add('${loc.translate('degreeLabel')}${p['target_degree']}');
   if (p['has_ielts'] == true && p['ielts_score'] != null) {
-    parts.add('IELTS: ${p['ielts_score']}');
+    parts.add('${loc.translate('ieltsLabel')}${p['ielts_score']}');
   }
   if (p['has_toefl'] == true && p['toefl_score'] != null) {
-    parts.add('TOEFL: ${p['toefl_score']}');
+    parts.add('${loc.translate('toeflLabel')}${p['toefl_score']}');
   }
   if (p['has_moi'] == true && p['moi_language'] != null) {
-    parts.add('MOI: ${p['moi_language']}');
+    parts.add('${loc.translate('moiLabel')}${p['moi_language']}');
   }
-  if (p['country'] != null) parts.add('Country: ${p['country']}');
+  if (p['country'] != null) parts.add('${loc.translate('countryLabel')}${p['country']}');
   if (p['target_country'] != null) {
-    parts.add('Target: ${p['target_country']}');
+    parts.add('${loc.translate('targetLabel')}${p['target_country']}');
   }
-  return parts.isNotEmpty ? parts.join(', ') : 'Not provided';
+  return parts.isNotEmpty ? parts.join(', ') : loc.translate('notProvided');
 }
 
 String? _toUrlOrNull(dynamic value) {
@@ -370,7 +371,7 @@ class _AutoReviewWrapperState extends State<_AutoReviewWrapper> {
         degreeType: 'Master',
         major: studentProfile?['target_major']?.toString() ?? '',
         studentName: studentProfile?['username']?.toString() ?? '',
-        studentBackground: _buildBackground(studentProfile),
+        studentBackground: _buildBackground(studentProfile, context),
         transcriptsUrl: _toUrlOrNull(studentProfile?['has_transcripts']),
         bachelorCertUrl: _toUrlOrNull(studentProfile?['has_bachelor_cert']),
         cvUrl: _toUrlOrNull(studentProfile?['has_cv']),
@@ -761,7 +762,7 @@ class _AiDocReviewButtonState extends State<_AiDocReviewButton> {
         degreeType: 'Master',
         major: studentProfile?['target_major']?.toString() ?? '',
         studentName: studentProfile?['username']?.toString() ?? '',
-        studentBackground: _buildBackground(studentProfile),
+        studentBackground: _buildBackground(studentProfile, ctx),
         transcriptsUrl: _toUrlOrNull(studentProfile?['has_transcripts']),
         bachelorCertUrl: _toUrlOrNull(studentProfile?['has_bachelor_cert']),
         cvUrl: _toUrlOrNull(studentProfile?['has_cv']),
@@ -829,7 +830,7 @@ class _AiGenerateButton extends StatelessWidget {
               degreeType: 'Master',
               major: profile?['target_major']?.toString() ?? '',
               studentName: profile?['username']?.toString() ?? '',
-              studentBackground: _buildBackground(profile),
+              studentBackground: _buildBackground(profile, context),
               transcriptsUrl: _toUrlOrNull(profile?['has_transcripts']),
               bachelorCertUrl: _toUrlOrNull(profile?['has_bachelor_cert']),
               cvUrl: _toUrlOrNull(profile?['has_cv']),

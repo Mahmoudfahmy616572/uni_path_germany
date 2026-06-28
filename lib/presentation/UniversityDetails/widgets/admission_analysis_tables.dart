@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/domain/entities/university_entity.dart';
 import 'package:germany_travel/domain/entities/program_entity.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/utils/match_score_calculator.dart';
 import '../../../core/utils/requirements_check_list.dart';
 import '../../../core/widgets/animated_match_score.dart';
@@ -76,7 +77,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
-                'Your Profile Match',
+                AppLocalizations.of(context).translate('yourProfileMatch'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
@@ -84,13 +85,13 @@ class AdmissionAnalysisTables extends StatelessWidget {
                 ),
               ),
             ),
-            _buildMetricRowInline('Major Match', academicScore),
+            _buildMetricRowInline(AppLocalizations.of(context).translate('majorMatch'), academicScore),
             SizedBox(height: 8.h),
-            _buildMetricRowInline('GPA Match', gpaScore),
+            _buildMetricRowInline(AppLocalizations.of(context).translate('gpaMatch'), gpaScore),
             SizedBox(height: 8.h),
-            _buildMetricRowInline('English', englishScore),
+            _buildMetricRowInline(AppLocalizations.of(context).translate('languageCertificate'), englishScore),
             SizedBox(height: 8.h),
-            _buildMetricRowInline('Language Pref', workExpScore),
+            _buildMetricRowInline(AppLocalizations.of(context).translate('languagePref'), workExpScore),
 
             // صف الـ Overall المجموع
             Padding(
@@ -98,7 +99,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
               child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
             ),
             _buildMetricRowInline(
-              'Overall Match',
+              AppLocalizations.of(context).translate('overallMatch'),
               overallScore,
               isOverall: true,
             ),
@@ -108,7 +109,7 @@ class AdmissionAnalysisTables extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(bottom: 12.h),
               child: Text(
-                'Requirements Checklist',
+                AppLocalizations.of(context).translate('requirementsChecklist'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,

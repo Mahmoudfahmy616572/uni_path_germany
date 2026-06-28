@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
   const AdminOverviewScreen({super.key});
@@ -33,13 +34,13 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   Future<void> _loadStats() async {
     setState(() => _loading = true);
     // Run each query independently so one failure doesn't kill the rest
-    try { final d = await Supabase.instance.client.from('profiles').select('id'); if (mounted) _userCount = d.length; } catch (_) {}
-    try { final d = await Supabase.instance.client.from('universities').select('id'); if (mounted) _universityCount = d.length; } catch (_) {}
-    try { final d = await Supabase.instance.client.from('my_applications').select('id'); if (mounted) _applicationCount = d.length; } catch (_) {}
-    try { final d = await Supabase.instance.client.from('profiles').select('id').or('has_transcripts.not.is.null,has_cv.not.is.null,has_sop.not.is.null,has_bachelor_cert.not.is.null'); if (mounted) _documentUsers = d.length; } catch (_) {}
-    try { final d = await Supabase.instance.client.from('profiles').select('id, username, email, created_at').order('created_at', ascending: false).limit(8); if (mounted) _recentUsers = List<Map<String, dynamic>>.from(d); } catch (_) {}
-    try { final d = await Supabase.instance.client.from('university_programs').select('id').eq('data_source', 'daad_api'); if (mounted) _daadProgramCount = d.length; } catch (_) {}
-    try { final d = await Supabase.instance.client.from('universities').select('ba_ban_id').not('ba_ban_id', 'is', null); if (mounted) _daadMatchedUniversities = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('profiles').select('id').timeout(const Duration(seconds: 10)); if (mounted) _userCount = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('universities').select('id').timeout(const Duration(seconds: 10)); if (mounted) _universityCount = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('my_applications').select('id').timeout(const Duration(seconds: 10)); if (mounted) _applicationCount = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('profiles').select('id').or('has_transcripts.not.is.null,has_cv.not.is.null,has_sop.not.is.null,has_bachelor_cert.not.is.null').timeout(const Duration(seconds: 10)); if (mounted) _documentUsers = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('profiles').select('id, username, email, created_at').order('created_at', ascending: false).limit(8).timeout(const Duration(seconds: 10)); if (mounted) _recentUsers = List<Map<String, dynamic>>.from(d); } catch (_) {}
+    try { final d = await Supabase.instance.client.from('university_programs').select('id').eq('data_source', 'daad_api').timeout(const Duration(seconds: 10)); if (mounted) _daadProgramCount = d.length; } catch (_) {}
+    try { final d = await Supabase.instance.client.from('universities').select('ba_ban_id').not('ba_ban_id', 'is', null).timeout(const Duration(seconds: 10)); if (mounted) _daadMatchedUniversities = d.length; } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
@@ -52,9 +53,9 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         child: ListView(
           padding: EdgeInsets.all(24.r),
           children: [
-            CurtainDrop(index: 0, child: Text('Dashboard', style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
+            CurtainDrop(index: 0, child: Text(AppLocalizations.of(context).translate('overview'), style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
             SizedBox(height: 4.h),
-            CurtainDrop(index: 1, child: Text('Welcome back, Admin', style: TextStyle(color: Colors.grey[600], fontSize: 14.sp))),
+            CurtainDrop(index: 1, child: Text(AppLocalizations.of(context).translate('welcomeAdmin'), style: TextStyle(color: Colors.grey[600], fontSize: 14.sp))),
             SizedBox(height: 24.h),
             if (_loading)
               CurtainDrop(index: 2, child: Padding(padding: EdgeInsets.all(40.r), child: Center(child: CircularProgressIndicator())))
@@ -81,10 +82,10 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
           spacing: 16,
           runSpacing: 16,
           children: [
-            _StatCard(Icons.people_outline, 'Users', _formatCount(_userCount), const Color(0xFF6366F1)),
-            _StatCard(Icons.school_outlined, 'Universities', _formatCount(_universityCount), const Color(0xFF10B981)),
-            _StatCard(Icons.assignment_outlined, 'Applications', _formatCount(_applicationCount), const Color(0xFFF59E0B)),
-            _StatCard(Icons.folder_outlined, 'Documents', _formatCount(_documentUsers), const Color(0xFFEF4444)),
+            _StatCard(Icons.people_outline, AppLocalizations.of(context).translate('adminUsers'), _formatCount(_userCount), const Color(0xFF6366F1)),
+            _StatCard(Icons.school_outlined, AppLocalizations.of(context).translate('adminUniversities'), _formatCount(_universityCount), const Color(0xFF10B981)),
+            _StatCard(Icons.assignment_outlined, AppLocalizations.of(context).translate('adminApplications'), _formatCount(_applicationCount), const Color(0xFFF59E0B)),
+            _StatCard(Icons.folder_outlined, AppLocalizations.of(context).translate('adminDocuments'), _formatCount(_documentUsers), const Color(0xFFEF4444)),
           ].map((card) => SizedBox(width: (constraints.maxWidth - 16 * (cols - 1)) / cols, child: card)).toList(),
         );
       },
@@ -117,7 +118,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quick Actions', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        Text(AppLocalizations.of(context).translate('quickActions'), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
         SizedBox(height: 16.h),
         Wrap(
           spacing: 12,
@@ -136,7 +137,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Recent Activity', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        Text(AppLocalizations.of(context).translate('recentActivity'), style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
         SizedBox(height: 16.h),
         Container(
           padding: EdgeInsets.all(20.r),
@@ -149,7 +150,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
               ? Center(child: Column(children: [
                   Icon(Icons.hourglass_empty, color: Colors.grey[400], size: 40.sp),
                   SizedBox(height: 8.h),
-                  Text('No recent activity', style: TextStyle(color: Colors.grey[500])),
+                  Text(AppLocalizations.of(context).translate('noRecentActivity'), style: TextStyle(color: Colors.grey[500])),
                 ]))
               : Column(
                   children: _recentUsers.map((u) => _activityRow(u)).toList(),

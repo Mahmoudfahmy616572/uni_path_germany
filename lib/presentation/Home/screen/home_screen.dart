@@ -188,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 forceRefresh: true),
                         icon: const Icon(Icons.refresh),
                         label: Text(
-                          'Try Again',
+                          AppLocalizations.of(context).translate('retry'),
                           style:
                               GoogleFonts.poppins(fontWeight: FontWeight.w600),
                         ),
@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               SizedBox(width: 12.w),
                               Text(
-                                'Loading more...',
+                                AppLocalizations.of(context).translate('loadingMore'),
                                 style: GoogleFonts.poppins(
                                   fontSize: 14.sp,
                                   color: Colors.grey[600],
@@ -368,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.only(top: 20.h),
                       child: Center(
                         child: Text(
-                          "You've seen all available programs!",
+                          AppLocalizations.of(context).translate('seenAllPrograms'),
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
@@ -505,7 +505,7 @@ class _GenericAiTipsSheet extends StatelessWidget {
               },
               icon: Icon(Icons.settings, size: 16.sp, color: const Color(0xFF8B5CF6)),
               label: Text(
-                'Visit Settings to Complete Your Profile',
+                AppLocalizations.of(context).translate('visitSettingsToComplete'),
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: const Color(0xFF8B5CF6),

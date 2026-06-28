@@ -112,13 +112,13 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                     Icon(Icons.error_outline, color: Colors.red, size: 48.sp),
                     SizedBox(height: 16.h),
                     Text(
-                      "Error: ${state.message}",
+                      '${AppLocalizations.of(context).translate('error')}${state.message}',
                       style: const TextStyle(color: Colors.red),
                     ),
                     TextButton(
                       onPressed: () =>
                           context.read<MyApplicationsCubit>().loadApplications(),
-                      child: const Text("Retry"),
+                      child: Text(AppLocalizations.of(context).translate('retry')),
                     ),
                   ],
                 ),

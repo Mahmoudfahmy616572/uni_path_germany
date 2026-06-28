@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+
 class AiImprovementSheet extends StatelessWidget {
   final List<Map<String, dynamic>> suggestions;
   final int remainingUses;
@@ -46,7 +48,7 @@ class AiImprovementSheet extends StatelessWidget {
                 Icon(Icons.auto_awesome, color: const Color(0xFF8B5CF6), size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'AI Suggestions',
+                  AppLocalizations.of(context).translate('aiSuggestions'),
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -61,7 +63,7 @@ class AiImprovementSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    '$remainingUses left this month',
+                    AppLocalizations.of(context).translate('remainingUses') + ' $remainingUses',
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: const Color(0xFF7C3AED),
@@ -82,7 +84,7 @@ class AiImprovementSheet extends StatelessWidget {
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    'Analyzing your profile...',
+                    AppLocalizations.of(context).translate('analyzingProfile'),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: const Color(0xFF64748B),
@@ -111,7 +113,7 @@ class AiImprovementSheet extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: onRetry,
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Retry'),
+                      label: Text(AppLocalizations.of(context).translate('retry')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
@@ -128,7 +130,7 @@ class AiImprovementSheet extends StatelessWidget {
                   Icon(Icons.check_circle, size: 48.sp, color: const Color(0xFF10B981)),
                   SizedBox(height: 16.h),
                   Text(
-                    'Your profile is already well-optimized!',
+                    AppLocalizations.of(context).translate('profileWellOptimized'),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: const Color(0xFF64748B),
@@ -164,7 +166,8 @@ class _SuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = suggestion['title'] as String? ?? 'Suggestion';
+    final t = AppLocalizations.of(context).translate;
+    final title = suggestion['title'] as String? ?? t('suggestion');
     final category = suggestion['category'] as String? ?? '';
     final impact = suggestion['impact'] as String? ?? '';
     final action = suggestion['action'] as String? ?? '';

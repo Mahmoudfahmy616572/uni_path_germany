@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../domain/entities/university_entity.dart';
 
@@ -13,13 +14,14 @@ class _TimelineStep {
   _TimelineStep({required this.title, required this.subtitle, required this.date, this.done = false, this.urgent = false});
 }
 
-List<_TimelineStep> _buildSteps(UniversityEntity uni, String? deadline) {
+List<_TimelineStep> _buildSteps(BuildContext context, UniversityEntity uni, String? deadline) {
+  final t = AppLocalizations.of(context).translate;
   final now = DateTime.now();
   final deadlineDate = deadline != null ? DateTime.tryParse(deadline) : null;
 
   return [
     _TimelineStep(
-      title: 'Prepare Documents',
+      title: t('stepPrepareDocuments'),
       subtitle: 'Transcripts, certificates, CV, SOP',
       date: deadlineDate != null ? deadlineDate.subtract(const Duration(days: 60)).toString().substring(0, 10) : 'ASAP',
       done: uni.hasCv is String && (uni.hasCv as String).startsWith('http'),
@@ -31,7 +33,7 @@ List<_TimelineStep> _buildSteps(UniversityEntity uni, String? deadline) {
       done: false,
     ),
     _TimelineStep(
-      title: 'Submit Application',
+      title: t('stepAttendInterview'),
       subtitle: uni.name,
       date: deadline ?? 'TBD',
       urgent: deadlineDate != null && deadlineDate.difference(now).inDays < 30,
@@ -57,7 +59,7 @@ class ApplicationTimelineScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: const Text('Application Timeline')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).translate('applicationTimeline'))),
       body: applications.isEmpty
           ? Center(
               child: Column(
@@ -65,7 +67,7 @@ class ApplicationTimelineScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.timeline, size: 48.sp, color: const Color(0xFF94A3B8)),
                   SizedBox(height: 16.h),
-                  Text('Save universities first to see your timeline',
+                  Text(AppLocalizations.of(context).translate('saveUniversitiesFirstTimeline'),
                       style: TextStyle(fontSize: 16.sp, color: const Color(0xFF64748B))),
                 ],
               ),
@@ -81,7 +83,7 @@ class ApplicationTimelineScreen extends StatelessWidget {
 
   Widget _buildUniversityTimeline(BuildContext context, UniversityEntity uni, bool isDark) {
     final program = uni.programs.isNotEmpty ? uni.programs.first : null;
-    final steps = _buildSteps(uni, program?.deadline);
+    final steps = _buildSteps(context, uni, program?.deadline);
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
@@ -102,7 +104,7 @@ class ApplicationTimelineScreen extends StatelessWidget {
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(10.r),
                 ),
-                child: const Icon(Icons.school, color: Color(0xFF4F46E5), size: 20),
+                  child: Icon(Icons.school, color: const Color(0xFF4F46E5), size: 20.sp),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -111,11 +113,13 @@ class ApplicationTimelineScreen extends StatelessWidget {
                   children: [
                     Text(uni.name,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp,
-                            color: isDark ? AppColors.textMain : const Color(0xFF0F172A))),
+                            color: isDark ? AppColors.textMain : const Color(0xFF0F172A)),
+                        softWrap: true),
                     if (program != null)
                       Text('${program.programName} • ${program.degreeType}',
                           style: TextStyle(fontSize: 12.sp,
-                              color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                              color: isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+                          softWrap: true),
                   ],
                 ),
               ),
@@ -151,14 +155,14 @@ class ApplicationTimelineScreen extends StatelessWidget {
                     border: Border.all(color: color, width: 2),
                   ),
                   child: step.done
-                      ? const Icon(Icons.check, size: 10, color: Colors.white)
+                      ? Icon(Icons.check, size: 10.sp, color: Colors.white)
                       : null,
                 ),
                 if (index < total - 1)
                   Expanded(
                     child: VerticalDivider(
                       width: 24.w,
-                      thickness: 1.5,
+                      thickness: 1.5.r,
                       color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                   ),
@@ -174,17 +178,22 @@ class ApplicationTimelineScreen extends StatelessWidget {
                 children: [
                   Text(step.title,
                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp,
-                          color: isDark ? AppColors.textMain : const Color(0xFF0F172A))),
+                          color: isDark ? AppColors.textMain : const Color(0xFF0F172A)),
+                      softWrap: true),
                   SizedBox(height: 2.h),
                   Text(step.subtitle,
                       style: TextStyle(fontSize: 12.sp,
-                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                          color: isDark ? AppColors.textMuted : const Color(0xFF64748B)),
+                      softWrap: true),
                   Row(
                     children: [
                       Icon(Icons.calendar_today, size: 12.r, color: color),
                       SizedBox(width: 4.w),
-                      Text(step.date,
-                          style: TextStyle(fontSize: 11.sp, color: color, fontWeight: step.urgent ? FontWeight.bold : FontWeight.normal)),
+                      Flexible(
+                        child: Text(step.date,
+                            style: TextStyle(fontSize: 11.sp, color: color, fontWeight: step.urgent ? FontWeight.bold : FontWeight.normal),
+                            softWrap: true),
+                      ),
                     ],
                   ),
                 ],

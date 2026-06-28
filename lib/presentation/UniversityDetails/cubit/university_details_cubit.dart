@@ -232,9 +232,10 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
 
       Map<String, dynamic> profile = (await Supabase.instance.client
           .from('profiles')
-          .select()
+          .select('degree_level, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, target_major, language_preference, gpa, max_gpa, academic_average, high_school_score, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_language_cert, has_german_cert_doc')
           .eq('id', user.id)
-          .maybeSingle()) ?? <String, dynamic>{};
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10))) ?? <String, dynamic>{};
 
       // Verify that stored document URLs still point to existing files
       profile = await _verifyDocumentUrls(profile, user);
@@ -365,7 +366,8 @@ class UniversityDetailsCubit extends Cubit<UniversityDetailsState> {
     await Supabase.instance.client
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .timeout(const Duration(seconds: 10));
 
     for (final col in staleCols) {
       profile[col] = null;

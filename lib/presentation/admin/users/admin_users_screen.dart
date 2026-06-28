@@ -5,6 +5,7 @@ import 'package:realtime_client/realtime_client.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -46,7 +47,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     });
     try {
       final data = await Supabase.instance.client
-          .from('profiles').select('*').order('created_at', ascending: false).range(0, _pageSize - 1);
+          .from('profiles').select('id, username, email, role, created_at').order('created_at', ascending: false).range(0, _pageSize - 1).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _users = List<Map<String, dynamic>>.from(data);
@@ -57,7 +58,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -81,7 +82,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       final from = _page * _pageSize;
       final to = from + _pageSize - 1;
       final data = await Supabase.instance.client
-          .from('profiles').select('*').order('created_at', ascending: false).range(from, to);
+          .from('profiles').select('id, username, email, role, created_at').order('created_at', ascending: false).range(from, to).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _users.addAll(List<Map<String, dynamic>>.from(data));
@@ -115,21 +116,21 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isAdmin ? 'Revoke Admin' : 'Promote to Admin'),
-        content: Text('${isAdmin ? 'Revoke admin privileges from' : 'Grant admin privileges to'} ${user['username']?.toString() ?? 'this user'}?'),
+        title: Text(isAdmin ? AppLocalizations.of(context).translate('revokeAdmin') : AppLocalizations.of(context).translate('promoteAdmin')),
+        content: Text('${isAdmin ? AppLocalizations.of(context).translate('revokeAdmin') : AppLocalizations.of(context).translate('promoteAdmin')} ${user['username']?.toString() ?? ''}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(isAdmin ? 'Revoke' : 'Promote', style: TextStyle(color: isAdmin ? Colors.orange : const Color(0xFF6366F1)))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(isAdmin ? AppLocalizations.of(context).translate('revokeAdmin') : AppLocalizations.of(context).translate('promoteAdmin'), style: TextStyle(color: isAdmin ? Colors.orange : const Color(0xFF6366F1)))),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await Supabase.instance.client.from('profiles').update({'role': isAdmin ? 'user' : 'admin'}).eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${user['username']} is now ${isAdmin ? 'a regular user' : 'an admin'}'), backgroundColor: const Color(0xFF10B981)));
+      await Supabase.instance.client.from('profiles').update({'role': isAdmin ? 'user' : 'admin'}).eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${user['username']} ${isAdmin ? AppLocalizations.of(context).translate('userRole') : AppLocalizations.of(context).translate('adminRole')}'), backgroundColor: const Color(0xFF10B981)));
       _loadUsers();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -141,20 +142,20 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit User'),
+        title: Text(AppLocalizations.of(context).translate('editUser')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: usernameCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('username'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: emailCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('email'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: role,
                 decoration: const InputDecoration(labelText: 'Role', border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
-                items: ['user', 'admin'].map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: Colors.white)))).toList(),
+                items: ['user', 'admin'].map((r) => DropdownMenuItem(value: r, child: Text(r == 'user' ? AppLocalizations.of(context).translate('userRole') : AppLocalizations.of(context).translate('adminRole'), style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => role = v ?? role,
                 style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
@@ -162,8 +163,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('save'))),
         ],
       ),
     );
@@ -171,16 +172,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
     final name = usernameCtrl.text.trim();
     if (name.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username cannot be empty'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', 'Username cannot be empty')), backgroundColor: Colors.red));
       return;
     }
 
     try {
-      await Supabase.instance.client.from('profiles').update({'username': name, 'role': role}).eq('id', existing['id']);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User updated'), backgroundColor: Color(0xFF10B981)));
+      await Supabase.instance.client.from('profiles').update({'username': name, 'role': role}).eq('id', existing['id']).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('userUpdated')), backgroundColor: Color(0xFF10B981)));
       _loadUsers();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -188,27 +189,27 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete User'),
-        content: const Text('Are you sure? This cannot be undone.'),
+        title: Text(AppLocalizations.of(context).translate('deleteAccount')),
+        content: Text(AppLocalizations.of(context).translate('deleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('yesDelete'), style: TextStyle(color: Colors.red))),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await Supabase.instance.client.from('profiles').delete().eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User deleted'), backgroundColor: Color(0xFF10B981)));
+      await Supabase.instance.client.from('profiles').delete().eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('userDeleted')), backgroundColor: Color(0xFF10B981)));
       _loadUsers();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _exportCsv() async {
     final csvData = _users.isEmpty
-        ? await Supabase.instance.client.from('profiles').select('*').order('created_at', ascending: false)
+        ? await Supabase.instance.client.from('profiles').select('id, username, email, role, created_at').order('created_at', ascending: false).timeout(const Duration(seconds: 10))
         : _users;
     await exportCsv(
       data: List<Map<String, dynamic>>.from(csvData),
@@ -224,11 +225,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Username')),
-                DataColumn(label: Text('Email')),
-                DataColumn(label: Text('Role')),
-                DataColumn(label: Text('Actions')),
+              columns: [
+                DataColumn(label: Text(AppLocalizations.of(context).translate('username'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('email'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('role'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('actions'))),
               ],
               rows: _filtered.map((u) => DataRow(cells: [
                 DataCell(Text(u['username']?.toString() ?? '')),
@@ -237,15 +238,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     ? Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2),
                         decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6.r)),
-                        child: Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
+                        child: Text(AppLocalizations.of(context).translate('adminRole'), style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
                       )
-                    : const Text('user')),
+                    : Text(AppLocalizations.of(context).translate('userRole'))),
                 DataCell(Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon:                       Icon(u['role'] == 'admin' ? Icons.shield : Icons.shield_outlined, color: u['role'] == 'admin' ? Colors.amber : Colors.grey, size: 20.sp),
-                      tooltip: u['role'] == 'admin' ? 'Revoke admin' : 'Make admin',
+                      icon: Icon(u['role'] == 'admin' ? Icons.shield : Icons.shield_outlined, color: u['role'] == 'admin' ? Colors.amber : Colors.grey, size: 20.sp),
+                      tooltip: u['role'] == 'admin' ? AppLocalizations.of(context).translate('revokeAdmin') : AppLocalizations.of(context).translate('promoteAdmin'),
                       onPressed: () => _toggleAdmin(u),
                     ),
                     IconButton(icon: Icon(Icons.edit_outlined, size: 20.sp), onPressed: () => _editDialog(u)),
@@ -262,7 +263,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
                       icon: const Icon(Icons.expand_more),
-                      label: const Text('Load More'),
+                      label: Text(AppLocalizations.of(context).translate('loadMore')),
                       onPressed: _loadMore,
                     ),
             ),
@@ -273,14 +274,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: CurtainDrop(index: 0, child: const Text('Users')),
+        title: CurtainDrop(index: 0, child: Text(t.translate('adminUsers'))),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: t.translate('exportCsv'), onPressed: _exportCsv)),
         ],
       ),
       body: Column(
@@ -293,7 +295,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Search by name or email...',
+                  hintText: t.translate('searchHint'),
                   prefixIcon: Icon(Icons.search, size: 20.sp),
                   suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
                     icon: Icon(Icons.clear, size: 18.sp),
@@ -321,7 +323,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           children: [
                             Icon(Icons.people_outline, size: 48.sp, color: Colors.grey[300]),
                             SizedBox(height: 8.h),
-                            Text(_searchCtrl.text.isEmpty ? 'No users yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
+                            Text(_searchCtrl.text.isEmpty ? t.translate('noUsers') : t.translate('noResults'), style: TextStyle(color: Colors.grey[500])),
                           ],
                         ),
                       )
@@ -344,7 +346,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                           ? const CircularProgressIndicator()
                                           : TextButton.icon(
                                               icon: const Icon(Icons.expand_more),
-                                              label: const Text('Load More'),
+                                              label: Text(t.translate('loadMore')),
                                               onPressed: _loadMore,
                                             ),
                                     ),
@@ -370,7 +372,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                           Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2),
                         decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6.r)),
-                        child: Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
+                        child: Text(t.translate('adminRole'), style: TextStyle(fontSize: 11.sp, color: Colors.amber)),
                                           ),
                                         IconButton(
                                           icon: Icon(
@@ -378,7 +380,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                             color: u['role'] == 'admin' ? Colors.amber : Colors.grey,
                                             size: 20.sp,
                                           ),
-                                          tooltip: u['role'] == 'admin' ? 'Revoke admin' : 'Make admin',
+                                          tooltip: u['role'] == 'admin' ? t.translate('revokeAdmin') : t.translate('promoteAdmin'),
                                           onPressed: () => _toggleAdmin(u),
                                         ),
                                         IconButton(

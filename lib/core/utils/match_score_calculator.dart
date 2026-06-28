@@ -422,12 +422,13 @@ class MatchScoreCalculator {
   // ─────────────────────────────────────────────────────────
   // بتقيس مدى جاهزية المستندات الأساسية المطلوبة للتقديم:
   //
-  //  Transcripts (كشف الدرجات) موجود     → 3 نقاط
-  //  Bachelor Certificate (شهادة البكالوريوس) → 3 نقاط
-  //  SOP / Motivation Letter موجود       → 2 نقطة
-  //  CV / Resume موجود                   → 2 نقطة
-  //                                     ─────
-  //                           المجموع   10 نقاط
+  //  Transcripts (كشف الدرجات) موجود           → 2 نقطة
+  //  Bachelor Certificate (شهادة البكالوريوس)   → 2 نقطة
+  //  SOP / Motivation Letter موجود             → 2 نقطة
+  //  CV / Resume موجود                         → 2 نقطة
+  //  German Language Certificate موجود         → 2 نقطة
+  //                                           ─────
+  //                                 المجموع   10 نقاط
   //
   // لو المستند مش موجود في الـ profile، بنعتبره 0.
   // ─────────────────────────────────────────────────────────
@@ -440,10 +441,11 @@ class MatchScoreCalculator {
     }
 
     int docs = 0;
-    if (hasDoc('has_transcripts')) docs += 3;
-    if (hasDoc('has_bachelor_cert')) docs += 3;
+    if (hasDoc('has_transcripts')) docs += 2;
+    if (hasDoc('has_bachelor_cert')) docs += 2;
     if (hasDoc('has_sop')) docs += 2;
     if (hasDoc('has_cv')) docs += 2;
+    if (hasDoc('has_german_cert_doc')) docs += 2;
     return docs.clamp(0, 10);
   }
 

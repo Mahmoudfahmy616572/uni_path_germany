@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/animated_match_score.dart';
 
 class MatchScoreCard extends StatelessWidget {
@@ -9,11 +10,11 @@ class MatchScoreCard extends StatelessWidget {
 
   const MatchScoreCard({super.key, required this.score, this.onAiTap});
 
-  String get _statusText {
-    if (score >= 80) return "Excellent Chance";
+  String _statusText(AppLocalizations t) {
+    if (score >= 80) return t.translate('excellentChance');
     if (score >= 60) return "Good Chance";
-    if (score >= 40) return "Fair Chance";
-    return "Needs Improvement";
+    if (score >= 40) return t.translate('fairChance');
+    return t.translate('needsImprovement');
   }
 
   Color get _statusColor {
@@ -25,6 +26,7 @@ class MatchScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
@@ -64,7 +66,7 @@ class MatchScoreCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Your Match Score",
+                        t.translate('yourMatchScore'),
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 13.sp,
@@ -83,7 +85,7 @@ class MatchScoreCard extends StatelessWidget {
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        _statusText,
+                        _statusText(t),
                         style: TextStyle(
                           color: _statusColor,
                           fontSize: 16.sp,
@@ -107,7 +109,7 @@ class MatchScoreCard extends StatelessWidget {
                             onPressed: onAiTap,
                             icon: Icon(Icons.auto_awesome, size: 14.sp),
                             label: Text(
-                              'AI Tips',
+                              t.translate('aiTips'),
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 fontWeight: FontWeight.bold,

@@ -4,8 +4,9 @@ import 'package:realtime_client/realtime_client.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/csv_export.dart';
-import '../../../core/widgets/webview_screen.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminApplicationsScreen extends StatefulWidget {
   const AdminApplicationsScreen({super.key});
@@ -48,7 +49,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     });
     try {
       final data = await Supabase.instance.client
-          .from('my_applications').select('*').order('created_at', ascending: false).range(0, _pageSize - 1);
+          .from('my_applications').select('id, user_id, university_name, program_name, university_id, program_id, status, portal_status, payment_status, portal_url, notes, created_at').order('created_at', ascending: false).range(0, _pageSize - 1).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _applications = List<Map<String, dynamic>>.from(data);
@@ -58,7 +59,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -82,7 +83,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       final from = _page * _pageSize;
       final to = from + _pageSize - 1;
       final data = await Supabase.instance.client
-          .from('my_applications').select('*').order('created_at', ascending: false).range(from, to);
+          .from('my_applications').select('id, user_id, university_name, program_name, university_id, program_id, status, portal_status, payment_status, portal_url, notes, created_at').order('created_at', ascending: false).range(from, to).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _applications.addAll(List<Map<String, dynamic>>.from(data));
@@ -97,11 +98,11 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
 
   Future<void> _updateStatus(String id, String status) async {
     try {
-      await Supabase.instance.client.from('my_applications').update({'status': status}).eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Status changed to $status'), backgroundColor: const Color(0xFF10B981)));
+      await Supabase.instance.client.from('my_applications').update({'status': status}).eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('applicationUpdated')), backgroundColor: const Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -119,41 +120,41 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Application'),
+        title: Text(AppLocalizations.of(context).translate('editApplication')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: TextEditingController(text: existing['user_id']?.toString() ?? ''),
-                decoration: const InputDecoration(labelText: 'User ID', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('userID'), border: OutlineInputBorder()),
                 style: TextStyle(fontSize: 14.sp),
                 readOnly: true,
                 enabled: false,
               ),
               SizedBox(height: 12.h),
-              TextField(controller: universityNameCtrl, decoration: const InputDecoration(labelText: 'University Name', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: universityNameCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('universityName'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: programNameCtrl, decoration: const InputDecoration(labelText: 'Program Name', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: programNameCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('programName'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: universityIdCtrl, decoration: const InputDecoration(labelText: 'University ID', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: universityIdCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('universityID'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: programIdCtrl, decoration: const InputDecoration(labelText: 'Program ID', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: programIdCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('programID'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: status,
-                decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('status'), border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => status = v ?? status,
                 style: TextStyle(fontSize: 14.sp, color: Color(0xFF0F172A)),
               ),
               SizedBox(height: 12.h),
-              TextField(controller: portalUrlCtrl, decoration: const InputDecoration(labelText: 'Portal URL', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: portalUrlCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('portalUrl'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: portalStatus,
-                decoration: const InputDecoration(labelText: 'Portal Status', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('portalStatus'), border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _portalStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => portalStatus = v ?? portalStatus,
@@ -162,7 +163,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
               SizedBox(height: 12.h),
               DropdownButtonFormField<String>(
                 initialValue: paymentStatus,
-                decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('paymentStatus'), border: OutlineInputBorder()),
                 dropdownColor: const Color(0xFF1E293B),
                 items: _paymentStatusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                 onChanged: (v) => paymentStatus = v ?? paymentStatus,
@@ -174,8 +175,8 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('save'))),
         ],
       ),
     );
@@ -192,11 +193,11 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
         'portal_status': portalStatus,
         'payment_status': paymentStatus,
         'notes': notesCtrl.text.trim(),
-      }).eq('id', existing['id']);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application updated'), backgroundColor: Color(0xFF10B981)));
+      }).eq('id', existing['id']).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('applicationUpdated')), backgroundColor: Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -204,21 +205,21 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Application'),
-        content: const Text('Are you sure?'),
+        title: Text(AppLocalizations.of(context).translate('deleteAccount')),
+        content: Text(AppLocalizations.of(context).translate('deleteConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('yesDelete'), style: TextStyle(color: Colors.red))),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await Supabase.instance.client.from('my_applications').delete().eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Application deleted'), backgroundColor: Color(0xFF10B981)));
+      await Supabase.instance.client.from('my_applications').delete().eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('applicationDeleted')), backgroundColor: Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -247,14 +248,14 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('User ID')),
-                DataColumn(label: Text('University')),
-                DataColumn(label: Text('Program')),
-                DataColumn(label: Text('Status')),
-                DataColumn(label: Text('Portal')),
-                DataColumn(label: Text('Payment')),
-                DataColumn(label: Text('Actions')),
+              columns: [
+                DataColumn(label: Text(AppLocalizations.of(context).translate('userID'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('universityName'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('programName'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('status'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('portalStatus'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('paymentStatus'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('actions'))),
               ],
               rows: _applications.map((a) => DataRow(cells: [
                 DataCell(Text(a['user_id']?.toString() ?? '')),
@@ -282,7 +283,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
                       icon: const Icon(Icons.expand_more),
-                      label: const Text('Load More'),
+                      label: Text(AppLocalizations.of(context).translate('loadMore')),
                       onPressed: _loadMore,
                     ),
             ),
@@ -354,9 +355,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
   }
 
   void _openPortal(String url) {
-    if (mounted) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => WebViewScreen(url: url)));
-    }
+    launchUrl(Uri.parse(url));
   }
 
   @override
@@ -364,11 +363,11 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: CurtainDrop(index: 0, child: const Text('Applications')),
+        title: CurtainDrop(index: 0, child: Text(AppLocalizations.of(context).translate('adminApplications'))),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: AppLocalizations.of(context).translate('exportCsv'), onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -382,7 +381,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                     children: [
                       Icon(Icons.assignment_outlined, size: 48.sp, color: Colors.grey[300]),
                       SizedBox(height: 8.h),
-                      Text('No applications yet', style: TextStyle(color: Colors.grey[500])),
+                      Text(AppLocalizations.of(context).translate('noApplications'), style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
                 )
@@ -403,10 +402,10 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                               child: Center(
                                 child: _loadingMore
                                     ? const CircularProgressIndicator()
-                                    : TextButton.icon(
-                                        icon: const Icon(Icons.expand_more),
-                                        label: const Text('Load More'),
-                                        onPressed: _loadMore,
+                                        : TextButton.icon(
+                                            icon: const Icon(Icons.expand_more),
+                                            label: Text(AppLocalizations.of(context).translate('loadMore')),
+                                            onPressed: _loadMore,
                                       ),
                               ),
                             );
@@ -468,7 +467,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
                                       SizedBox(height: 12.h),
                                       DropdownButtonFormField<String>(
                                         initialValue: a['status']?.toString(),
-                                        decoration: InputDecoration(labelText: 'Status', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h)),
+                                        decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('status'), border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h)),
                                         dropdownColor: const Color(0xFF1E293B),
                                         items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
                                         onChanged: (v) {

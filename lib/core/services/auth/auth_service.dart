@@ -39,7 +39,7 @@ class AuthService {
           .from('profiles')
           .select('target_major, degree_level, intake')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
       return profile != null &&
           profile['target_major'] != null &&
           profile['target_major'].toString().isNotEmpty &&

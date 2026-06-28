@@ -10,52 +10,41 @@ class SearchDropdownsRow extends StatelessWidget {
   final String currentIntake;
   final String currentDegree;
   final String currentMajor;
+  final List<String> availableDegrees;
+  final List<String> availableMajors;
 
   const SearchDropdownsRow({
     super.key,
     required this.currentIntake,
     required this.currentDegree,
     required this.currentMajor,
+    required this.availableDegrees,
+    required this.availableMajors,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // 🎯 دروب داون الفصل الدراسي (Winter/Summer/Both)
         Expanded(
           child: _buildDropdownContainer(context,
             child: DropdownButton<String>(
-              value:
-                  [
-                    'All',
-                    'Winter Semester',
-                    'Summer Semester',
-                    'Both Semesters',
-                  ].contains(currentIntake)
-                  ? currentIntake
-                  : 'All',
+              value: ['All', 'Winter Semester', 'Summer Semester', 'Both Semesters'].contains(currentIntake) ? currentIntake : 'All',
               isExpanded: true,
               underline: const SizedBox(),
-              items:
-                  [
-                    'All',
-                    'Winter Semester',
-                    'Summer Semester',
-                    'Both Semesters',
-                  ].map((String val) {
-                    return DropdownMenuItem<String>(
-                      value: val,
-                      child: Text(
-                        val == 'All' ? '📅 Intake' : val,
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                          color: context.isDark ? AppColors.textMain : null,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              items: ['All', 'Winter Semester', 'Summer Semester', 'Both Semesters'].map((String val) {
+                return DropdownMenuItem<String>(
+                  value: val,
+                  child: Text(
+                    val == 'All' ? '📅 Intake' : val,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: context.isDark ? AppColors.textMain : null,
+                    ),
+                  ),
+                );
+              }).toList(),
               onChanged: (value) => context
                   .read<UniversitySearchCubit>()
                   .updateFilters(intake: value),
@@ -63,24 +52,26 @@ class SearchDropdownsRow extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8.w),
-        // دروب داون الدرجة العلمية
         Expanded(
           child: _buildDropdownContainer(context,
-            child: DropdownButton<String>(
-              value: currentDegree,
+            child: availableDegrees.isEmpty
+                ? Center(child: SizedBox(width: 14.w, height: 14.w, child: CircularProgressIndicator(strokeWidth: 2.w)))
+                : DropdownButton<String>(
+              value: availableDegrees.contains(currentDegree) ? currentDegree : 'All',
               isExpanded: true,
               underline: const SizedBox(),
-              items: ['All', 'Bachelor', 'Master', 'PhD'].map((String val) {
+              items: ['All', ...availableDegrees].map((String val) {
                 return DropdownMenuItem<String>(
                   value: val,
-                    child: Text(
-                      val == 'All' ? '🎓 Degree' : val,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        color: context.isDark ? AppColors.textMain : null,
-                      ),
+                  child: Text(
+                    val == 'All' ? '🎓 Degree' : val,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      overflow: TextOverflow.ellipsis,
+                      color: context.isDark ? AppColors.textMain : null,
                     ),
+                  ),
                 );
               }).toList(),
               onChanged: (value) => context
@@ -90,29 +81,28 @@ class SearchDropdownsRow extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8.w),
-        // دروب داون التخصص
         Expanded(
           child: _buildDropdownContainer(context,
-            child: DropdownButton<String>(
-              value: currentMajor,
+            child: availableMajors.isEmpty
+                ? Center(child: SizedBox(width: 14.w, height: 14.w, child: CircularProgressIndicator(strokeWidth: 2.w)))
+                : DropdownButton<String>(
+              value: availableMajors.contains(currentMajor) ? currentMajor : 'All',
               isExpanded: true,
               underline: const SizedBox(),
-              items: ['All', 'Computer Science', 'Medicine', 'Engineering'].map(
-                (String val) {
-                  return DropdownMenuItem<String>(
-                    value: val,
-                      child: Text(
-                        val == 'All' ? '🔬 Major' : val,
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                          overflow: TextOverflow.ellipsis,
-                          color: context.isDark ? AppColors.textMain : null,
-                        ),
-                      ),
-                  );
-                },
-              ).toList(),
+              items: ['All', ...availableMajors].map((String val) {
+                return DropdownMenuItem<String>(
+                  value: val,
+                  child: Text(
+                    val == 'All' ? '🔬 Major' : val,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      overflow: TextOverflow.ellipsis,
+                      color: context.isDark ? AppColors.textMain : null,
+                    ),
+                  ),
+                );
+              }).toList(),
               onChanged: (value) => context
                   .read<UniversitySearchCubit>()
                   .updateFilters(major: value),

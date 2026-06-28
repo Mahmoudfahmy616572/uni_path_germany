@@ -1,7 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../core/widgets/curtain_drop.dart';
@@ -16,6 +15,8 @@ class IeltsStepWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGerman = state.languagePreference == 'German';
+
     return Padding(
       padding: EdgeInsets.all(24.r),
       child: Column(
@@ -24,7 +25,7 @@ class IeltsStepWidget extends StatelessWidget {
           CurtainDrop(
             index: 0,
             child: Text(
-              AppLocalizations.of(context).translate('ieltsHeading'),
+              isGerman ? 'German Certificate' : 'English Test',
               style: TextStyle(
                 color: context.isDark ? AppColors.textMain : AppColors.textDark,
                 fontSize: 28.sp,
@@ -37,63 +38,89 @@ class IeltsStepWidget extends StatelessWidget {
           CurtainDrop(
             index: 1,
             child: Text(
-              AppLocalizations.of(context).translate('ieltsSubtitle'),
+              isGerman ? 'Do you have a German language certificate?' : 'Do you have an English language certificate?',
               style: TextStyle(color: context.textMutedColor, fontSize: 15.sp),
             ),
           ),
           SizedBox(height: 16.h),
           Expanded(
-              child: ListView(
-                children: [
-                  CurtainDrop(
-                    index: 2,
-                    child: _buildSelectionCard(
-                      context,
-                      title: 'IELTS',
-                      subtitle: 'International English Language Testing System',
-                      icon: Icons.check_circle_outline,
-                      isSelected: state.testType == 'ielts',
-                      onTap: () => cubit.updateTestType('ielts'),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  CurtainDrop(
-                    index: 3,
-                    child: _buildSelectionCard(
-                      context,
-                      title: 'TOEFL',
-                      subtitle: 'Test of English as a Foreign Language',
-                      icon: Icons.language_outlined,
-                      isSelected: state.testType == 'toefl',
-                      onTap: () => cubit.updateTestType('toefl'),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  CurtainDrop(
-                    index: 4,
-                    child: _buildSelectionCard(
-                      context,
-                      title: 'MOI',
-                      subtitle: 'Medium of Instruction certificate',
-                      icon: Icons.school_outlined,
-                      isSelected: state.testType == 'moi',
-                      onTap: () => cubit.updateTestType('moi'),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  CurtainDrop(
-                    index: 5,
-                    child: _buildSelectionCard(
-                      context,
-                      title: 'None of the above',
-                      subtitle: 'I don\'t have any English certificate',
-                      icon: Icons.cancel_outlined,
-                      isSelected: state.testType == 'none',
-                      onTap: () => cubit.updateTestType('none'),
-                    ),
-                  ),
-                ],
-              ),
+            child: ListView(
+              children: isGerman
+                  ? [
+                      CurtainDrop(
+                        index: 2,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'Yes, I have a German certificate',
+                          subtitle: 'TestDaF, Goethe, DSH, Telc, or ÖSD',
+                          icon: Icons.translate,
+                          isSelected: state.testType == 'german',
+                          onTap: () => cubit.updateTestType('german'),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      CurtainDrop(
+                        index: 3,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'No, I don\'t have one yet',
+                          subtitle: 'I will upload it later',
+                          icon: Icons.cancel_outlined,
+                          isSelected: state.testType == 'none',
+                          onTap: () => cubit.updateTestType('none'),
+                        ),
+                      ),
+                    ]
+                  : [
+                      CurtainDrop(
+                        index: 2,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'IELTS',
+                          subtitle: 'International English Language Testing System',
+                          icon: Icons.check_circle_outline,
+                          isSelected: state.testType == 'ielts',
+                          onTap: () => cubit.updateTestType('ielts'),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      CurtainDrop(
+                        index: 3,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'TOEFL',
+                          subtitle: 'Test of English as a Foreign Language',
+                          icon: Icons.language_outlined,
+                          isSelected: state.testType == 'toefl',
+                          onTap: () => cubit.updateTestType('toefl'),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      CurtainDrop(
+                        index: 4,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'MOI',
+                          subtitle: 'Medium of Instruction certificate',
+                          icon: Icons.school_outlined,
+                          isSelected: state.testType == 'moi',
+                          onTap: () => cubit.updateTestType('moi'),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      CurtainDrop(
+                        index: 5,
+                        child: _buildSelectionCard(
+                          context,
+                          title: 'None of the above',
+                          subtitle: 'I don\'t have any English certificate',
+                          icon: Icons.cancel_outlined,
+                          isSelected: state.testType == 'none',
+                          onTap: () => cubit.updateTestType('none'),
+                        ),
+                      ),
+                    ],
+            ),
           ),
         ],
       ),

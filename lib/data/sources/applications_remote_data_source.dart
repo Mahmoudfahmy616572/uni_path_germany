@@ -74,7 +74,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
       'program_id': programId,
       'status': 'saved',
       'created_at': DateTime.now().toIso8601String(),
-    });
+    }).timeout(const Duration(seconds: 10));
   }
 
   @override
@@ -86,14 +86,14 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .from('my_applications')
         .select('*, universities(*, university_programs(*))')
         .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false).timeout(const Duration(seconds: 10));
 
     final rawApps = List<Map<String, dynamic>>.from(response as List);
     final userData = (await client
         .from('profiles')
-        .select()
+        .select('degree_level, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, target_major, language_preference, gpa, max_gpa, academic_average, high_school_score, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_german_cert_doc')
         .eq('id', user.id)
-        .maybeSingle()) ?? <String, dynamic>{};
+        .maybeSingle().timeout(const Duration(seconds: 10))) ?? <String, dynamic>{};
 
     final hydratedApps = <Map<String, dynamic>>[];
 
@@ -151,7 +151,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .delete()
         .eq('user_id', user.id)
         .eq('university_id', universityId)
-        .eq('program_id', programId);
+        .eq('program_id', programId).timeout(const Duration(seconds: 10));
 
     log.i("DB Delete completed");
   }
@@ -166,7 +166,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .eq('user_id', user.id)
         .eq('university_id', universityId);
     if (programId != null) query = query.eq('program_id', programId);
-    final response = await query.maybeSingle();
+    final response = await query.maybeSingle().timeout(const Duration(seconds: 10));
     return response != null;
   }
 
@@ -176,7 +176,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .from('my_applications')
         .select('program_id')
         .eq('user_id', userId)
-        .eq('university_id', universityId);
+        .eq('university_id', universityId).timeout(const Duration(seconds: 10));
     return response.map((r) => r['program_id'] as String).toSet();
   }
 
@@ -244,7 +244,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
       }
     }
     final url = client.storage.from('documents').getPublicUrl(path);
-    await client.from('profiles').update({columnName: url}).eq('id', userId);
+    await client.from('profiles').update({columnName: url}).eq('id', userId).timeout(const Duration(seconds: 10));
     return url;
   }
 
@@ -319,7 +319,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .eq('user_id', userId)
         .eq('university_id', universityId);
     if (programId != null) query = query.eq('program_id', programId);
-    await query;
+    await query.timeout(const Duration(seconds: 10));
   }
 
   @override
@@ -331,7 +331,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
     await client
         .from('profiles')
         .update({columnName: newValue})
-        .eq('id', userId);
+        .eq('id', userId).timeout(const Duration(seconds: 10));
   }
 
   @override
@@ -348,7 +348,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .update({'status': newStatus, 'updated_at': DateTime.now().toIso8601String()})
         .eq('user_id', user.id)
         .eq('university_id', universityId)
-        .eq('program_id', programId);
+        .eq('program_id', programId).timeout(const Duration(seconds: 10));
   }
 
   @override
@@ -365,7 +365,7 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .eq('user_id', user.id)
         .eq('university_id', universityId)
         .eq('program_id', programId)
-        .maybeSingle();
+        .maybeSingle().timeout(const Duration(seconds: 10));
 
     return response;
   }
@@ -395,6 +395,6 @@ class ApplicationsRemoteDataSourceImpl implements ApplicationsRemoteDataSource {
         .update(updateMap)
         .eq('user_id', userId)
         .eq('university_id', universityId)
-        .eq('program_id', programId);
+        .eq('program_id', programId).timeout(const Duration(seconds: 10));
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../../../core/widgets/auth_background.dart';
@@ -35,7 +36,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (_formKey.currentState!.validate()) {
       CustomSnackBar.show(
         context,
-        message: "Password has been reset successfully!",
+        message: AppLocalizations.of(context).translate('passwordResetSuccess'),
         isError: false,
       );
       context.go('/login');
@@ -62,7 +63,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             CurtainDrop(
               index: 1,
               child: Text(
-                "Reset Password",
+                AppLocalizations.of(context).translate('resetPassword'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 32.sp,
@@ -76,7 +77,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Padding(
                 padding: EdgeInsets.only(top: 10.h),
                 child: Text(
-                  "Create a new strong password to\nsecure your account.",
+                  AppLocalizations.of(context).translate('resetPasswordSubtitle'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14.sp,
@@ -109,7 +110,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           fontSize: 15.sp,
                         ),
                         decoration: InputDecoration(
-                          hintText: "New Password",
+                          hintText: AppLocalizations.of(context).translate('newPassword'),
                           hintStyle: TextStyle(
                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                             fontSize: 14.sp,
@@ -131,8 +132,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           contentPadding: EdgeInsets.symmetric(vertical: 16.h),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return "Please enter a password";
-                          if (value.length < 6) return "Password must be at least 6 characters";
+                          if (value == null || value.isEmpty) return AppLocalizations.of(context).translate('enterPasswordRegister');
+                          if (value.length < 6) return AppLocalizations.of(context).translate('passwordMinLength');
                           return null;
                         },
                       ),
@@ -153,7 +154,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           fontSize: 15.sp,
                         ),
                         decoration: InputDecoration(
-                          hintText: "Confirm Password",
+                          hintText: AppLocalizations.of(context).translate('confirmPassword'),
                           hintStyle: TextStyle(
                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                             fontSize: 14.sp,
@@ -175,8 +176,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           contentPadding: EdgeInsets.symmetric(vertical: 16.h),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return "Please confirm your password";
-                          if (value != _passwordController.text) return "Passwords do not match";
+                          if (value == null || value.isEmpty) return AppLocalizations.of(context).translate('confirmYourPassword');
+                          if (value != _passwordController.text) return AppLocalizations.of(context).translate('passwordsNotMatch');
                           return null;
                         },
                       ),
@@ -184,7 +185,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     Padding(
                       padding: EdgeInsets.only(bottom: 20.h),
                       child: Text(
-                        "✓ 8+ characters\n✓ One number\n✓ One special character",
+                        AppLocalizations.of(context).translate('passwordRequirements'),
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -194,7 +195,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     SizedBox(height: 20.h),
                     LoadingButton(
-                      text: "Reset Password →",
+                      text: AppLocalizations.of(context).translate('resetPassword'),
                       onPressed: _onResetPressed,
                     ),
                   ],

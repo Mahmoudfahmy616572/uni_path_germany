@@ -142,6 +142,16 @@ Guidance for Language Certificate:
 - Check the applicant's name matches their other documents.
 - For MOI: verify it explicitly states the medium of instruction was English/German.
 ''';
+      case 'german_cert':
+        return '''
+Guidance for German Language Certificate:
+- Verify the certificate type (TestDaF, Goethe, DSH, Telc, ÖSD).
+- Check CEFR level (A1-C2) against program requirements (most German programs require B2/C1).
+- For TestDaF: check scores are TDN 4 or higher in all sections.
+- For DSH: check if DSH-1, DSH-2, or DSH-3 (DSH-2 is most common requirement).
+- Verify the certificate is not expired (typically valid indefinitely for German certs).
+- Check the applicant's name matches their other documents.
+''';
       default:
         return '';
     }
@@ -217,7 +227,8 @@ Uploaded Documents Status:
 - Bachelor Certificate: ${uploadStatus['has_bachelor_cert'] == true ? 'Uploaded' : 'Missing'}
 - SOP / Motivation Letter: ${uploadStatus['has_sop'] == true ? 'Uploaded' : 'Missing'}
 - CV / Resume: ${uploadStatus['has_cv'] == true ? 'Uploaded' : 'Missing'}
-- Language Certificate (IELTS/MOI/TestDaF/Goethe): ${uploadStatus['has_language_cert'] == true ? 'Uploaded' : 'Missing'}
+- Language Certificate (IELTS/MOI): ${uploadStatus['has_language_cert'] == true ? 'Uploaded' : 'Missing'}
+- German Language Certificate: ${uploadStatus['has_german_cert_doc'] == true ? 'Uploaded' : 'Missing'}
 
 ${_priorityRule()}
 
@@ -233,7 +244,7 @@ Compare the uploaded document set against the program requirements. Identify gap
 Format as JSON array:
 [
   {
-    "doc_type": "transcripts|bachelor_cert|sop|cv|language_cert",
+    "doc_type": "transcripts|bachelor_cert|sop|cv|language_cert|german_cert",
     "status": "uploaded|missing",
     "title": "string",
     "tips": ["(X-Y units): tip1", "(X-Y units): tip2"],
@@ -423,6 +434,7 @@ Keep each response concise — max 3 sentences per section.
       buf.writeln('- IELTS: ${userProfile['has_ielts'] == true ? "${userProfile['ielts_score']}" : "No IELTS"}');
       buf.writeln('- TOEFL: ${userProfile['has_toefl'] == true ? "${userProfile['toefl_score']}" : "No TOEFL"}');
       buf.writeln('- MOI: ${userProfile['has_moi'] == true ? "Yes" : "No"}');
+      buf.writeln('- German Cert: ${userProfile['has_german_cert'] == true ? "${userProfile['german_cert_type']} (${userProfile['german_cert_level']})" : "No"}');
       buf.writeln('- Language Preference: ${userProfile['language_preference'] ?? "Not set"}');
       buf.writeln('- Target Intake: ${userProfile['intake'] ?? "Not set"}');
       buf.writeln('- Nationality: ${userProfile['nationality'] ?? "Not set"}');
@@ -448,11 +460,16 @@ Keep each response concise — max 3 sentences per section.
           (userProfile['has_language_cert'] is bool
               ? userProfile['has_language_cert'] == true
               : (userProfile['has_language_cert'] as String?)?.isNotEmpty == true);
+      final hasGermanCert = userProfile['has_german_cert_doc'] != null &&
+          (userProfile['has_german_cert_doc'] is bool
+              ? userProfile['has_german_cert_doc'] == true
+              : (userProfile['has_german_cert_doc'] as String?)?.isNotEmpty == true);
       buf.writeln('- Transcripts: ${hasTranscripts ? "Uploaded" : "Not uploaded"}');
       buf.writeln('- Bachelor Certificate: ${hasBachelor ? "Uploaded" : "Not uploaded"}');
       buf.writeln('- CV/Resume: ${hasCv ? "Uploaded" : "Not uploaded"}');
       buf.writeln('- SOP/Motivation Letter: ${hasSop ? "Uploaded" : "Not uploaded"}');
-      buf.writeln('- Language Certificate: ${hasLangCert ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- Language Certificate (IELTS/TOEFL/MOI): ${hasLangCert ? "Uploaded" : "Not uploaded"}');
+      buf.writeln('- German Language Certificate: ${hasGermanCert ? "Uploaded" : "Not uploaded"}');
     }
 
     buf.writeln();

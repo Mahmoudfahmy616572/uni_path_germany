@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/themes/app_colors.dart';
 
 class DocumentTemplatesScreen extends StatelessWidget {
@@ -12,7 +13,7 @@ class DocumentTemplatesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Document Templates'),
+        title: Text(AppLocalizations.of(context).translate('documentTemplates')),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(4.h),
           child: Container(color: AppColors.primary.withValues(alpha: 0.2), height: 2.h),
@@ -24,17 +25,17 @@ class DocumentTemplatesScreen extends StatelessWidget {
           _buildTemplateCard(
             context,
             icon: Icons.description_outlined,
-            title: 'CV / Resume - German Style',
-            subtitle: 'Tabular format preferred by German universities',
+            title: AppLocalizations.of(context).translate('cvGermanStyle'),
+            subtitle: AppLocalizations.of(context).translate('cvTemplateSubtitle'),
             sections: [
-              'Personal Information (Name, Address, Phone, Email)',
-              'Education (reverse chronological order)',
-              'Work Experience (if any)',
-              'Skills & Languages',
-              'Interests & Activities',
-              'References (optional)',
+              AppLocalizations.of(context).translate('cvSectionPersonal'),
+              AppLocalizations.of(context).translate('cvSectionEducation'),
+              AppLocalizations.of(context).translate('cvSectionWork'),
+              AppLocalizations.of(context).translate('cvSectionSkills'),
+              AppLocalizations.of(context).translate('cvSectionInterests'),
+              AppLocalizations.of(context).translate('cvSectionReferences'),
             ],
-            tip: 'Keep it concise — max 2 pages. Use Europass format or tabular CV.',
+            tip: AppLocalizations.of(context).translate('cvTip'),
             color: const Color(0xFF6366F1),
             isDark: isDark,
           ),
@@ -42,18 +43,18 @@ class DocumentTemplatesScreen extends StatelessWidget {
           _buildTemplateCard(
             context,
             icon: Icons.article_outlined,
-            title: 'Motivation Letter (Statement of Purpose)',
-            subtitle: 'Academic-focused letter for German universities',
+            title: AppLocalizations.of(context).translate('motivationLetterTemplate'),
+            subtitle: AppLocalizations.of(context).translate('motivationLetterSubtitle'),
             sections: [
-              'Header: Your contact + University address + Date',
-              'Subject: "Motivation Letter for [Program Name]"',
-              'Paragraph 1: Introduce yourself + what you are applying for',
-              'Paragraph 2: Why this program? Connect your background to the program',
-              'Paragraph 3: Why Germany? Show knowledge of the education system',
-              'Paragraph 4: Your future goals — how this degree fits your career plans',
-              'Closing: Confident closing + signature',
+              AppLocalizations.of(context).translate('mlSectionHeader'),
+              AppLocalizations.of(context).translate('mlSectionSubject'),
+              AppLocalizations.of(context).translate('mlSectionPara1'),
+              AppLocalizations.of(context).translate('mlSectionPara2'),
+              AppLocalizations.of(context).translate('mlSectionPara3'),
+              AppLocalizations.of(context).translate('mlSectionPara4'),
+              AppLocalizations.of(context).translate('mlSectionClosing'),
             ],
-            tip: 'Be specific about the university and program. Generic letters are easily spotted.',
+            tip: AppLocalizations.of(context).translate('mlTip'),
             color: const Color(0xFF10B981),
             isDark: isDark,
           ),
@@ -61,18 +62,18 @@ class DocumentTemplatesScreen extends StatelessWidget {
           _buildTemplateCard(
             context,
             icon: Icons.receipt_long_outlined,
-            title: 'Letter of Recommendation Request',
-            subtitle: 'Professional email to ask professors for recommendation',
+            title: AppLocalizations.of(context).translate('recommendationTemplate'),
+            subtitle: AppLocalizations.of(context).translate('recommendationSubtitle'),
             sections: [
-              'Subject: "Recommendation Letter Request — [Your Name]"',
-              'Greeting: Dear Professor [Name],',
-              'Introduction: Remind them who you are (course, semester)',
-              'Request: Politely ask if they would write a recommendation',
-              'Details: Attach your CV, grades, and program list',
-              'Deadline: Mention when you need it',
-              'Closing: Thank them + offer to meet in person',
+              AppLocalizations.of(context).translate('recSectionSubject'),
+              AppLocalizations.of(context).translate('recSectionGreeting'),
+              AppLocalizations.of(context).translate('recSectionIntro'),
+              AppLocalizations.of(context).translate('recSectionRequest'),
+              AppLocalizations.of(context).translate('recSectionDetails'),
+              AppLocalizations.of(context).translate('recSectionDeadline'),
+              AppLocalizations.of(context).translate('recSectionClosing'),
             ],
-            tip: 'Ask at least 4 weeks before the deadline. Provide all materials upfront.',
+            tip: AppLocalizations.of(context).translate('recTip'),
             color: const Color(0xFFF59E0B),
             isDark: isDark,
           ),
@@ -227,7 +228,7 @@ class DocumentTemplatesScreen extends StatelessWidget {
               Icon(Icons.auto_awesome, color: AppColors.primary, size: 20.sp),
               SizedBox(width: 8.w),
               Text(
-                'Pro Tip',
+                AppLocalizations.of(context).translate('proTip'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
@@ -238,7 +239,7 @@ class DocumentTemplatesScreen extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'Use our AI Document Generator to create a personalized CV or Motivation Letter based on your profile. Go to any university detail page and tap "Generate CV" or "Generate Motivation Letter".',
+            AppLocalizations.of(context).translate('aiGeneratorPrompt'),
             style: TextStyle(
               fontSize: 13.sp,
               color: isDark ? AppColors.textMuted : const Color(0xFF475569),

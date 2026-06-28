@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/custom_snack_bar.dart';
 import '../../../../core/widgets/auth_background.dart';
@@ -44,7 +45,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (code.length == 4) {
       CustomSnackBar.show(
         context,
-        message: "Email verified successfully!",
+        message: AppLocalizations.of(context).translate('emailVerifiedSuccess'),
         isError: false,
       );
       context.go('/home');
@@ -71,7 +72,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             CurtainDrop(
               index: 1,
               child: Text(
-                "Verify Email",
+                AppLocalizations.of(context).translate('verifyEmail'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 32.sp,
@@ -85,7 +86,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               child: Padding(
                 padding: EdgeInsets.only(top: 10.h),
                 child: Text(
-                  "We've sent a verification code to\n${widget.email ?? "your email address"}",
+                  AppLocalizations.of(context).translate('verificationCodeSent').replaceAll('{email}', widget.email ?? AppLocalizations.of(context).translate('email')),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14.sp,
@@ -155,7 +156,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     SizedBox(height: 25.h),
                     Text(
-                      "Didn't receive the code?",
+                      AppLocalizations.of(context).translate('didntReceiveCode'),
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -163,7 +164,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      "Resend in 00:45",
+                      '${AppLocalizations.of(context).translate('resendIn')}00:45',
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: const Color(0xFF7C4DFF),
@@ -172,7 +173,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     SizedBox(height: 25.h),
                     LoadingButton(
-                      text: "Verify Code →",
+                      text: AppLocalizations.of(context).translate('verifyCode'),
                       onPressed: _onVerifyPressed,
                     ),
                   ],

@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/ai/ai_usage_service.dart';
 import '../../core/services/ai/gemini_service.dart';
 import '../../core/services/ai/review_cache_service.dart';
@@ -26,23 +27,26 @@ import '../ai/widgets/ai_document_review_sheet.dart';
 class _DocInfo {
   final String column;
   final String title;
+  final String localeKey;
   final String docType;
   final IconData icon;
 
   const _DocInfo({
     required this.column,
     required this.title,
+    required this.localeKey,
     required this.docType,
     required this.icon,
   });
 }
 
 const _docInfos = [
-  _DocInfo(column: 'has_transcripts', title: 'Academic Transcripts', docType: 'transcripts', icon: Icons.menu_book_rounded),
-  _DocInfo(column: 'has_bachelor_cert', title: 'Bachelor Certificate', docType: 'bachelor_cert', icon: Icons.workspace_premium_rounded),
-  _DocInfo(column: 'has_sop', title: 'Motivation Letter / SOP', docType: 'sop', icon: Icons.article_rounded),
-  _DocInfo(column: 'has_cv', title: 'CV / Resume', docType: 'cv', icon: Icons.description_rounded),
-  _DocInfo(column: 'has_language_cert', title: 'Language Certificate', docType: 'language_cert', icon: Icons.language_rounded),
+  _DocInfo(column: 'has_transcripts', title: 'Academic Transcripts', localeKey: 'academicTranscripts', docType: 'transcripts', icon: Icons.menu_book_rounded),
+  _DocInfo(column: 'has_bachelor_cert', title: 'Bachelor Certificate', localeKey: 'bachelorCertificate', docType: 'bachelor_cert', icon: Icons.workspace_premium_rounded),
+  _DocInfo(column: 'has_sop', title: 'Motivation Letter / SOP', localeKey: 'sopMotivationLetter', docType: 'sop', icon: Icons.article_rounded),
+  _DocInfo(column: 'has_cv', title: 'CV / Resume', localeKey: 'cvResume', docType: 'cv', icon: Icons.description_rounded),
+  _DocInfo(column: 'has_language_cert', title: 'Language Certificate', localeKey: 'languageCertOptional', docType: 'language_cert', icon: Icons.language_rounded),
+  _DocInfo(column: 'has_german_cert_doc', title: 'German Language Certificate', localeKey: 'germanCert', docType: 'german_cert', icon: Icons.translate_rounded),
 ];
 
 class SmartDocumentHubScreen extends StatefulWidget {
@@ -98,9 +102,10 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
       if (userId != null) {
         profile = await Supabase.instance.client
             .from('profiles')
-            .select()
+            .select('id, username, gpa, target_major, degree_level, has_ielts, ielts_score, has_toefl, toefl_score, nationality, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_language_cert, has_german_cert_doc')
             .eq('id', userId)
-            .maybeSingle();
+            .maybeSingle()
+            .timeout(const Duration(seconds: 10));
       }
       if (mounted) setState(() {
         _universities = list;
@@ -172,7 +177,8 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
     required Future<List<Map<String, dynamic>>?> Function(void Function(String) updateStatus) task,
   }) async {
     if (!mounted) return null;
-    final statusNotifier = ValueNotifier<String>('Starting...');
+    final t = AppLocalizations.of(context);
+    final statusNotifier = ValueNotifier<String>(t.translate('starting'));
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -216,7 +222,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
       {
         'doc_type': doc.docType,
         'status': 'uploaded',
-        'title': doc.title,
+        'title': doc.localeKey,
         'importance': importance,
         'tips': tips,
       },
@@ -248,9 +254,9 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         : 'Master\'s Program';
 
     final reviews = await _showProgress(
-      title: 'Reviewing ${docInfo.title}',
+      title: '${AppLocalizations.of(context).translate('reviewing')} ${AppLocalizations.of(context).translate(docInfo.localeKey)}',
       task: (updateStatus) async {
-        updateStatus('Downloading document...');
+        updateStatus(AppLocalizations.of(context).translate('downloadingDocument'));
         final dio = Dio();
         final response = await dio.get<Uint8List>(
           url,
@@ -259,23 +265,23 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         final bytes = response.data;
         if (bytes == null) return null;
 
-        updateStatus('Analyzing with AI...');
+        updateStatus(AppLocalizations.of(context).translate('analyzingWithAi'));
         final r = await _gemini.reviewDocumentWithPdf(
           studentProfile: _profile ?? {},
           programName: progName,
           docType: docInfo.docType,
-          title: docInfo.title,
+            title: AppLocalizations.of(context).translate(docInfo.localeKey),
           pdfBytes: bytes,
         );
 
         if (GeminiService.hasValidFeedback(r)) {
-          updateStatus('Saving feedback...');
+          updateStatus(AppLocalizations.of(context).translate('savingFeedback'));
           await _usage.recordUsage();
           await _cache.storeReview(docType: col, url: url, reviews: r);
           await ReviewService.registerPositiveAction();
         }
 
-        updateStatus('Done!');
+        updateStatus(AppLocalizations.of(context).translate('done'));
         return r;
       },
     );
@@ -298,24 +304,24 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
     setState(() => _reviewing = true);
 
     final results = await _showProgress(
-      title: 'AI Review All Documents',
+        title: AppLocalizations.of(context).translate('aiReviewAllDocuments'),
       task: (updateStatus) async {
         final progName = _universities.isNotEmpty && _universities.first.programs.isNotEmpty
             ? _universities.first.programs.first.programName
-            : 'Master\'s Program';
+            : AppLocalizations.of(context).translate('mastersProgram');
         final allResults = <Map<String, dynamic>>[];
 
         for (final doc in _docInfos) {
           final url = _url(doc.column);
           if (url != null) {
-            updateStatus('Checking ${doc.title}...');
+            updateStatus('${AppLocalizations.of(context).translate('downloading')} ${AppLocalizations.of(context).translate(doc.localeKey)}...');
             final cached = await _cache.getCachedReview(docType: doc.column, currentUrl: url);
             if (cached != null) {
               allResults.addAll(_normalizeReviews(cached, doc));
               continue;
             }
             try {
-              updateStatus('Downloading ${doc.title}...');
+              updateStatus('${AppLocalizations.of(context).translate('downloading')} ${AppLocalizations.of(context).translate(doc.localeKey)}...');
               final dio = Dio();
               final response = await dio.get<Uint8List>(
                 url,
@@ -324,12 +330,12 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
               final bytes = response.data;
               if (bytes == null) continue;
 
-              updateStatus('Analyzing ${doc.title} with AI...');
+              updateStatus('${AppLocalizations.of(context).translate('analyzingWithAi')} ${AppLocalizations.of(context).translate(doc.localeKey)}...');
               final reviews = await _gemini.reviewDocumentWithPdf(
                 studentProfile: _profile ?? {},
                 programName: progName,
                 docType: doc.docType,
-                title: doc.title,
+                title: AppLocalizations.of(context).translate(doc.localeKey),
                 pdfBytes: bytes,
               );
               if (GeminiService.hasValidFeedback(reviews)) {
@@ -343,12 +349,12 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         }
 
         if (allResults.isNotEmpty) {
-          updateStatus('Finalizing...');
+          updateStatus(AppLocalizations.of(context).translate('finalizing'));
           await _usage.recordUsage();
           await ReviewService.registerPositiveAction();
         }
 
-        updateStatus('Done!');
+        updateStatus(AppLocalizations.of(context).translate('done'));
         return allResults;
       },
     );
@@ -372,16 +378,16 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Document Hub'),
+        title: Text(AppLocalizations.of(context).translate('smartDocumentHub')),
         elevation: 0,
         actions: [
           if (!_isLoading)
             TextButton.icon(
               onPressed: _reviewing ? null : _reviewAll,
               icon: _reviewing
-                  ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.auto_awesome, size: 18),
-              label: Text(_reviewing ? 'Reviewing...' : 'AI Review All'),
+                  ? SizedBox(width: 16.r, height: 16.r, child: CircularProgressIndicator(strokeWidth: 2.r))
+                  : Icon(Icons.auto_awesome, size: 18.sp),
+              label: Text(_reviewing ? AppLocalizations.of(context).translate('reviewing') : AppLocalizations.of(context).translate('aiReviewAll')),
             ),
         ],
       ),
@@ -423,9 +429,9 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+              Icon(Icons.auto_awesome, color: Colors.white, size: 24.sp),
               SizedBox(width: 10.w),
-              Text('Document Readiness',
+              Text(AppLocalizations.of(context).translate('documentReadiness'),
                   style: TextStyle(color: Colors.white70, fontSize: 13.sp)),
             ],
           ),
@@ -454,8 +460,8 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
           SizedBox(height: 8.h),
           Text(
             _universities.isNotEmpty
-                ? 'Across ${_universities.length} saved universit${_universities.length == 1 ? "y" : "ies"}'
-                : 'No saved universities yet',
+                ? AppLocalizations.of(context).translate('acrossSavedUniversities').replaceAll('{count}', _universities.length.toString()).replaceAll('{plural}', _universities.length == 1 ? 'y' : 'ies')
+                : AppLocalizations.of(context).translate('noSavedUniversities'),
             style: TextStyle(color: Colors.white60, fontSize: 12.sp),
           ),
         ],
@@ -476,10 +482,10 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         children: [
           Icon(Icons.bookmark_border, size: 48.sp, color: const Color(0xFF94A3B8)),
           SizedBox(height: 12.h),
-          Text('Save universities to your pipeline first',
+          Text(AppLocalizations.of(context).translate('saveUniversitiesFirst'),
               style: TextStyle(fontSize: 15.sp, color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
           SizedBox(height: 4.h),
-          Text('Documents will show program-specific requirements here.',
+          Text(AppLocalizations.of(context).translate('documentsShowRequirements'),
               style: TextStyle(fontSize: 13.sp, color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8))),
         ],
       ),
@@ -527,7 +533,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(doc.title,
+                      Text(AppLocalizations.of(context).translate(doc.localeKey),
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp,
                               color: isDark ? AppColors.textMain : const Color(0xFF0F172A))),
                       SizedBox(height: 2.h),
@@ -540,7 +546,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
                               borderRadius: BorderRadius.circular(6.r),
                             ),
                             child: Text(
-                              uploaded ? 'Uploaded' : 'Missing',
+                              uploaded ? AppLocalizations.of(context).translate('uploaded') : AppLocalizations.of(context).translate('missing'),
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 fontWeight: FontWeight.w600,
@@ -550,7 +556,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
                           ),
                           if (programs.length > 1) ...[
                             SizedBox(width: 8.w),
-                            Text('Needed by ${programs.length} programs',
+                            Text(AppLocalizations.of(context).translate('neededByPrograms').replaceAll('{count}', programs.length.toString()),
                                 style: TextStyle(fontSize: 11.sp,
                                     color: isDark ? AppColors.textMuted : const Color(0xFF94A3B8))),
                           ],
@@ -581,7 +587,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  Text('Uploading ${(progress * 100).toInt()}%',
+                  Text(AppLocalizations.of(context).translate('uploadingPercent').replaceAll('{percent}', (progress * 100).toInt().toString()),
                       style: TextStyle(fontSize: 11.sp, color: const Color(0xFF4F46E5))),
                   SizedBox(height: 12.h),
                 ],
@@ -596,21 +602,21 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
               children: [
                 _actionChip(
                   icon: uploaded ? Icons.swap_horiz_rounded : Icons.upload_file_rounded,
-                  label: uploaded ? 'Replace' : 'Upload',
+                  label: uploaded ? AppLocalizations.of(context).translate('replace') : AppLocalizations.of(context).translate('upload'),
                   onTap: () => _pickAndUpload(doc.column),
                   color: const Color(0xFF4F46E5),
                 ),
                 if (uploaded && url != null)
                   _actionChip(
                     icon: Icons.auto_awesome,
-                    label: 'AI Review',
+                    label: AppLocalizations.of(context).translate('aiReviewShort'),
                     onTap: () => _autoReview(doc.column, url),
                     color: const Color(0xFF7C3AED),
                   ),
                 if (doc.docType == 'sop' || doc.docType == 'cv')
                   _actionChip(
                     icon: Icons.auto_fix_high_rounded,
-                    label: 'Generate',
+                    label: AppLocalizations.of(context).translate('generate'),
                     onTap: () => _openGenerator(doc.docType),
                     color: const Color(0xFF0891B2),
                   ),
@@ -670,7 +676,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
   }
 
   String _buildBackground() {
-    if (_profile == null) return 'Not provided';
+    if (_profile == null) return AppLocalizations.of(context).translate('notProvided');
     final parts = <String>[];
     if (_profile!['gpa'] != null) parts.add('GPA: ${_profile!['gpa']}');
     if (_profile!['target_major'] != null) parts.add('Major: ${_profile!['target_major']}');
@@ -682,14 +688,14 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
       parts.add('TOEFL: ${_profile!['toefl_score']}');
     }
     if (_profile!['nationality'] != null) parts.add('Country: ${_profile!['nationality']}');
-    return parts.isNotEmpty ? parts.join(', ') : 'Not provided';
+    return parts.isNotEmpty ? parts.join(', ') : AppLocalizations.of(context).translate('notProvided');
   }
 
   void _openGenerator(String docType) {
     final progName = _universities.isNotEmpty && _universities.first.programs.isNotEmpty
         ? _universities.first.programs.first.programName
-        : 'Master\'s Program';
-    final uniName = _universities.isNotEmpty ? _universities.first.name : 'University';
+        : AppLocalizations.of(context).translate('mastersProgram');
+    final uniName = _universities.isNotEmpty ? _universities.first.name : AppLocalizations.of(context).translate('university');
 
     final univ = _universities.isNotEmpty ? _universities.first : null;
     final prog = univ != null && univ.programs.isNotEmpty ? univ.programs.first : null;
@@ -703,7 +709,7 @@ class _SmartDocumentHubScreenState extends State<SmartDocumentHubScreen> {
         universityName: uniName,
         degreeType: prog?.degreeType ?? "Master's",
         major: prog?.major ?? '',
-        studentName: _profile?['username'] as String? ?? 'Student',
+        studentName: _profile?['username'] as String? ?? AppLocalizations.of(context).translate('username'),
         studentBackground: _buildBackground(),
         transcriptsUrl: _url('has_transcripts'),
         bachelorCertUrl: _url('has_bachelor_cert'),
@@ -744,9 +750,10 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final steps = ['Downloading', 'Analyzing with AI', 'Saving feedback', 'Done'];
+    final loc = AppLocalizations.of(context);
+    final steps = [loc.translate('downloading'), loc.translate('analyzingWithAi'), loc.translate('savingFeedback'), loc.translate('done')];
     final currentStep = steps.indexWhere((s) => _currentStatus.contains(s.replaceFirst('...', '')));
-    final activeStep = currentStep >= 0 ? currentStep : (_currentStatus == 'Done!' ? steps.length - 1 : 0);
+    final activeStep = currentStep >= 0 ? currentStep : (_currentStatus == loc.translate('done') ? steps.length - 1 : 0);
 
     return Container(
       decoration: BoxDecoration(
@@ -769,7 +776,7 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet> {
             final i = entry.key;
             final step = entry.value;
             final isActive = i == activeStep;
-            final isDone = i < activeStep || (i == steps.length - 1 && _currentStatus == 'Done!');
+            final isDone = i < activeStep || (i == steps.length - 1 && _currentStatus == loc.translate('done'));
             return Padding(
               padding: EdgeInsets.only(bottom: 12.h),
               child: Row(
@@ -783,10 +790,10 @@ class _ReviewProgressSheetState extends State<_ReviewProgressSheet> {
                       shape: BoxShape.circle,
                     ),
                     child: isDone
-                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        ? Icon(Icons.check, size: 14.sp, color: Colors.white)
                         : isActive
-                            ? SizedBox(width: 12, height: 12, child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
+                            ? SizedBox(width: 12.r, height: 12.r, child: CircularProgressIndicator(
+                                strokeWidth: 2.r, color: Colors.white))
                             : null,
                   ),
                   SizedBox(width: 12.w),

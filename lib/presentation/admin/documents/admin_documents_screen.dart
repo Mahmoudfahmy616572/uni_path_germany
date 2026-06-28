@@ -5,6 +5,7 @@ import 'package:realtime_client/realtime_client.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/utils/csv_export.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminDocumentsScreen extends StatefulWidget {
   const AdminDocumentsScreen({super.key});
@@ -37,7 +38,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
       final data = await Supabase.instance.client
           .from('profiles')
           .select('id, username, email, has_transcripts, has_cv, has_sop, has_bachelor_cert')
-          .order('username');
+          .order('username').timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _users = List<Map<String, dynamic>>.from(data);
@@ -46,7 +47,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -71,7 +72,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Document Flags'),
+        title: Text('${AppLocalizations.of(context).translate('edit')} Document Flags'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -80,28 +81,28 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
               Text('User: ${user['username']?.toString() ?? ''}', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
               SizedBox(height: 12.h),
               CheckboxListTile(
-                title: Text('Transcripts', style: TextStyle(fontSize: 14.sp)),
+                title: Text(AppLocalizations.of(context).translate('academicTranscripts'), style: TextStyle(fontSize: 14.sp)),
                 value: hasTranscripts,
                 onChanged: (v) => hasTranscripts = v ?? hasTranscripts,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: Text('CV', style: TextStyle(fontSize: 14.sp)),
+                title: Text(AppLocalizations.of(context).translate('cvResume'), style: TextStyle(fontSize: 14.sp)),
                 value: hasCv,
                 onChanged: (v) => hasCv = v ?? hasCv,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: Text('SOP', style: TextStyle(fontSize: 14.sp)),
+                title: Text(AppLocalizations.of(context).translate('sopMotivationLetter'), style: TextStyle(fontSize: 14.sp)),
                 value: hasSop,
                 onChanged: (v) => hasSop = v ?? hasSop,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
-                title: Text('Bachelor Cert', style: TextStyle(fontSize: 14.sp)),
+                title: Text(AppLocalizations.of(context).translate('bachelorCertificate'), style: TextStyle(fontSize: 14.sp)),
                 value: hasBachelorCert,
                 onChanged: (v) => hasBachelorCert = v ?? hasBachelorCert,
                 controlAffinity: ListTileControlAffinity.leading,
@@ -111,8 +112,8 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('save'))),
         ],
       ),
     );
@@ -124,11 +125,11 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
         'has_cv': hasCv,
         'has_sop': hasSop,
         'has_bachelor_cert': hasBachelorCert,
-      }).eq('id', user['id']);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document flags updated'), backgroundColor: Color(0xFF10B981)));
+      }).eq('id', user['id']).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('applicationUpdated')), backgroundColor: Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}$e'), backgroundColor: Colors.red));
     }
   }
 
@@ -136,10 +137,10 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
     final csvData = _users.map((u) => {
       'username': u['username'],
       'email': u['email'],
-      'transcripts': u['has_transcripts'] == true ? 'Yes' : 'No',
-      'cv': u['has_cv'] == true ? 'Yes' : 'No',
-      'sop': u['has_sop'] == true ? 'Yes' : 'No',
-      'bachelor_cert': u['has_bachelor_cert'] == true ? 'Yes' : 'No',
+      'transcripts': u['has_transcripts'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'),
+      'cv': u['has_cv'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'),
+      'sop': u['has_sop'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'),
+      'bachelor_cert': u['has_bachelor_cert'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'),
     }).toList();
     await exportCsv(
       data: csvData,
@@ -155,21 +156,21 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Username')),
-                DataColumn(label: Text('Email')),
-                DataColumn(label: Text('Transcripts')),
-                DataColumn(label: Text('CV')),
-                DataColumn(label: Text('SOP')),
-                DataColumn(label: Text('Bachelor Cert')),
+              columns: [
+                DataColumn(label: Text(AppLocalizations.of(context).translate('username'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('email'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('academicTranscripts'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('cvResume'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('sopMotivationLetter'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('bachelorCertificate'))),
               ],
               rows: _users.map((u) => DataRow(cells: [
                 DataCell(Text(u['username']?.toString() ?? '')),
                 DataCell(Text(u['email']?.toString() ?? '')),
-                DataCell(Text(u['has_transcripts'] == true ? 'Yes' : 'No')),
-                DataCell(Text(u['has_cv'] == true ? 'Yes' : 'No')),
-                DataCell(Text(u['has_sop'] == true ? 'Yes' : 'No')),
-                DataCell(Text(u['has_bachelor_cert'] == true ? 'Yes' : 'No')),
+                DataCell(Text(u['has_transcripts'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'))),
+                DataCell(Text(u['has_cv'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'))),
+                DataCell(Text(u['has_sop'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'))),
+                DataCell(Text(u['has_bachelor_cert'] == true ? AppLocalizations.of(context).translate('yes') : AppLocalizations.of(context).translate('no'))),
               ])).toList(),
             ),
           ),
@@ -183,11 +184,11 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: CurtainDrop(index: 0, child: const Text('Documents')),
+        title: CurtainDrop(index: 0, child: Text(AppLocalizations.of(context).translate('adminDocuments'))),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: AppLocalizations.of(context).translate('exportCsv'), onPressed: _exportCsv)),
         ],
       ),
       body: CurtainDrop(
@@ -201,7 +202,7 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                     children: [
                       Icon(Icons.folder_open_outlined, size: 48.sp, color: Colors.grey[300]),
                       SizedBox(height: 8.h),
-                      Text('No documents uploaded yet', style: TextStyle(color: Colors.grey[500])),
+                      Text(AppLocalizations.of(context).translate('noDocuments'), style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
                 )
@@ -218,10 +219,10 @@ class _AdminDocumentsScreenState extends State<AdminDocumentsScreen> {
                         itemBuilder: (context, i) {
                           final u = _users[i];
                           final docs = <String, dynamic>{
-                            'Transcripts': u['has_transcripts'],
-                            'CV': u['has_cv'],
-                            'SOP': u['has_sop'],
-                            'Bachelor Cert': u['has_bachelor_cert'],
+                            AppLocalizations.of(context).translate('academicTranscripts'): u['has_transcripts'],
+                            AppLocalizations.of(context).translate('cvResume'): u['has_cv'],
+                            AppLocalizations.of(context).translate('sopMotivationLetter'): u['has_sop'],
+                            AppLocalizations.of(context).translate('bachelorCertificate'): u['has_bachelor_cert'],
                           };
                           final hasDocs = _hasAnyDoc(u);
                           if (!hasDocs) return const SizedBox.shrink();

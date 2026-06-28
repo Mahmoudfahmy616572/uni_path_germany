@@ -79,15 +79,21 @@ class NotificationService {
     // 11. جدولة الإشعارات المحلية (تعمل offline)
     await _scheduleLocalDeadlineNotifications();
 
-    // 12. Subscribe to realtime application changes
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser != null) {
-      try {
-        _applicationChannel = await _subscribeToApplicationChanges();
-      } catch (e) {
-        _logger.e('❌ Error subscribing to application changes: $e');
+    // 12. React to auth changes to manage realtime subscription
+    Supabase.instance.client.auth.onAuthStateChange.listen((authState) async {
+      if (authState.session != null) {
+        if (_applicationChannel == null) {
+          try {
+            _applicationChannel = await _subscribeToApplicationChanges();
+          } catch (e) {
+            _logger.e('❌ Error subscribing to application changes: $e');
+          }
+        }
+      } else {
+        await _applicationChannel?.unsubscribe();
+        _applicationChannel = null;
       }
-    }
+    });
   }
 
   /// Request notification permission — call after onboarding/registration
@@ -148,7 +154,8 @@ class NotificationService {
                 .select(
                     '*, universities(name), university_programs(program_name)')
                 .eq('id', newRecord['id'])
-                .single();
+                .single()
+                .timeout(const Duration(seconds: 10));
 
             final universityName =
                 (appData['universities'] as Map?)?['name'] as String? ??
@@ -175,7 +182,8 @@ class NotificationService {
                 .select(
                     '*, universities(name), university_programs(program_name)')
                 .eq('id', newRecord['id'])
-                .single();
+                .single()
+                .timeout(const Duration(seconds: 10));
 
             final universityName =
                 (appData['universities'] as Map?)?['name'] as String? ??
@@ -261,7 +269,8 @@ class NotificationService {
           .from('profiles')
           .select('notifications_enabled, deadline_reminders, reminder_days_before')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
 
       if (profile == null) return;
 
@@ -370,7 +379,8 @@ class NotificationService {
           .select(
               'notifications_enabled, deadline_reminders, reminder_days_before')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
 
       if (profile == null) return;
 
@@ -458,7 +468,8 @@ class NotificationService {
           .from('profiles')
           .select('notifications_enabled, document_reminders')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
       if (profile == null) return;
       final bool enabled = profile['notifications_enabled'] ?? true;
       final bool docReminders = profile['document_reminders'] ?? true;
@@ -489,7 +500,8 @@ class NotificationService {
           .from('profiles')
           .select('notifications_enabled')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
       if (profile == null) return;
       if (profile['notifications_enabled'] != true) return;
 
@@ -565,7 +577,8 @@ class NotificationService {
           .from('profiles')
           .select('notifications_enabled, application_updates')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
 
       if (profile == null) return;
 
@@ -638,7 +651,8 @@ class NotificationService {
           .from('profiles')
           .select('notifications_enabled, application_updates')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
 
       if (profile == null) return;
 

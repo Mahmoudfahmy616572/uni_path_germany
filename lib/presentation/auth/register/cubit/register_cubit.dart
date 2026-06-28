@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/auth/auth_service.dart';
+import '../../../../core/storage/local_storage_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/universities_repository.dart';
@@ -41,6 +42,9 @@ class RegisterCubit extends Cubit<RegisterState> {
     required String intake,
     required String languagePreference,
     String? degreeLevel,
+    bool? hasGermanCert,
+    String? germanCertType,
+    String? germanCertLevel,
   }) async {
     AuthService.isOAuthInProgress = false;
     // حماية أساسية
@@ -78,14 +82,18 @@ class RegisterCubit extends Cubit<RegisterState> {
           ieltsScore: ieltsScore ?? 0.0,
           targetMajor: targetMajor ?? '',
           intake: intake,
-          languagePreference: languagePreference, // 🎯 تمرير اللغة
-          degreeLevel: degreeLevel ?? '', // 🎯 تمرير مستوى الدرجة
+          languagePreference: languagePreference,
+          degreeLevel: degreeLevel ?? '',
+          hasGermanCert: hasGermanCert ?? false,
+          germanCertType: germanCertType,
+          germanCertLevel: germanCertLevel,
         );
       } catch (profileError) {
         log.e("Profile Sync Error (Non-blocking): $profileError");
       }
 
       // 🎯 النجاح
+      await LocalStorageService.markOnboardingComplete();
       if (!isClosed) {
         emit(RegisterSuccess());
       }
@@ -161,6 +169,7 @@ class RegisterCubit extends Cubit<RegisterState> {
             await _doSaveProfile(profileData);
           }
           AuthService.isOAuthInProgress = false;
+          await LocalStorageService.markOnboardingComplete();
           if (!isClosed) emit(RegisterSuccess());
         }
       });
@@ -186,6 +195,9 @@ class RegisterCubit extends Cubit<RegisterState> {
         intake: profileData['intake'] as String? ?? 'Both Semesters',
         languagePreference: profileData['languagePreference'] as String? ?? 'English',
         degreeLevel: profileData['degreeLevel'] as String? ?? '',
+        hasGermanCert: profileData['hasGermanCert'] as bool? ?? false,
+        germanCertType: profileData['germanCertType'] as String?,
+        germanCertLevel: profileData['germanCertLevel'] as String?,
       );
       log.i('OAuth: profile saved successfully');
     } catch (e) {

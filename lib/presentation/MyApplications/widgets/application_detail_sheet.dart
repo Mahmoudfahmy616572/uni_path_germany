@@ -9,7 +9,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/build_notes_section.dart';
 import '../../../../core/utils/quick_info_metrics.dart';
 import '../../../../core/utils/requirements_check_list.dart';
-import '../../../../core/widgets/webview_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../domain/entities/university_entity.dart';
 import '../../UniversityDetails/cubit/university_details_cubit.dart';
 import '../../UniversityDetails/cubit/university_details_state.dart';
@@ -101,7 +101,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
       child: Stack(
         children: [
           SingleChildScrollView(
-            padding: EdgeInsets.all(24.r).copyWith(bottom: 100),
+            padding: EdgeInsets.all(24.r).copyWith(bottom: 100.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,7 +133,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
   Widget _buildHeader(BuildContext context) {
     final String programName = app.programs.isNotEmpty
         ? app.programs.first.programName
-        : "Application";
+        : AppLocalizations.of(context).translate('application');
     final String? programUrl = app.programs.isNotEmpty
         ? app.programs.first.programUrl
         : null;
@@ -162,20 +162,10 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WebViewScreen(
-                      url: programUrl,
-                      title: programName,
-                    ),
-                  ),
-                );
-              },
+              onPressed: () => launchUrl(Uri.parse(programUrl)),
               icon: Icon(Icons.open_in_new, size: 15.sp),
               label: Text(
-                'View Program Website',
+                AppLocalizations.of(context).translate('viewProgramWebsite'),
                 style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
@@ -208,7 +198,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
               Icon(Icons.travel_explore, size: 18.sp, color: Color(0xFF8B5CF6)),
               SizedBox(width: 8.w),
               Text(
-                'Portal Status',
+                AppLocalizations.of(context).translate('portalStatus'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
@@ -221,7 +211,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
             children: [
               Expanded(
                 child: _StatusDropdown(
-                  label: 'Status',
+                  label: AppLocalizations.of(context).translate('status'),
                   value: _portalStatus,
                   items: const ['pending', 'submitted', 'acknowledged', 'accepted', 'rejected'],
                   icon: Icons.assignment,
@@ -231,7 +221,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
               SizedBox(width: 12.w),
               Expanded(
                 child: _StatusDropdown(
-                  label: 'Payment',
+                  label: AppLocalizations.of(context).translate('payment'),
                   value: _paymentStatus,
                   items: const ['unpaid', 'paid', 'waived'],
                   icon: Icons.payment,
@@ -244,8 +234,8 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
           SwitchListTile(
             value: _autoTrack,
             onChanged: (v) => _updatePortal(context, autoTrack: v),
-            title: Text('Auto Track', style: TextStyle(fontSize: 13.sp)),
-            subtitle: Text('Automatically sync portal status', style: TextStyle(fontSize: 11.sp)),
+            title: Text(AppLocalizations.of(context).translate('autoTrack'), style: TextStyle(fontSize: 13.sp)),
+            subtitle: Text(AppLocalizations.of(context).translate('autoTrackDesc'), style: TextStyle(fontSize: 11.sp)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -254,14 +244,9 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WebViewScreen(url: app.portalUrl!),
-                  ),
-                ),
+                onPressed: () => launchUrl(Uri.parse(app.portalUrl!)),
                 icon: Icon(Icons.open_in_browser, size: 16.sp),
-                label: const Text('Open Portal Link'),
+                label: Text(AppLocalizations.of(context).translate('openPortalLink')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF4F46E5),
                   side: const BorderSide(color: Color(0xFF4F46E5)),
@@ -385,7 +370,7 @@ class _ApplicationDetailSheetState extends State<ApplicationDetailSheet> {
             },
             icon: Icon(Icons.auto_awesome, size: 16.sp),
             label: Text(
-              'Generate CV/SOP with AI',
+              AppLocalizations.of(context).translate('generateCvSopAiDetail'),
               style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(

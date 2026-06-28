@@ -22,7 +22,7 @@ class AiUsageService {
           .from('profiles')
           .select('role')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
       final isAdmin = data?['role'] == 'admin';
       if (isAdmin) _authService.cachedIsAdmin = true;
       return isAdmin;

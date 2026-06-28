@@ -29,7 +29,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/providers/language_provider.dart';
-import '../../../core/providers/theme_provider.dart';
 import '../../../core/services/services_locator.dart' as di;
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_theme.dart';
@@ -43,7 +42,8 @@ import '../cubit/profile_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserEntity user;
-  const SettingsScreen({super.key, required this.user});
+  final int? scrollToSection;
+  const SettingsScreen({super.key, required this.user, this.scrollToSection});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -88,6 +88,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TimeOfDay? _quietEnd;
 
   static const List<int> _reminderDayOptions = [1, 3, 7, 14, 30];
+
+  // ── Section scrolling ─────────────────────────────────────
+  final List<GlobalKey> _sectionKeys = List.generate(8, (_) => GlobalKey());
 
   // ── Dropdown options (نفس الـ Onboarding) ─────────────────
   static const List<String> _majors = [
@@ -280,6 +283,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // ✨ Quiet Hours — نقرأ من user
     _quietStart = widget.user.quietStart;
     _quietEnd = widget.user.quietEnd;
+
+    if (widget.scrollToSection != null && widget.scrollToSection! >= 0 && widget.scrollToSection! < 8) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final key = _sectionKeys[widget.scrollToSection!];
+        if (key.currentContext != null) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -344,7 +360,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // تحديث الـ MyApplicationsCubit
             di.sl<MyApplicationsCubit>().loadApplications();
 
-            context.pop(true);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) context.pop(true);
+            });
           }
           if (state is ProfileError) {
             CustomSnackBar.show(context, message: state.message, isError: true);
@@ -358,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 // ── Profile Completeness Bar ──────────────────
                 _buildCompletenessCard(),
-                SizedBox(height: 24.h),
+                SizedBox(height: 24.h, key: _sectionKeys[0]),
 
                 // ── Section: Personal Info ────────────────────
                 CurtainDrop(
@@ -366,16 +384,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('personalInfo')),
                 ),
                 SizedBox(height: 10.h),
-                _buildField('Name', _nameController, Icons.person_outline),
+                _buildField(AppLocalizations.of(context).translate('name'), _nameController, Icons.person_outline),
                 _buildField(
-                  'Email',
+                  AppLocalizations.of(context).translate('email'),
                   _emailController,
                   Icons.email_outlined,
                   enabled: false,
                 ),
 
                 // ── Section: Academic Profile ─────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[1]),
                 CurtainDrop(
                   index: 1,
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('academicProfile')),
@@ -401,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildGpaOrAcademicRow(),
 
                 // ── Section: Language & Intake ────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[2]),
                 CurtainDrop(
                   index: 2,
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('preferences')),
@@ -424,7 +442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // ── Section: Language Certificate ─────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[3]),
                 CurtainDrop(
                   index: 3,
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('languageCertificate')),
@@ -433,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildIeltsSection(),
 
                 // ── Section: Notifications ────────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[4]),
                 CurtainDrop(
                   index: 4,
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('notifications')),
@@ -442,7 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildNotificationSection(),
 
                 // ── Section: App Settings ──────────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[5]),
                 CurtainDrop(
                   index: 5,
                   child: _buildSectionLabel(AppLocalizations.of(context).translate('appSettings')),
@@ -467,26 +485,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) => setState(() => _selectedBudget = v!),
                 ),
 
-                _buildThemeToggle(),
-
                 _buildLanguageToggle(),
 
                 // ── Section: Legal ────────────────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[6]),
                 CurtainDrop(
                   index: 6,
-                  child: _buildSectionLabel('Legal'),
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('legal')),
                 ),
                 SizedBox(height: 10.h),
-                _buildLegalLink(Icons.privacy_tip_outlined, 'Privacy Policy', '/privacy'),
-                _buildLegalLink(Icons.description_outlined, 'Terms of Service', '/terms'),
+                _buildLegalLink(Icons.privacy_tip_outlined, AppLocalizations.of(context).translate('privacyPolicy'), '/privacy'),
+                _buildLegalLink(Icons.description_outlined, AppLocalizations.of(context).translate('termsOfService'), '/terms'),
                 SizedBox(height: 20.h),
 
                 // ── Section: Danger Zone ────────────────────────
-                SizedBox(height: 20.h),
+                SizedBox(height: 20.h, key: _sectionKeys[7]),
                 CurtainDrop(
                   index: 7,
-                  child: _buildSectionLabel('Danger Zone'),
+                  child: _buildSectionLabel(AppLocalizations.of(context).translate('dangerZone')),
                 ),
                 SizedBox(height: 10.h),
                 _buildDeleteAccountButton(),
@@ -522,7 +538,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       )
                     : Icon(Icons.save, size: 20.sp),
                 label: Text(
-                  isLoading ? 'Saving...' : 'Save Changes',
+                  isLoading ? AppLocalizations.of(context).translate('saving') : AppLocalizations.of(context).translate('saveChanges'),
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
@@ -613,7 +629,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (context.mounted) {
         CustomSnackBar.show(
           context,
-          message: 'Account deleted successfully.',
+          message: AppLocalizations.of(context).translate('accountDeletedSuccess'),
         );
         context.go('/login');
       }
@@ -621,7 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (context.mounted) {
         CustomSnackBar.show(
           context,
-          message: 'Failed to delete account: $e',
+          message: '${AppLocalizations.of(context).translate('failedToDeleteAccount')}$e',
           isError: true,
         );
       }
@@ -632,9 +648,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildCompletenessCard() {
     final double pct = _completeness;
-    final String label = pct >= 1.0
-        ? 'Profile complete!'
-        : 'Complete your profile to get better matches';
+        final String label = pct >= 1.0
+        ? AppLocalizations.of(context).translate('profileComplete')
+        : AppLocalizations.of(context).translate('completeProfileForBetterMatches');
 
     return StatefulBuilder(
       builder: (context, setInner) {
@@ -831,7 +847,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
                 ),
                 decoration: InputDecoration(
-                  labelText: 'GPA',
+                  labelText: AppLocalizations.of(context).translate('gpa'),
                   labelStyle: TextStyle(color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B)),
                   prefixIcon: Icon(
                     Icons.grade_outlined,
@@ -859,8 +875,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _selectedGpaScale,
                   isExpanded: true,
                   icon: Icon(Icons.keyboard_arrow_down, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 18),
-                  hint: Text('Scale', style: TextStyle(fontSize: 12.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
-                  items: _gpaScales.map((e) => DropdownMenuItem(value: e, child: Text('of $e', style: TextStyle(fontSize: 13.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))))).toList(),
+                  hint: Text(AppLocalizations.of(context).translate('scale'), style: TextStyle(fontSize: 12.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
+                  items: _gpaScales.map((e) => DropdownMenuItem(value: e, child: Text('${AppLocalizations.of(context).translate('of')} $e', style: TextStyle(fontSize: 13.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))))).toList(),
                   onChanged: (v) => setState(() => _selectedGpaScale = v!),
                 ),
               ),
@@ -880,8 +896,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           margin: EdgeInsets.only(bottom: 10.h),
           child: Row(
             children: [
-              Text(
-                'Have you studied at a university before?',
+                Text(
+                  AppLocalizations.of(context).translate('haveYouStudiedUniversity'),
                 style: TextStyle(
                   fontSize: 13.sp,
                   color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
@@ -921,12 +937,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (_hasStudiedUniversity)
           _buildNumericField(
             controller: _academicAvgController,
-            label: 'Academic Average (your current university average)',
+            label: AppLocalizations.of(context).translate('academicAverage'),
           )
         else
           _buildNumericField(
             controller: _highSchoolController,
-            label: 'High School Score (e.g. Tawjihi / Thanawiya)',
+            label: AppLocalizations.of(context).translate('highSchoolScore'),
           ),
       ],
     );
@@ -985,9 +1001,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('I have an IELTS certificate',
+                    Text(AppLocalizations.of(context).translate('iHaveIelts'),
                         style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
-                    Text(_hasIelts ? 'Enter your score below' : 'Some programs require it',
+                    Text(_hasIelts ? AppLocalizations.of(context).translate('enterScoreBelow') : AppLocalizations.of(context).translate('someProgramsRequireIt'),
                         style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
                   ],
                 ),
@@ -1004,7 +1020,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         if (_hasIelts)
-          _buildField('IELTS Score (e.g. 6.5)', _ieltsScoreController, Icons.star_outline, isNum: true),
+          _buildField(AppLocalizations.of(context).translate('ieltsScoreEg'), _ieltsScoreController, Icons.star_outline, isNum: true),
 
         // TOEFL toggle
         Container(
@@ -1023,9 +1039,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('I have a TOEFL certificate',
+                    Text(AppLocalizations.of(context).translate('iHaveToefl'),
                         style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
-                    Text(_hasToefl ? 'Enter your score below' : 'Accepted by many German universities',
+                    Text(_hasToefl ? AppLocalizations.of(context).translate('enterScoreBelow') : AppLocalizations.of(context).translate('acceptedByManyUniversities'),
                         style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
                   ],
                 ),
@@ -1042,7 +1058,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         if (_hasToefl)
-          _buildField('TOEFL Score (e.g. 90)', _toeflScoreController, Icons.star_outline, isNum: true),
+          _buildField(AppLocalizations.of(context).translate('toeflScoreEg'), _toeflScoreController, Icons.star_outline, isNum: true),
 
         // MOI toggle
         Container(
@@ -1061,11 +1077,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Medium of Instruction (MOI)',
+                    Text(AppLocalizations.of(context).translate('moiConfirmToggle'),
                         style: TextStyle(fontSize: 14.sp, color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B))),
                     Text(_hasMoi
-                        ? 'Confirmed — degree taught in English'
-                        : 'Confirm if your degree was taught in English',
+                        ? AppLocalizations.of(context).translate('confirmedDegreeEnglish')
+                        : AppLocalizations.of(context).translate('confirmIfDegreeEnglish'),
                         style: TextStyle(fontSize: 11.sp, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B))),
                   ],
                 ),
@@ -1088,8 +1104,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         // Master toggle
         _buildNotificationToggle(
-          label: 'Enable Notifications',
-          subtitle: 'Receive all types of notifications',
+          label: AppLocalizations.of(context).translate('enableNotifications'),
+          subtitle: AppLocalizations.of(context).translate('receiveAllNotifications'),
           icon: Icons.notifications_active_outlined,
           value: _notificationsEnabled,
           onChanged: (v) => setState(() {
@@ -1107,15 +1123,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (_notificationsEnabled) ...[
           _buildNotificationToggle(
             label: AppLocalizations.of(context).translate('deadlineReminders'),
-            subtitle: 'Get reminded before application deadlines',
+            subtitle: AppLocalizations.of(context).translate('getRemindedBeforeDeadlines'),
             icon: Icons.schedule_outlined,
             value: _deadlineReminders,
             onChanged: (v) => setState(() => _deadlineReminders = v),
           ),
           SizedBox(height: 8.h),
           _buildNotificationToggle(
-            label: 'Application Updates',
-            subtitle: 'Status changes (saved → applied → accepted/rejected)',
+            label: AppLocalizations.of(context).translate('applicationUpdates'),
+            subtitle: AppLocalizations.of(context).translate('statusChanges'),
             icon: Icons.update_outlined,
             value: _applicationUpdates,
             onChanged: (v) => setState(() => _applicationUpdates = v),
@@ -1123,7 +1139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: 8.h),
           _buildNotificationToggle(
             label: AppLocalizations.of(context).translate('generalNotifications'),
-            subtitle: 'Tips, new programs, and announcements',
+            subtitle: AppLocalizations.of(context).translate('tipsNewProgramsAnnouncements'),
             icon: Icons.campaign_outlined,
             value: _generalNotifications,
             onChanged: (v) => setState(() => _generalNotifications = v),
@@ -1196,7 +1212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
               SizedBox(width: 8.w),
               Text(
-                'Preferred Cities',
+                AppLocalizations.of(context).translate('preferredCities'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
@@ -1243,7 +1259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
               padding: EdgeInsets.only(top: 8.h),
               child: Text(
-                '${_selectedCities.length} selected',
+                AppLocalizations.of(context).translate('xSelected').replaceAll('{count}', _selectedCities.length.toString()),
                 style: TextStyle(
                   fontSize: 11.sp,
                   color: AppColors.textMuted,
@@ -1251,43 +1267,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildThemeToggle() {
-    final themeProvider = di.sl<ThemeProvider>();
-    return Container(
-      margin: EdgeInsets.only(bottom: 10.h),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: context.isDark ? AppColors.darkCardBg : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: context.isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
-      ),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Row(
-          children: [
-            Icon(Icons.dark_mode_outlined,
-                color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 20),
-            SizedBox(width: 8.w),
-            Text(
-              AppLocalizations.of(context).translate('darkMode'),
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
-              ),
-            ),
-          ],
-        ),
-        value: themeProvider.isDark,
-        activeColor: AppColors.primary,
-        onChanged: (v) {
-          themeProvider.setThemeMode(
-            v ? ThemeMode.dark : ThemeMode.light,
-          );
-        },
       ),
     );
   }
@@ -1392,7 +1371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 22),
               SizedBox(width: 12.w),
               Text(
-                'Remind me before deadline',
+                AppLocalizations.of(context).translate('remindMeBeforeDeadline'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
@@ -1409,7 +1388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final isSelected = _reminderDaysBefore.contains(day);
               return FilterChip(
                 label: Text(
-                  '$day day${day > 1 ? 's' : ''}',
+                  '$day ${day > 1 ? AppLocalizations.of(context).translate('days') : AppLocalizations.of(context).translate('day')}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: isSelected ? context.isDark ? AppColors.darkCardBg : Colors.white : context.isDark ? AppColors.textMain : const Color(0xFF1E293B),
@@ -1458,7 +1437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icon(Icons.bedtime_outlined, color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B), size: 22),
               SizedBox(width: 12.w),
               Text(
-                'Quiet Hours',
+                AppLocalizations.of(context).translate('quietHours'),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
@@ -1472,7 +1451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Expanded(
                 child: _buildTimePicker(
-                  label: 'Start',
+                  label: AppLocalizations.of(context).translate('start'),
                   initialTime: _quietStart,
                   onChanged: (time) => setState(() => _quietStart = time),
                 ),
@@ -1480,7 +1459,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(width: 12.w),
               Expanded(
                 child: _buildTimePicker(
-                  label: 'End',
+                  label: AppLocalizations.of(context).translate('end'),
                   initialTime: _quietEnd,
                   onChanged: (time) => setState(() => _quietEnd = time),
                 ),
@@ -1526,7 +1505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               initialTime != null
                   ? initialTime.format(context)
-                  : 'Select',
+                  : AppLocalizations.of(context).translate('select'),
               style: TextStyle(
                 fontSize: 13.sp,
                 color: context.isDark ? AppColors.textMain : const Color(0xFF1E293B),

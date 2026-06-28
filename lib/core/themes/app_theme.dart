@@ -91,8 +91,8 @@ class AppTheme {
         return AppColors.textGrey;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.primaryPurple.withOpacity(0.3);
-        return AppColors.textGrey.withOpacity(0.2);
+        if (states.contains(WidgetState.selected)) return AppColors.primaryPurple.withValues(alpha: 0.3);
+        return AppColors.textGrey.withValues(alpha: 0.2);
       }),
     ),
     colorScheme: ColorScheme.light(
@@ -152,8 +152,8 @@ class AppTheme {
         return AppColors.textMuted;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.primaryPurple.withOpacity(0.3);
-        return AppColors.textMuted.withOpacity(0.2);
+        if (states.contains(WidgetState.selected)) return AppColors.primaryPurple.withValues(alpha: 0.3);
+        return AppColors.textMuted.withValues(alpha: 0.2);
       }),
     ),
     chipTheme: ChipThemeData(

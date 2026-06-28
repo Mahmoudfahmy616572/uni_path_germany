@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminShell extends StatefulWidget {
   final Widget child;
@@ -34,12 +35,13 @@ class _AdminShellState extends State<AdminShell> {
           .from('profiles')
           .select('role')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
       final isAdmin = profile?['role'] == 'admin';
       if (!isAdmin) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Access denied. Admin privileges required.'),
+          final t = AppLocalizations.of(context).translate;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(t('accessDenied')),
             backgroundColor: Colors.red,
           ));
           context.go('/home');
@@ -68,14 +70,15 @@ class _AdminShellState extends State<AdminShell> {
     final location = GoRouterState.of(context).matchedLocation;
     final selectedIndex = _indexForLocation(location);
 
+    final t = AppLocalizations.of(context).translate;
     final navItems = [
-      _NavItem(Icons.dashboard_outlined, 'Overview', '/admin'),
-      _NavItem(Icons.people_outline, 'Users', '/admin/users'),
-      _NavItem(Icons.school_outlined, 'Universities', '/admin/universities'),
-      _NavItem(Icons.menu_book_outlined, 'Programs', '/admin/programs'),
-      _NavItem(Icons.assignment_outlined, 'Applications', '/admin/applications'),
-      _NavItem(Icons.folder_outlined, 'Documents', '/admin/documents'),
-      _NavItem(Icons.settings_outlined, 'Settings', '/admin/settings'),
+      _NavItem(Icons.dashboard_outlined, t('overview'), '/admin'),
+      _NavItem(Icons.people_outline, t('adminUsers'), '/admin/users'),
+      _NavItem(Icons.school_outlined, t('adminUniversities'), '/admin/universities'),
+      _NavItem(Icons.menu_book_outlined, t('adminPrograms'), '/admin/programs'),
+      _NavItem(Icons.assignment_outlined, t('adminApplications'), '/admin/applications'),
+      _NavItem(Icons.folder_outlined, t('adminDocuments'), '/admin/documents'),
+      _NavItem(Icons.settings_outlined, t('adminSettings'), '/admin/settings'),
     ];
 
     final sidebar = Container(
@@ -103,7 +106,7 @@ class _AdminShellState extends State<AdminShell> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('UniPath', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.sp)),
-                      Text('Admin', style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+                      Text(t('adminTitle'), style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
                     ],
                   ),
                 ],
@@ -146,7 +149,7 @@ class _AdminShellState extends State<AdminShell> {
                     children: [
                       Icon(Icons.arrow_back, color: Colors.white54, size: 18.sp),
                       SizedBox(width: 8.w),
-                      Text('My Profile', style: TextStyle(color: Colors.white54, fontSize: 13.sp)),
+                      Text(t('myProfile'), style: TextStyle(color: Colors.white54, fontSize: 13.sp)),
                     ],
                   ),
                 ),

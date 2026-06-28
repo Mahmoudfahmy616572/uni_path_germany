@@ -27,18 +27,19 @@ class BiometricService {
     }
   }
 
-  /// Authenticate using biometrics
-  static Future<bool> authenticate({String reason = 'Quick login'}) async {
+  /// Authenticate using biometrics (falls back to PIN/pattern if biometric unavailable)
+  static Future<AuthResult> authenticate({String reason = 'Quick login'}) async {
     try {
-      return await _auth.authenticate(
+      final success = await _auth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: true,
+          biometricOnly: false,
         ),
       );
-    } on PlatformException {
-      return false;
+      return AuthResult(success, null);
+    } on PlatformException catch (e) {
+      return AuthResult(false, e.message ?? e.code);
     }
   }
 
@@ -53,4 +54,10 @@ class BiometricService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_prefKey) ?? false;
   }
+}
+
+class AuthResult {
+  final bool success;
+  final String? errorMessage;
+  const AuthResult(this.success, this.errorMessage);
 }

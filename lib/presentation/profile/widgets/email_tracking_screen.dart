@@ -1,12 +1,16 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/email_tracking/email_connection_service.dart';
 import '../../../core/services/services_locator.dart' as di;
 import '../../../core/themes/app_colors.dart';
+import '../../../core/utils/logger.dart';
 import '../../../core/widgets/curtain_drop.dart';
-import '../../../core/widgets/webview_screen.dart';
 
 class EmailTrackingScreen extends StatefulWidget {
   const EmailTrackingScreen({super.key});
@@ -17,16 +21,50 @@ class EmailTrackingScreen extends StatefulWidget {
 
 class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
   final _service = di.sl<EmailConnectionService>();
+  final _appLinks = AppLinks();
   List<EmailConnection> _connections = [];
   List<EmailStatusLog> _logs = [];
   bool _loadingConnections = true;
   bool _loadingLogs = true;
   bool _syncing = false;
+  bool _connecting = false;
+  StreamSubscription<Uri>? _deepLinkSub;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    _deepLinkSub = _appLinks.uriLinkStream.listen(_handleDeepLink, onError: (e) => log.e('Deep link stream error: $e'));
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    }).catchError((e) { log.e('getInitialLink error: $e'); });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (!mounted) return;
+    if (uri.toString().startsWith(_service.oAuthRedirectUri)) {
+      final success = uri.queryParameters['success'];
+      if (success == 'true') {
+        if (!_service.verifyOAuthState(uri.queryParameters['state'])) {
+          log.w('OAuth state mismatch — ignoring redirect');
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).translate('providerConnected').replaceAll('{provider}', uri.queryParameters['provider'] ?? ''))),
+        );
+        _loadConnections();
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -49,40 +87,11 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
   }
 
   Future<void> _connectEmail(String provider) async {
-    final url = provider == 'gmail'
-        ? _service.getGmailAuthUrl(state: provider)
-        : _service.getOutlookAuthUrl(state: provider);
+    setState(() => _connecting = true);
+    final url = _service.getOAuthAuthorizeUrl(provider);
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => WebViewScreen(
-          url: url.toString(),
-          title: provider == 'gmail' ? 'Connect Gmail' : 'Connect Outlook',
-          oauthRedirectUri: _service.oAuthRedirectUri,
-          onOAuthCallback: (code, state) => _exchangeCode(provider, code),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _exchangeCode(String provider, String code) async {
-    try {
-      final supabase = Supabase.instance.client;
-      await supabase.functions.invoke('email-sync', method: HttpMethod.post, body: {
-        'action': 'token-exchange',
-        'code': code,
-        'provider': provider,
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$provider connected!')));
-        await _loadConnections();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to connect: $e')));
-      }
-    }
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (mounted) setState(() => _connecting = false);
   }
 
   Future<void> _toggleAutoSync(String id, bool value) async {
@@ -98,9 +107,10 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
   Future<void> _triggerSync() async {
     setState(() => _syncing = true);
     await _service.triggerSync();
+    if (!mounted) return;
     setState(() => _syncing = false);
     await _loadLogs();
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync completed')));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('syncCompleted'))));
   }
 
   @override
@@ -109,16 +119,16 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Email Tracking'),
-        backgroundColor: Colors.white,
+        title: Text(AppLocalizations.of(context).translate('emailTracking')),
+        backgroundColor: isDark ? AppColors.darkCardBg : Colors.white,
         elevation: 0,
         actions: [
           IconButton(
             icon: _syncing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? SizedBox(width: 20.r, height: 20.r, child: CircularProgressIndicator(strokeWidth: 2.r))
                 : Icon(Icons.sync, size: 20.sp),
             onPressed: _syncing ? null : _triggerSync,
-            tooltip: 'Sync now',
+            tooltip: AppLocalizations.of(context).translate('syncNow'),
           ),
         ],
       ),
@@ -133,6 +143,8 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             padding: EdgeInsets.all(16.r),
             children: [
               _buildConnectedAccounts(isDark),
+              SizedBox(height: 24.h),
+              _buildHint(isDark),
               SizedBox(height: 24.h),
               _buildRecentLogs(isDark),
             ],
@@ -157,11 +169,16 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             children: [
               Icon(Icons.mail_outline, size: 18.sp),
               SizedBox(width: 8.w),
-              Text('Connected Accounts', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context).translate('connectedAccounts'), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
             ],
           ),
           SizedBox(height: 16.h),
-          if (_loadingConnections)
+          if (_connecting)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (_loadingConnections)
             const Center(child: CircularProgressIndicator())
           else if (_connections.isEmpty)
             Padding(
@@ -170,9 +187,9 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
                 children: [
                   Icon(Icons.mail_outline, size: 40.sp, color: Colors.grey[300]),
                   SizedBox(height: 12.h),
-                  Text('No email accounts connected', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                  Text(AppLocalizations.of(context).translate('noEmailAccounts'), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
                   SizedBox(height: 4.h),
-                  Text('Connect Gmail or Outlook to auto-detect\napplication status from your inbox.', style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
+                  Text(AppLocalizations.of(context).translate('connectEmailPrompt'), style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
                 ],
               ),
             )
@@ -183,20 +200,68 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _connectEmail('gmail'),
+                  onPressed: _connecting ? null : () => _connectEmail('gmail'),
                   icon: Icon(Icons.email, size: 16.sp),
-                  label: const Text('Connect Gmail'),
+                  label: Text(AppLocalizations.of(context).translate('connectGmail')),
                 ),
               ),
               SizedBox(width: 12.w),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _connectEmail('outlook'),
+                  onPressed: _connecting ? null : () => _connectEmail('outlook'),
                   icon: Icon(Icons.email, size: 16.sp),
-                  label: const Text('Connect Outlook'),
+                  label: Text(AppLocalizations.of(context).translate('connectOutlook')),
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHint(bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : const Color(0xFFBBF7D0),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.shield_outlined,
+            size: 20.sp,
+            color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(context).translate('emailTrackingDesc'),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.textMain : const Color(0xFF1E293B),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  AppLocalizations.of(context).translate('emailTrackingHint'),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    height: 1.5,
+                    color: isDark ? AppColors.textMuted : const Color(0xFF475569),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -242,7 +307,7 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
             children: [
               Icon(Icons.history, size: 18.sp),
               SizedBox(width: 8.w),
-              Text('Recent Detections', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context).translate('recentDetections'), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
             ],
           ),
           SizedBox(height: 16.h),
@@ -255,9 +320,9 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
                 children: [
                   Icon(Icons.inbox_outlined, size: 40.sp, color: Colors.grey[300]),
                   SizedBox(height: 12.h),
-                  Text('No status changes yet', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                  Text(AppLocalizations.of(context).translate('noStatusChanges'), style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey[500])),
                   SizedBox(height: 4.h),
-                  Text('Sync your email to check for\napplication status updates.', style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
+                  Text(AppLocalizations.of(context).translate('syncEmailPrompt'), style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]), textAlign: TextAlign.center),
                 ],
               ),
             )
@@ -277,8 +342,8 @@ class _EmailTrackingScreenState extends State<EmailTrackingScreen> {
         size: 20.sp,
         color: l.applied ? const Color(0xFF10B981) : Colors.grey,
       ),
-      title: Text(l.emailSubject ?? 'Unknown', style: TextStyle(fontSize: 13.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(l.detectedStatus != null ? 'Detected: ${l.detectedStatus}' : 'No status detected', style: TextStyle(fontSize: 11.sp, color: Colors.grey)),
+      title: Text(l.emailSubject ?? AppLocalizations.of(context).translate('unknown'), style: TextStyle(fontSize: 13.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(l.detectedStatus != null ? AppLocalizations.of(context).translate('detected').replaceAll('{status}', l.detectedStatus!) : AppLocalizations.of(context).translate('noStatusDetected'), style: TextStyle(fontSize: 11.sp, color: Colors.grey)),
     );
   }
 }

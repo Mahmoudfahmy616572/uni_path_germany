@@ -15,6 +15,8 @@ class MissingDocTemplates {
         return _cv();
       case 'language_cert':
         return _languageCert(studentProfile);
+      case 'german_cert':
+        return _germanCert();
       default:
         return {'doc_type': docType, 'status': 'missing', 'title': 'Document', 'tips': []};
     }
@@ -27,12 +29,15 @@ class MissingDocTemplates {
     final hasMoi = studentProfile['has_moi'] == true;
     final needsLang = hasIelts || hasToefl || hasMoi;
 
+    final hasGerman = studentProfile['has_german_cert'] == true;
+
     return [
       _transcripts(),
       _bachelorCert(),
       _sop(studentProfile),
       _cv(),
       if (needsLang) _languageCert(studentProfile),
+      if (hasGerman) _germanCert(),
     ];
   }
 
@@ -123,6 +128,20 @@ class MissingDocTemplates {
         certTip,
         'If you have both IELTS and TOEFL, upload the one with the higher score.',
         'For German-taught programs: TestDaF (4×4) or DSH-2 is typically required. Goethe B2/C1 may also be accepted — check program page.',
+      ],
+    };
+  }
+
+  static Map<String, dynamic> _germanCert() {
+    return {
+      'doc_type': 'german_cert',
+      'status': 'missing',
+      'title': 'German Language Certificate',
+      'importance': 'medium',
+      'tips': [
+        'Consider taking a German language certificate (TestDaF, Goethe, DSH, Telc, or ÖSD) if the program requires German proficiency.',
+        'Most German-taught programs require B2 or C1 level. TestDaF level 4 in all sections (TDN 4) is widely accepted.',
+        'Goethe-Zertifikat B2/C1 is valid indefinitely and recognized by most German universities.',
       ],
     };
   }

@@ -26,12 +26,12 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
     final user = client.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
     // 🎯 استخدام الحقول الصحيحة التي أصلحناها في الـ SQL
-    await client.from('profiles').update(data).eq('id', user.id);
+    await client.from('profiles').update(data).eq('id', user.id).timeout(const Duration(seconds: 10));
   }
 
   @override
   Future<Map<String, dynamic>> getCurrentStudentProfile(String userId) async {
-    final result = await client.from('profiles').select().eq('id', userId).maybeSingle();
+    final result = await client.from('profiles').select('degree_level, preferred_cities, budget_range, gpa, max_gpa, academic_average, high_school_score, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, target_major, language_preference, has_transcripts, has_bachelor_cert, has_sop, has_cv, has_german_cert_doc').eq('id', userId).maybeSingle().timeout(const Duration(seconds: 10));
     return result ?? <String, dynamic>{};
   }
 
@@ -72,23 +72,16 @@ class UniversitiesRemoteDataSourceImpl implements UniversitiesRemoteDataSource {
       } else {
         final response = await client
             .from('universities')
-            .select('*, university_programs(*)')
+            .select('*, university_programs!inner(*)')
             .eq('country', 'Germany')
-            .order('name', ascending: true);
+            .eq('university_programs.degree_type', searchDegree)
+            .order('name', ascending: true).timeout(const Duration(seconds: 10));
         unis = List<Map<String, dynamic>>.from(response as List);
         await LocalStorageService.cacheOfflineData(
           'universities_all',
           jsonEncode(unis),
         );
       }
-
-      // 🎯 تصفية حسب الدرجة الدراسية client-side
-      unis.retainWhere((uni) {
-        final programs = uni['university_programs'] as List;
-        programs.retainWhere((p) =>
-            (p['degree_type'] as String? ?? '').toLowerCase().contains(searchDegree.toLowerCase()));
-        return programs.isNotEmpty;
-      });
 
       // 🎯 حساب scores في Isolate منفصل عشان ميبقاش على main thread
       final scoredUnis = await compute(_scoreAndSortUniversities, {

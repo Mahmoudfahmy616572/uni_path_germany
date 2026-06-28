@@ -50,6 +50,7 @@ import '../../presentation/ai/widgets/uni_match_screen.dart';
 import '../../presentation/applications/widgets/application_timeline_screen.dart';
 import '../../presentation/documents/visa_guide_screen.dart';
 import '../../presentation/profile/gamification_screen.dart';
+import '../../presentation/cost_of_living/screens/cost_of_living_screen.dart';
 import '../services/services_locator.dart';
 import '../utils/policy_content.dart';
 
@@ -159,8 +160,9 @@ final GoRouter appRouter = GoRouter(
       path: '/settings',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final profileCubit = state.extra as ProfileCubit;
-        return _SettingsRouteHandler(cubit: profileCubit);
+        final profileCubit = state.extra is ProfileCubit ? state.extra as ProfileCubit : sl<ProfileCubit>();
+        final section = int.tryParse(state.uri.queryParameters['section'] ?? '');
+        return _SettingsRouteHandler(cubit: profileCubit, scrollToSection: section);
       },
     ),
 
@@ -297,6 +299,13 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const VisaGuideScreen(),
     ),
     GoRoute(
+      path: '/cost-of-living',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => CostOfLivingScreen(
+        initialCity: state.uri.queryParameters['city'],
+      ),
+    ),
+    GoRoute(
       path: '/achievements',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const GamificationScreen(),
@@ -387,13 +396,16 @@ final GoRouter appRouter = GoRouter(
 // ─────────────────────────────────────────────────────────
 class _SettingsRouteHandler extends StatefulWidget {
   final ProfileCubit cubit;
-  const _SettingsRouteHandler({required this.cubit});
+  final int? scrollToSection;
+  const _SettingsRouteHandler({required this.cubit, this.scrollToSection});
 
   @override
   State<_SettingsRouteHandler> createState() => _SettingsRouteHandlerState();
 }
 
 class _SettingsRouteHandlerState extends State<_SettingsRouteHandler> {
+  ProfileLoaded? _lastLoaded;
+
   @override
   void initState() {
     super.initState();
@@ -410,7 +422,11 @@ class _SettingsRouteHandlerState extends State<_SettingsRouteHandler> {
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state is ProfileLoaded) {
-            return SettingsScreen(user: state.user);
+            _lastLoaded = state;
+            return SettingsScreen(user: state.user, scrollToSection: widget.scrollToSection);
+          }
+          if (state is ProfileUpdateSuccess && _lastLoaded != null) {
+            return SettingsScreen(user: _lastLoaded!.user, scrollToSection: widget.scrollToSection);
           }
           if (state is ProfileError) {
             return Scaffold(

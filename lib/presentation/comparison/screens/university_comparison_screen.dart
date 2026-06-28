@@ -29,7 +29,7 @@ class UniversityComparisonScreen extends StatelessWidget {
                   Icon(Icons.compare_arrows, size: 64.sp, color: Colors.grey[300]),
                   SizedBox(height: 16.h),
                   Text(
-                    'Select universities to compare',
+                    AppLocalizations.of(context).translate('selectUniversitiesToCompare'),
                     style: TextStyle(fontSize: 16.sp, color: Colors.grey[500]),
                   ),
                 ],
@@ -43,7 +43,7 @@ class UniversityComparisonScreen extends StatelessWidget {
                   columnSpacing: 24.w,
                   columns: [
                     DataColumn(
-                      label: Text('Feature',
+                      label: Text(AppLocalizations.of(context).translate('feature'),
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
                     ),
                     ...universities.map((uni) => DataColumn(
@@ -52,19 +52,19 @@ class UniversityComparisonScreen extends StatelessWidget {
                         )),
                   ],
                   rows: [
-                    _buildRow('Logo', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('logo'), isDark, context,
                         universities.map((u) => u.logoText.isNotEmpty ? u.logoText : '-').toList()),
-                    _buildRow('Location', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('location'), isDark, context,
                         universities.map((u) => u.location ?? '-').toList()),
-                    _buildRow('Ranking', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('ranking'), isDark, context,
                         universities.map((u) => u.rankings?.toString() ?? '-').toList()),
-                    _buildRow('Match', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('matchScore'), isDark, context,
                         universities.map((u) => '${u.matchPercentage}%').toList()),
-                    _buildRow('Programs', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('programs'), isDark, context,
                         universities.map((u) => '${u.matchedProgramsCount}').toList()),
-                    _buildRow('Status', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('status'), isDark, context,
                         universities.map((u) => u.status.isNotEmpty ? u.status : '-').toList()),
-                    _buildRow('Tuition', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('tuition'), isDark, context,
                         universities.map((u) {
                           if (u.programs.isEmpty) return '-';
                           final fees = u.programs.map((p) => p.tuitionFeePerYear).toSet();
@@ -75,7 +75,7 @@ class UniversityComparisonScreen extends StatelessWidget {
                           final maxFee = fees.reduce((a, b) => a > b ? a : b);
                           return '€$minFee-€$maxFee/yr';
                         }).toList()),
-                    _buildRow('Deadlines', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('deadlines'), isDark, context,
                         universities.map((u) {
                           final dates = u.programs
                               .where((p) => p.deadline != null && p.deadline!.isNotEmpty)
@@ -84,7 +84,7 @@ class UniversityComparisonScreen extends StatelessWidget {
                               .join(', ');
                           return dates.isNotEmpty ? dates : '-';
                         }).toList()),
-                    _buildRow('Application Fee', isDark, context,
+                    _buildRow(AppLocalizations.of(context).translate('applicationFee'), isDark, context,
                         universities.map((u) {
                           if (u.programs.isEmpty) return '-';
                           final fees = u.programs.map((p) => p.applicationFee).toSet();

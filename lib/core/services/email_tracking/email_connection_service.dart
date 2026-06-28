@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/logger.dart';
 
@@ -83,9 +84,39 @@ class EmailConnectionService {
 
   EmailConnectionService(this.client);
 
+  /// Deep link URI that the Edge Function redirects to after OAuth completes.
+  String get oAuthRedirectUri => 'com.unipath.app://email_callback';
+
+  /// Base URL for the email-sync Edge Function.
+  String get _edgeFunctionUrl {
+    const supabaseUrl = String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://marrlrggovghhnmhtbgs.supabase.co',
+    );
+    return '$supabaseUrl/functions/v1/email-sync';
+  }
+
+  /// Build the URL to send the user to for OAuth authorization.
+  /// Opens in the system browser; the Edge Function handles the full OAuth flow
+  /// and redirects back to [oAuthRedirectUri] on success.
+  Uri getOAuthAuthorizeUrl(String provider) {
+    final userId = client.auth.currentUser?.id ?? '';
+    _lastOAuthState = _generateState();
+    return Uri.parse('$_edgeFunctionUrl?action=authorize&provider=$provider&user_id=$userId&client_state=$_lastOAuthState');
+  }
+
+  String? _lastOAuthState;
+  final _random = Random();
+
+  String _generateState() =>
+      List.generate(32, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[_random.nextInt(36)]).join();
+
+  bool verifyOAuthState(String? state) =>
+      state != null && _lastOAuthState != null && state == _lastOAuthState;
+
   Future<List<EmailConnection>> loadConnections() async {
     try {
-      final data = await client.from('email_connections').select('*').order('created_at', ascending: false);
+      final data = await client.from('email_connections').select('*').order('created_at', ascending: false).timeout(const Duration(seconds: 10));
       _connections = (data as List).map((e) => EmailConnection.fromMap(Map<String, dynamic>.from(e))).toList();
       return _connections;
     } catch (e) {
@@ -102,7 +133,7 @@ class EmailConnectionService {
         'access_token': accessToken,
         'refresh_token': refreshToken,
         'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id,provider');
+      }, onConflict: 'user_id,provider').timeout(const Duration(seconds: 10));
       await loadConnections();
       return true;
     } catch (e) {
@@ -113,7 +144,7 @@ class EmailConnectionService {
 
   Future<bool> deleteConnection(String id) async {
     try {
-      await client.from('email_connections').delete().eq('id', id);
+      await client.from('email_connections').delete().eq('id', id).timeout(const Duration(seconds: 10));
       _connections.removeWhere((c) => c.id == id);
       return true;
     } catch (e) {
@@ -124,7 +155,7 @@ class EmailConnectionService {
 
   Future<bool> toggleAutoSync(String id, bool enabled) async {
     try {
-      await client.from('email_connections').update({'auto_sync': enabled}).eq('id', id);
+      await client.from('email_connections').update({'auto_sync': enabled}).eq('id', id).timeout(const Duration(seconds: 10));
       return true;
     } catch (e) {
       log.e('Failed to toggle auto sync: $e');
@@ -134,7 +165,7 @@ class EmailConnectionService {
 
   Future<List<EmailStatusLog>> getStatusLogs({int limit = 20}) async {
     try {
-      final data = await client.from('email_status_log').select('*').order('created_at', ascending: false).limit(limit);
+      final data = await client.from('email_status_log').select('*').order('created_at', ascending: false).limit(limit).timeout(const Duration(seconds: 10));
       return (data as List).map((e) => EmailStatusLog.fromMap(Map<String, dynamic>.from(e))).toList();
     } catch (e) {
       log.e('Failed to load email status logs: $e');
@@ -151,31 +182,5 @@ class EmailConnectionService {
       log.e('Failed to trigger email sync: $e');
       return false;
     }
-  }
-
-  String get oAuthRedirectUri => 'http://localhost/email_callback';
-
-  Uri getGmailAuthUrl({String? state}) {
-    final params = <String, String>{
-      'client_id': const String.fromEnvironment('GMAIL_CLIENT_ID', defaultValue: ''),
-      'redirect_uri': '$oAuthRedirectUri',
-      'response_type': 'code',
-      'scope': 'https://www.googleapis.com/auth/gmail.readonly email',
-      'access_type': 'offline',
-      'prompt': 'consent',
-    };
-    if (state != null) params['state'] = state;
-    return Uri.parse('https://accounts.google.com/o/oauth2/v2/auth').replace(queryParameters: params);
-  }
-
-  Uri getOutlookAuthUrl({String? state}) {
-    final params = <String, String>{
-      'client_id': const String.fromEnvironment('OUTLOOK_CLIENT_ID', defaultValue: ''),
-      'redirect_uri': '$oAuthRedirectUri',
-      'response_type': 'code',
-      'scope': 'Mail.Read User.Read offline_access',
-    };
-    if (state != null) params['state'] = state;
-    return Uri.parse('https://login.microsoftonline.com/common/oauth2/v2.0/authorize').replace(queryParameters: params);
   }
 }

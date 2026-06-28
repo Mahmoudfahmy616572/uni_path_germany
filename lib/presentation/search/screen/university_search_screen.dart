@@ -133,6 +133,8 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                             currentIntake: state.selectedIntake,
                             currentDegree: state.selectedDegree,
                             currentMajor: state.selectedMajor,
+                            availableDegrees: state.availableDegrees,
+                            availableMajors: state.availableMajors,
                           ),
                         ),
                         SizedBox(height: 20.h),
@@ -180,7 +182,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
         onChanged: (val) {
           _searchDebounce?.cancel();
           _searchDebounce = Timer(
-            const Duration(milliseconds: 300),
+            const Duration(milliseconds: 800),
             () => context.read<UniversitySearchCubit>().updateFilters(query: val),
           );
         },
@@ -214,7 +216,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
           ),
           onPressed: () => _showResultsBottomSheet(context, results),
           child: Text(
-            'Show $count Available Programs',
+            AppLocalizations.of(context).translate('showPrograms').replaceAll('{count}', count.toString()),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -255,7 +257,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                 Padding(
                   padding: EdgeInsets.only(top: 8.h),
                   child: Text(
-                    '${selectedIds.length} selected — tap Compare to view side-by-side',
+                    AppLocalizations.of(context).translate('selectedCompare').replaceAll('{count}', selectedIds.length.toString()),
                     style: TextStyle(fontSize: 12.sp, color: AppColors.primary),
                   ),
                 ),
@@ -289,7 +291,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          '${uni.programs.length} Matching Programs',
+                          AppLocalizations.of(context).translate('matchingPrograms').replaceAll('{count}', uni.programs.length.toString()),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -326,7 +328,7 @@ class _UniversitySearchScreenState extends State<UniversitySearchScreen> {
                         context.push('/compare', extra: selected);
                       },
                       icon: Icon(Icons.compare_arrows, size: 18.sp),
-                      label: Text('Compare ${selectedIds.length} Universities'),
+                      label: Text(AppLocalizations.of(context).translate('compareButton').replaceAll('{count}', selectedIds.length.toString())),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         foregroundColor: Colors.white,

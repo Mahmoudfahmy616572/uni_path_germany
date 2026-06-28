@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+
 class AiDocumentReviewSheet extends StatelessWidget {
   final List<Map<String, dynamic>> reviews;
   final bool isLoading;
@@ -51,7 +53,7 @@ class AiDocumentReviewSheet extends StatelessWidget {
                 Icon(Icons.description, color: const Color(0xFF8B5CF6), size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'Document Review',
+                  AppLocalizations.of(context).translate('documentReview'),
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -71,7 +73,7 @@ class AiDocumentReviewSheet extends StatelessWidget {
                   ),
                   SizedBox(height: 16.h),
                   Text(
-                    'Reviewing your documents...',
+                    AppLocalizations.of(context).translate('reviewingDocuments'),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: const Color(0xFF64748B),
@@ -100,7 +102,7 @@ class AiDocumentReviewSheet extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: onRetry,
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Retry'),
+                      label: Text(AppLocalizations.of(context).translate('retry')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8B5CF6),
                         foregroundColor: Colors.white,
@@ -117,7 +119,7 @@ class AiDocumentReviewSheet extends StatelessWidget {
                   Icon(Icons.check_circle, size: 48.sp, color: const Color(0xFF10B981)),
                   SizedBox(height: 16.h),
                   Text(
-                    'No documents to review. Upload your documents first!',
+                    AppLocalizations.of(context).translate('noDocsToReview'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.sp,
@@ -223,7 +225,7 @@ class _DocReviewCard extends StatelessWidget {
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          isUploaded ? 'Uploaded' : 'Missing',
+                          isUploaded ? AppLocalizations.of(context).translate('uploaded') : AppLocalizations.of(context).translate('missing'),
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: isUploaded
@@ -324,7 +326,7 @@ class _DocReviewCard extends StatelessWidget {
                   onPressed: onGenerate,
                   icon: const Icon(Icons.auto_awesome, size: 16),
                   label: Text(
-                    'Generate ${docType == 'cv' ? 'CV' : 'SOP'} with AI',
+                    docType == 'cv' ? AppLocalizations.of(context).translate('generateCvWithAi') : AppLocalizations.of(context).translate('generateSopWithAi'),
                     style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
                   ),
                   style: OutlinedButton.styleFrom(

@@ -14,9 +14,8 @@ class UniversitySearchLoading extends UniversitySearchState {}
 
 class UniversitySearchLoaded extends UniversitySearchState {
   final List<UniversityEntity> allResults;
-  final List<UniversityEntity> filteredResults; // الجامعات المطابقة
+  final List<UniversityEntity> filteredResults;
 
-  // فلاتر المستخدم الحالية
   final String selectedIntake;
   final String selectedDegree;
   final String selectedMajor;
@@ -25,6 +24,9 @@ class UniversitySearchLoaded extends UniversitySearchState {
   final double maxTuition;
   final String selectedLanguage;
   final String selectedLocation;
+
+  final List<String> availableDegrees;
+  final List<String> availableMajors;
 
   const UniversitySearchLoaded({
     required this.allResults,
@@ -37,6 +39,8 @@ class UniversitySearchLoaded extends UniversitySearchState {
     required this.maxTuition,
     required this.selectedLanguage,
     this.selectedLocation = 'All',
+    this.availableDegrees = const [],
+    this.availableMajors = const [],
   });
 
   @override
@@ -51,6 +55,8 @@ class UniversitySearchLoaded extends UniversitySearchState {
     maxTuition,
     selectedLanguage,
     selectedLocation,
+    availableDegrees,
+    availableMajors,
   ];
 }
 

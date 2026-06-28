@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:germany_travel/core/widgets/curtain_drop.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/utils/csv_export.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AdminUniversitiesScreen extends StatefulWidget {
   const AdminUniversitiesScreen({super.key});
@@ -49,7 +50,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     });
     try {
       final data = await Supabase.instance.client
-          .from('universities').select('*').order('name').range(0, _pageSize - 1);
+          .from('universities').select('id, name, country, rankings, description, location, website_url, image_url, city, state, street, postal_code, lat, lon, university_type, ba_ban_id, logo_url').order('name').range(0, _pageSize - 1).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _universities = List<Map<String, dynamic>>.from(data);
@@ -60,7 +61,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -84,7 +85,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
       final from = _page * _pageSize;
       final to = from + _pageSize - 1;
       final data = await Supabase.instance.client
-          .from('universities').select('*').order('name').range(from, to);
+          .from('universities').select('id, name, country, rankings, description, location, website_url, image_url, city, state, street, postal_code, lat, lon, university_type, ba_ban_id, logo_url').order('name').range(from, to).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       setState(() {
         _universities.addAll(List<Map<String, dynamic>>.from(data));
@@ -95,7 +96,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loadingMore = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load more: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
@@ -118,28 +119,28 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete University'),
-        content: const Text('This will also delete all associated programs.'),
+        title: Text(AppLocalizations.of(context).translate('deleteAccount')),
+        content: Text(AppLocalizations.of(context).translate('deleteWarning')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('yesDelete'), style: TextStyle(color: Colors.red))),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await Supabase.instance.client.from('university_programs').delete().eq('university_id', id);
-      await Supabase.instance.client.from('universities').delete().eq('id', id);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('University deleted'), backgroundColor: Color(0xFF10B981)));
+      await Supabase.instance.client.from('university_programs').delete().eq('university_id', id).timeout(const Duration(seconds: 10));
+      await Supabase.instance.client.from('universities').delete().eq('id', id).timeout(const Duration(seconds: 10));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('universityDeleted')), backgroundColor: Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _exportCsv() async {
     final csvData = _universities.isEmpty
-        ? await Supabase.instance.client.from('universities').select('*').order('name')
+        ? await Supabase.instance.client.from('universities').select('id, name, country, rankings, description, location, website_url, image_url, city, state, street, postal_code, lat, lon, university_type, ba_ban_id, logo_url').order('name').timeout(const Duration(seconds: 10))
         : _universities;
     await exportCsv(
       data: List<Map<String, dynamic>>.from(csvData),
@@ -155,12 +156,12 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Country')),
-                DataColumn(label: Text('Ranking')),
-                DataColumn(label: Text('Location')),
-                DataColumn(label: Text('Actions')),
+              columns: [
+                DataColumn(label: Text(AppLocalizations.of(context).translate('name'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('countryField'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('rank'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('location'))),
+                DataColumn(label: Text(AppLocalizations.of(context).translate('actions'))),
               ],
               rows: _filtered.map((u) => DataRow(cells: [
                 DataCell(Text(u['name']?.toString() ?? '')),
@@ -184,7 +185,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                   ? const CircularProgressIndicator()
                   : TextButton.icon(
                       icon: const Icon(Icons.expand_more),
-                      label: const Text('Load More'),
+                      label: Text(AppLocalizations.of(context).translate('loadMore')),
                       onPressed: _loadMore,
                     ),
             ),
@@ -195,14 +196,15 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: CurtainDrop(index: 0, child: const Text('Universities')),
+        title: CurtainDrop(index: 0, child: Text(t.translate('adminUniversities'))),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: 'Export CSV', onPressed: _exportCsv)),
+          CurtainDrop(index: 1, child: IconButton(icon: Icon(Icons.download, size: 20.sp), tooltip: t.translate('exportCsv'), onPressed: _exportCsv)),
         ],
       ),
       body: Column(
@@ -215,7 +217,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Search by name, country...',
+                  hintText: t.translate('searchHint'),
                   prefixIcon: Icon(Icons.search, size: 20.sp),
                   suffixIcon: _searchCtrl.text.isEmpty ? null : IconButton(
                     icon: Icon(Icons.clear, size: 18.sp),
@@ -243,7 +245,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                             children: [
                               Icon(Icons.school_outlined, size: 48.sp, color: Colors.grey[300]),
                               SizedBox(height: 8.h),
-                              Text(_searchCtrl.text.isEmpty ? 'No universities yet' : 'No results found', style: TextStyle(color: Colors.grey[500])),
+                              Text(_searchCtrl.text.isEmpty ? t.translate('noUniversities') : t.translate('noResults'), style: TextStyle(color: Colors.grey[500])),
                             ],
                           ),
                         )
@@ -266,7 +268,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                                             ? const CircularProgressIndicator()
                                             : TextButton.icon(
                                                 icon: const Icon(Icons.expand_more),
-                                                label: const Text('Load More'),
+                                                label: Text(t.translate('loadMore')),
                                                 onPressed: _loadMore,
                                               ),
                                       ),
@@ -311,7 +313,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
         child: FloatingActionButton.extended(
         onPressed: () => _editDialog(null),
         icon: const Icon(Icons.add),
-        label: const Text('Add University'),
+        label: Text(t.translate('addUniversity')),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
       ),
@@ -376,20 +378,20 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(existing != null ? 'Edit University' : 'Add University'),
+        title: Text(existing != null ? AppLocalizations.of(context).translate('editUniversity') : AppLocalizations.of(context).translate('addUniversity')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('name') + ' *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               TextField(controller: countryCtrl, decoration: const InputDecoration(labelText: 'Country *', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'Ranking', border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: rankCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('rank'), border: OutlineInputBorder()), keyboardType: TextInputType.number, style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: locationCtrl, decoration: const InputDecoration(labelText: 'Location', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: locationCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('location'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
-              TextField(controller: websiteCtrl, decoration: const InputDecoration(labelText: 'Website URL', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: websiteCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('website'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               Row(
                 children: [
@@ -419,7 +421,7 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
                 Text('Image: $imageUrl', style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
               SizedBox(height: 12.h),
-              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'City', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
+              TextField(controller: cityCtrl, decoration: InputDecoration(labelText: AppLocalizations.of(context).translate('city'), border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
               TextField(controller: stateCtrl, decoration: const InputDecoration(labelText: 'State', border: OutlineInputBorder()), style: TextStyle(fontSize: 14.sp)),
               SizedBox(height: 12.h),
@@ -444,8 +446,8 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context).translate('save'))),
         ],
       ),
     );
@@ -499,14 +501,14 @@ class _AdminUniversitiesScreenState extends State<AdminUniversitiesScreen> {
         'ba_ban_id': baBanCtrl.text.trim(),
       };
       if (existing != null) {
-        await Supabase.instance.client.from('universities').update(data).eq('id', existing['id']);
+        await Supabase.instance.client.from('universities').update(data).eq('id', existing['id']).timeout(const Duration(seconds: 10));
       } else {
-        await Supabase.instance.client.from('universities').insert(data);
+        await Supabase.instance.client.from('universities').insert(data).timeout(const Duration(seconds: 10));
       }
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(existing != null ? 'University updated' : 'University added'), backgroundColor: const Color(0xFF10B981)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('universityUpdated')), backgroundColor: const Color(0xFF10B981)));
       _load();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).translate('failedToLoad').replaceAll('{error}', e.toString())), backgroundColor: Colors.red));
     }
   }
 }

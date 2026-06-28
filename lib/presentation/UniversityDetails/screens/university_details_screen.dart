@@ -9,8 +9,9 @@ import '../../../core/themes/app_theme.dart';
 import '../../../core/services/premium_service.dart';
 import '../../../core/services/services_locator.dart';
 import '../../../core/utils/build_notes_section.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/utils/quick_info_metrics.dart';
-import '../../../core/widgets/webview_screen.dart';
 import '../../../domain/entities/program_entity.dart';
 import '../../../domain/entities/university_entity.dart';
 import '../../../domain/repositories/applications_repository.dart';
@@ -303,7 +304,11 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
             Expanded(
               child: Text(
                 AppLocalizations.of(context).translate('filterAiRecommended'),
-                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isFiltered ? const Color(0xFF166534) : null,
+                ),
               ),
             ),
           ],
@@ -359,17 +364,7 @@ class _UniversityDetailsScreenState extends State<UniversityDetailsScreen> {
                     Icons.language,
                     color: context.isDark ? AppColors.textMuted : const Color(0xFF64748B),
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WebViewScreen(
-                          url: widget.university.websiteUrl!,
-                          title: widget.university.name,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: () => launchUrl(Uri.parse(widget.university.websiteUrl!)),
                 ),
               ),
             ],

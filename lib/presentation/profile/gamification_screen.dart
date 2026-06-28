@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/gamification_service.dart' as gs;
 
 class GamificationScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class GamificationScreen extends StatelessWidget {
     final progress = gs.GamificationService.overallProgress;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).translate('achievements'))),
       body: ListView(
         padding: EdgeInsets.all(16.r),
         children: [
@@ -26,10 +27,10 @@ class GamificationScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Icon(Icons.emoji_events, size: 48, color: Colors.white),
+                Icon(Icons.emoji_events, size: 48.sp, color: Colors.white),
                 SizedBox(height: 8.h),
-                Text('${earned.length} / ${gs.GamificationService.totalCount} Badges Earned',
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(AppLocalizations.of(context).translate('badgesEarned').replaceAll('{earned}', '${earned.length}').replaceAll('{total}', '${gs.GamificationService.totalCount}'),
+                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
                 SizedBox(height: 12.h),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.r),
@@ -41,17 +42,17 @@ class GamificationScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 8.h),
-                Text('${(progress * 100).round()}% Complete',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(AppLocalizations.of(context).translate('percentComplete').replaceAll('{percent}', '${(progress * 100).round()}'),
+                    style: TextStyle(color: Colors.white70, fontSize: 13.sp)),
               ],
             ),
           ),
           SizedBox(height: 24.h),
-          Text('Your Stats', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).translate('yourStats'), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
           SizedBox(height: 12.h),
-          _buildStatsRow(stats),
+          _buildStatsRow(context, stats),
           SizedBox(height: 24.h),
-          Text('All Badges', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).translate('allBadges'), style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
           SizedBox(height: 12.h),
           ...gs.GamificationService.badges.map((badge) => _buildBadgeCard(badge, earned.any((e) => e.id == badge.id), stats, isDark)),
         ],
@@ -59,11 +60,12 @@ class GamificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsRow(Map<String, int> stats) {
+  Widget _buildStatsRow(BuildContext context, Map<String, int> stats) {
+    final t = AppLocalizations.of(context).translate;
     final items = [
-      ('Saved', stats['universities_saved'] ?? 0, Icons.bookmark),
-      ('Applied', stats['applications_submitted'] ?? 0, Icons.send),
-      ('Documents', stats['documents_uploaded'] ?? 0, Icons.description),
+      (t('saved'), stats['universities_saved'] ?? 0, Icons.bookmark),
+      (t('applied'), stats['applications_submitted'] ?? 0, Icons.send),
+      (t('documents'), stats['documents_uploaded'] ?? 0, Icons.description),
     ];
     return Row(
       children: items.map((item) => Expanded(
@@ -78,7 +80,7 @@ class GamificationScreen extends StatelessWidget {
             children: [
               Icon(item.$3, color: const Color(0xFF4F46E5), size: 24),
               SizedBox(height: 4.h),
-              Text('${item.$2}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('${item.$2}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp)),
               Text(item.$1, style: TextStyle(fontSize: 11.sp, color: const Color(0xFF64748B))),
             ],
           ),

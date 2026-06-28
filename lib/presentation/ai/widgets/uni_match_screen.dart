@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/ai/gemini_service.dart';
 import '../../../core/services/services_locator.dart';
 import '../../../core/themes/app_colors.dart';
@@ -70,7 +71,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return;
       final profile = await Supabase.instance.client
-          .from('profiles').select().eq('id', userId).maybeSingle();
+          .from('profiles').select('gpa, max_gpa, target_major, degree_level, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, language_preference, intake, german_level, budget_range, preferred_cities').eq('id', userId).maybeSingle().timeout(const Duration(seconds: 10));
       if (!mounted) return;
       if (profile == null) {
         setState(() { _error = 'Please complete your profile first'; _loading = false; });
@@ -82,7 +83,8 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
       final uniResponse = await supabase
           .from('universities')
           .select('*, university_programs(*)')
-          .eq('country', 'Germany');
+          .eq('country', 'Germany')
+          .timeout(const Duration(seconds: 10));
 
       final allUnis = (uniResponse as List).map((json) =>
           UniversityModel.fromJson(Map<String, dynamic>.from(json)).toEntity()
@@ -182,7 +184,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isSaved ? 'Removed from Pipeline' : 'Added to Pipeline'),
+            content: Text(AppLocalizations.of(context).translate(isSaved ? 'removedFromPipeline' : 'addedToPipeline')),
             backgroundColor: const Color(0xFF16A34A),
             behavior: SnackBarBehavior.floating,
           ),
@@ -191,7 +193,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}$e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -201,7 +203,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: const Text('AI University Match')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).translate('aiUniversityMatch'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -213,13 +215,13 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
                       children: [
                         Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
                         SizedBox(height: 16.h),
-                        Text('Could not load recommendations', style: TextStyle(fontSize: 16.sp)),
+                        Text(AppLocalizations.of(context).translate('couldNotLoadRecommendations'), style: TextStyle(fontSize: 16.sp)),
                         if (_error != null) ...[
                           SizedBox(height: 8.h),
                           Text(_error!, style: TextStyle(fontSize: 11.sp, color: Colors.red.shade700), textAlign: TextAlign.center),
                         ],
                         SizedBox(height: 16.h),
-                        ElevatedButton(onPressed: _loadRecommendations, child: const Text('Retry')),
+                        ElevatedButton(onPressed: _loadRecommendations, child: Text(AppLocalizations.of(context).translate('retry'))),
                       ],
                     ),
                   ),
@@ -233,7 +235,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
                           children: [
                             Icon(Icons.school_outlined, size: 48.sp, color: const Color(0xFF94A3B8)),
                             SizedBox(height: 16.h),
-                            Text('Complete your profile to get matches',
+                            Text(AppLocalizations.of(context).translate('completeProfileFirst'),
                                 style: TextStyle(fontSize: 16.sp,
                                     color: isDark ? AppColors.textMuted : const Color(0xFF64748B))),
                           ],
@@ -262,15 +264,15 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome, color: Colors.white, size: 28),
+          Icon(Icons.auto_awesome, color: Colors.white, size: 28.sp),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Your Top Matches',
+                Text(AppLocalizations.of(context).translate('yourTopMatches'),
                     style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
-                Text('Tap the checkmark to save a program to your Pipeline',
+                Text(AppLocalizations.of(context).translate('tapCheckmarkToSave'),
                     style: TextStyle(color: Colors.white70, fontSize: 12.sp)),
               ],
             ),
@@ -379,7 +381,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
               children: [
                 Icon(Icons.calendar_today, size: 14.r, color: const Color(0xFF94A3B8)),
                 SizedBox(width: 4.w),
-                Text('Deadline: ${r['deadline']}',
+                Text(AppLocalizations.of(context).translate('deadlineLabel').replaceAll('{date}', '${r['deadline']}'),
                     style: TextStyle(fontSize: 11.sp, color: const Color(0xFF94A3B8))),
               ],
             ),
@@ -397,7 +399,7 @@ class _UniMatchScreenState extends State<UniMatchScreen> {
                     color: isSaved ? const Color(0xFF16A34A) : const Color(0xFF4F46E5),
                   ),
                   label: Text(
-                    isSaved ? 'Added to Pipeline' : 'Add to Pipeline',
+                    AppLocalizations.of(context).translate(isSaved ? 'addedToPipeline' : 'addToPipeline'),
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: isSaved ? const Color(0xFF16A34A) : const Color(0xFF4F46E5),
@@ -452,7 +454,7 @@ class _ExpandableReasonState extends State<_ExpandableReason> {
             child: Padding(
               padding: EdgeInsets.only(top: 4.h),
               child: Text(
-                _expanded ? 'Show less' : 'Show more',
+                AppLocalizations.of(context).translate(_expanded ? 'showLess' : 'showMore'),
                 style: TextStyle(fontSize: 11.sp, color: const Color(0xFF4F46E5), fontWeight: FontWeight.w500),
               ),
             ),

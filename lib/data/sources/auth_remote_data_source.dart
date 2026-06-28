@@ -45,7 +45,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           .from('profiles')
           .select('email')
           .eq('username', targetEmail)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
       if (userData == null) throw Exception('User not found');
       targetEmail = userData['email'];
     }
@@ -82,7 +82,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'phone': phone,
         'target_country': targetCountry,
         'created_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'id');
+      }, onConflict: 'id').timeout(const Duration(seconds: 10));
     }
 
     // Check if email confirmation is required
@@ -98,7 +98,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getCurrentUserProfile(String userId) async {
-    final result = await client.from('profiles').select().eq('id', userId).maybeSingle();
+    final result = await client.from('profiles').select('id, email, username, intake, target_major, language_preference, degree_level, gpa, academic_average, high_school_score, max_gpa, min_gpa, has_ielts, ielts_score, has_toefl, toefl_score, has_moi, nationality, preferred_cities, budget_range, goals, notifications_enabled, deadline_reminders, application_updates, general_notifications, reminder_days_before, quiet_start, quiet_end, role').eq('id', userId).maybeSingle().timeout(const Duration(seconds: 10));
     return result ?? <String, dynamic>{};
   }
 
@@ -107,7 +107,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String userId,
     required Map<String, dynamic> updates,
   }) async {
-    await client.from('profiles').update(updates).eq('id', userId);
+    await client.from('profiles').update(updates).eq('id', userId).timeout(const Duration(seconds: 10));
   }
 
   @override
@@ -119,7 +119,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> deleteAccount() async {
     final user = client.auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
-    await client.from('profiles').delete().eq('id', user.id);
+    await client.from('email_connections').delete().eq('user_id', user.id).timeout(const Duration(seconds: 10));
+    await client.from('email_status_log').delete().eq('user_id', user.id).timeout(const Duration(seconds: 10));
+    await client.from('my_applications').delete().eq('user_id', user.id).timeout(const Duration(seconds: 10));
+    await client.from('profiles').delete().eq('id', user.id).timeout(const Duration(seconds: 10));
     await client.auth.signOut();
   }
 

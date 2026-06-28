@@ -14,7 +14,7 @@ class PremiumService {
           .from('profiles')
           .select('premium_until, role')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
 
       if (response == null) return false;
 
@@ -41,7 +41,7 @@ class PremiumService {
           .from('profiles')
           .select('premium_until')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle().timeout(const Duration(seconds: 10));
 
       if (response == null) return null;
 
@@ -78,6 +78,6 @@ class PremiumService {
     await _supabase.from('profiles').update({
       'premium_until': premiumUntil.toUtc().toIso8601String(),
       'premium_plan': plan,
-    }).eq('id', user.id);
+    }).eq('id', user.id).timeout(const Duration(seconds: 10));
   }
 }

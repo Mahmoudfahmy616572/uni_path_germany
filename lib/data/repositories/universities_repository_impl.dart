@@ -25,6 +25,9 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
     required String intake,
     required String languagePreference,
     required String degreeLevel,
+    bool hasGermanCert = false,
+    String? germanCertType,
+    String? germanCertLevel,
   }) async {
     try {
       await remoteDataSource.updateStudentProfile({
@@ -39,8 +42,11 @@ class UniversitiesRepositoryImpl implements UniversitiesRepository {
         'target_major': targetMajor,
         'intake': intake,
         'language_preference': languagePreference,
-        'degree_level': degreeLevel, // 🎯 Added degree level
-        'target_country': 'Germany', // ثابت دائماً
+        'degree_level': degreeLevel,
+        'has_german_cert': hasGermanCert,
+        'german_cert_type': germanCertType,
+        'german_cert_level': germanCertLevel,
+        'target_country': 'Germany',
       });
     } catch (e) {
       throw Exception('Failed to update profile: ${e.toString()}');

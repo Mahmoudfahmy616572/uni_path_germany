@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/app_localizations.dart';
+
 class UniversityStatsSection extends StatelessWidget {
   final String uniName;
   final int? qsRanking;
@@ -43,7 +45,7 @@ class UniversityStatsSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'About the University',
+                      AppLocalizations.of(context).translate('aboutUniversity'),
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
@@ -51,7 +53,7 @@ class UniversityStatsSection extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '$uniName is one of Europe\'s leading research universities.',
+                      AppLocalizations.of(context).translate('uniIsLeading').replaceAll('{name}', uniName),
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Color(0xFF64748B),
@@ -63,13 +65,13 @@ class UniversityStatsSection extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'QS Ranking',
+                    AppLocalizations.of(context).translate('qsRanking'),
                     style: TextStyle(fontSize: 10.sp, color: Color(0xFF64748B)),
                   ),
                   Text(
                     qsRanking != null && qsRanking! > 0
                         ? '= $qsRanking'
-                        : 'N/A',
+                        : AppLocalizations.of(context).translate('na'),
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
@@ -84,9 +86,9 @@ class UniversityStatsSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatItem(Icons.star_border, '4.6/5', 'Reviews'),
-              _buildStatItem(Icons.people_outline, '40k+', 'Students'),
-              _buildStatItem(Icons.work_outline, '95%', 'Employment'),
+              _buildStatItem(Icons.star_border, '4.6/5', AppLocalizations.of(context).translate('reviews')),
+              _buildStatItem(Icons.people_outline, '40k+', AppLocalizations.of(context).translate('students')),
+              _buildStatItem(Icons.work_outline, '95%', AppLocalizations.of(context).translate('employment')),
             ],
           ),
         ],

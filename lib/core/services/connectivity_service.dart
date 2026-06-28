@@ -20,6 +20,7 @@ class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
   final StreamController<ConnectionStatus> _statusController = StreamController.broadcast();
   Timer? _speedTestTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   Stream<ConnectionStatus> get connectionStatusStream => _statusController.stream;
   ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
@@ -28,7 +29,7 @@ class ConnectivityService {
   Future<void> init() async {
     await _checkConnection();
 
-    _connectivity.onConnectivityChanged.listen((result) {
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((result) {
       _checkConnection();
     });
 
@@ -73,6 +74,7 @@ class ConnectivityService {
   }
 
   void dispose() {
+    _connectivitySub?.cancel();
     _speedTestTimer?.cancel();
     _statusController.close();
   }

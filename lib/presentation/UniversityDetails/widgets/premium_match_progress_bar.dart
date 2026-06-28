@@ -27,7 +27,7 @@ class PremiumMatchProgressBar extends StatelessWidget {
       children: [
         // هيدر بسيط وأنيق فوق البار
         Text(
-          'Admission Chance Evaluation',
+          AppLocalizations.of(context).translate('admissionChanceEval'),
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.bold,
@@ -57,7 +57,7 @@ class PremiumMatchProgressBar extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Academic Match (',
+                                '${AppLocalizations.of(context).translate('academicMatch')} (',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12.sp,
@@ -136,8 +136,8 @@ class PremiumMatchProgressBar extends StatelessWidget {
                             SizedBox(width: 4.w),
                             Text(
                               isPremium
-                                  ? AppLocalizations.of(context).translate('unlocked')
-                                  : 'AI Premium (20%)',
+                                    ? AppLocalizations.of(context).translate('unlocked')
+                                    : AppLocalizations.of(context).translate('aiPremium'),
                               style: TextStyle(
                                 color: isPremium ? Colors.white : const Color(0xFF64748B),
                                 fontSize: 11.sp,
@@ -178,7 +178,7 @@ class PremiumMatchProgressBar extends StatelessWidget {
                       Text(
                         isPremium
                             ? AppLocalizations.of(context).translate('youArePremium')
-                            : 'Want to unlock the remaining 20%?',
+                            : AppLocalizations.of(context).translate('unlockRemaining'),
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
@@ -189,7 +189,7 @@ class PremiumMatchProgressBar extends StatelessWidget {
                       Text(
                         isPremium
                             ? AppLocalizations.of(context).translate('premiumFeatures')
-                            : 'Optimize your CV & SOP via our AI Tailoring service to match this program.',
+                            : AppLocalizations.of(context).translate('optimizeCvSop'),
                         style: TextStyle(
                           fontSize: 11.sp,
                           color: Color(0xFF6D28D9),

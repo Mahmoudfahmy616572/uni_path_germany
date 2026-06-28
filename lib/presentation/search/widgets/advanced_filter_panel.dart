@@ -95,7 +95,7 @@ class AdvancedFilterPanel extends StatelessWidget {
             context,
             title:
                 AppLocalizations.of(context).translate('IELTS/TOEFL Required'),
-            subtitle: 'Show programs requiring English test',
+            subtitle: AppLocalizations.of(context).translate('showEnglishTest'),
             value: requiresIelts,
             onToggle: () {
               context.read<UniversitySearchCubit>().updateFilters(
@@ -115,7 +115,7 @@ class AdvancedFilterPanel extends StatelessWidget {
           _buildToggleRow(
             context,
             title: AppLocalizations.of(context).translate('moiAccepted'),
-            subtitle: 'Medium of Instruction certificate support',
+            subtitle: AppLocalizations.of(context).translate('moiSupport'),
             value: acceptsMoi,
             onToggle: () {
               context.read<UniversitySearchCubit>().updateFilters(

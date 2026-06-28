@@ -208,6 +208,18 @@ class LocalStorageService {
     return box.containsKey('data_$key') && box.containsKey('data_${key}_ts');
   }
 
+  // ─── Onboarding Status ───
+
+  static Future<void> markOnboardingComplete() async {
+    final box = await _getOfflineBox();
+    await box.put('onboarding_complete', true);
+  }
+
+  static Future<bool> isOnboardingComplete() async {
+    final box = await _getOfflineBox();
+    return box.get('onboarding_complete', defaultValue: false) as bool;
+  }
+
   // ─── Clear All ───
 
   static Future<void> clearAll() async {
